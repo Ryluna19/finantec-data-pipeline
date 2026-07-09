@@ -109,6 +109,14 @@ O teste de carga usa um banco temporário criado pelo próprio `pytest`, evitand
 
 ---
 
+## Relatório de Rejeições
+
+O pipeline também gera um relatório de linhas rejeitadas quando encontra dados inválidos nos arquivos de entrada.
+
+O arquivo gerado é:
+
+data/processed/transacoes_rejeitadas.csv
+
 ## Scripts Manuais
 
 A pasta `manual_tests/` contém scripts de apoio para verificações manuais e debug.

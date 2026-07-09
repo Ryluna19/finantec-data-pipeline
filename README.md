@@ -40,6 +40,7 @@ Demonstrar um fluxo básico de dados aplicado a um contexto financeiro:
 - simulador de metas financeiras;
 - chat com IA generativa usando contexto dos dados;
 - histórico de conversa separado por período analisado.
+- geração de relatório de transações rejeitadas com motivo da rejeição;
 
 ## Tecnologias Utilizadas
 
