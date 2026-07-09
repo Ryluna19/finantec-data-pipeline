@@ -1,31 +1,77 @@
-﻿from __future__ import annotations
+﻿"""
+Funções de análise financeira usadas pelo FinanTec.
+
+Este módulo concentra os cálculos financeiros do projeto para evitar que a IA
+invente valores. A IA recebe os números já calculados em Python e apenas explica
+os resultados de forma contextualizada.
+"""
+
+from __future__ import annotations
+
+from typing import Any
 
 import pandas as pd
 
 
-"""
-Funções de análise financeira usadas pelo FinanTec.
+TIPO_RECEITA = "receita"
+TIPO_DESPESA = "despesa"
+CATEGORIA_RESERVA = "Reserva"
 
-Este módulo concentra os cálculos do projeto para evitar que a IA invente
-valores financeiros. A IA recebe os números já calculados e apenas explica
-os resultados de forma contextualizada.
-"""
+
+def garantir_coluna_ano_mes(transacoes: pd.DataFrame) -> pd.DataFrame:
+    """
+    Garante que o DataFrame tenha a coluna ano_mes no formato AAAA-MM.
+    """
+    if "ano_mes" in transacoes.columns:
+        return transacoes
+
+    transacoes = transacoes.copy()
+    transacoes["data"] = pd.to_datetime(
+        transacoes["data"],
+        errors="coerce",
+    )
+    transacoes["ano_mes"] = transacoes["data"].dt.to_period("M").astype(str)
+
+    return transacoes
+
+
+def filtrar_por_tipo(transacoes: pd.DataFrame, tipo: str) -> pd.DataFrame:
+    """
+    Filtra transações pelo tipo informado.
+    """
+    return transacoes[transacoes["tipo"] == tipo].copy()
+
+
+def identificar_categoria_reserva(transacoes: pd.DataFrame) -> pd.Series:
+    """
+    Identifica linhas da categoria Reserva.
+
+    A comparação ignora diferença entre maiúsculas e minúsculas para deixar o
+    cálculo mais resistente a pequenas variações nos dados.
+    """
+    return (
+        transacoes["categoria"]
+        .astype("string")
+        .str.strip()
+        .str.casefold()
+        == CATEGORIA_RESERVA.casefold()
+    )
 
 
 def calcular_gastos_por_categoria(
     transacoes: pd.DataFrame,
-    incluir_reserva: bool = False
+    incluir_reserva: bool = False,
 ) -> pd.Series:
     """
     Soma os gastos por categoria.
 
-    Por padrão, a categoria 'Reserva' não entra como gasto de consumo,
-    porque representa dinheiro guardado, não consumo do período.
+    Por padrão, a categoria Reserva não entra como gasto de consumo, porque
+    representa dinheiro guardado, não consumo do período.
     """
-    despesas = transacoes[transacoes["tipo"] == "despesa"].copy()
+    despesas = filtrar_por_tipo(transacoes, TIPO_DESPESA)
 
     if not incluir_reserva:
-        despesas = despesas[despesas["categoria"] != "Reserva"]
+        despesas = despesas[~identificar_categoria_reserva(despesas)]
 
     return (
         despesas.groupby("categoria")["valor"]
@@ -34,27 +80,27 @@ def calcular_gastos_por_categoria(
     )
 
 
-def calcular_resumo_financeiro(transacoes: pd.DataFrame) -> dict:
+def calcular_resumo_financeiro(transacoes: pd.DataFrame) -> dict[str, Any]:
     """
     Calcula o resumo financeiro do período analisado.
 
-    O cálculo separa despesas totais de gasto de consumo para deixar claro
-    quanto foi realmente consumido e quanto foi separado para reserva.
+    O cálculo separa despesas totais, gastos de consumo e valor reservado.
+    Isso deixa claro quanto foi consumido e quanto foi separado para reserva.
     """
     receitas = transacoes.loc[
-        transacoes["tipo"] == "receita",
-        "valor"
+        transacoes["tipo"] == TIPO_RECEITA,
+        "valor",
     ].sum()
 
     despesas_totais = transacoes.loc[
-        transacoes["tipo"] == "despesa",
-        "valor"
+        transacoes["tipo"] == TIPO_DESPESA,
+        "valor",
     ].sum()
 
-    valor_reserva = transacoes.loc[
-        (transacoes["tipo"] == "despesa")
-        & (transacoes["categoria"] == "Reserva"),
-        "valor"
+    despesas = filtrar_por_tipo(transacoes, TIPO_DESPESA)
+    valor_reserva = despesas.loc[
+        identificar_categoria_reserva(despesas),
+        "valor",
     ].sum()
 
     despesas_do_mes = despesas_totais - valor_reserva
@@ -83,13 +129,13 @@ def calcular_resumo_financeiro(transacoes: pd.DataFrame) -> dict:
 def calcular_meta_mensal(
     valor_meta: float,
     prazo_meses: int,
-    valor_ja_reservado: float
-) -> dict:
+    valor_ja_reservado: float,
+) -> dict[str, float | None]:
     """
     Calcula quanto falta para uma meta e o valor mensal necessário.
 
-    Cada meta usa seu próprio valor atual. A reserva geral da pessoa usuária
-    não é automaticamente usada para outras metas, como compra de notebook.
+    Cada meta usa seu próprio valor atual. A reserva geral da pessoa não é
+    automaticamente usada para outras metas, como compra de notebook.
     """
     valor_restante = max(valor_meta - valor_ja_reservado, 0)
 
@@ -107,11 +153,14 @@ def calcular_meta_mensal(
     }
 
 
-def formatar_moeda(valor: float) -> str:
+def formatar_moeda(valor: float | int | None) -> str:
     """
     Formata valores numéricos no padrão de moeda brasileira.
     """
-    valor_formatado = f"{valor:,.2f}"
+    if valor is None:
+        return "N/A"
+
+    valor_formatado = f"{float(valor):,.2f}"
 
     return (
         "R$ "
@@ -121,12 +170,12 @@ def formatar_moeda(valor: float) -> str:
     )
 
 
-def calcular_simulacoes_de_metas(perfil_usuario: dict) -> list[dict]:
+def calcular_simulacoes_de_metas(perfil_usuario: dict) -> list[dict[str, Any]]:
     """
     Gera simulações calculadas para todas as metas cadastradas.
 
-    Esses valores são enviados prontos para a IA, reduzindo o risco de erro
-    em contas feitas pelo modelo de linguagem.
+    Esses valores são enviados prontos para a IA, reduzindo o risco de erro em
+    contas feitas pelo modelo de linguagem.
     """
     simulacoes = []
 
@@ -169,22 +218,23 @@ def listar_meses_disponiveis(transacoes: pd.DataFrame) -> list[str]:
     """
     Lista os períodos disponíveis na base de transações.
     """
-    if "ano_mes" not in transacoes.columns:
-        transacoes = transacoes.copy()
-        transacoes["ano_mes"] = transacoes["data"].dt.to_period("M").astype(str)
+    transacoes = garantir_coluna_ano_mes(transacoes)
 
-    return sorted(transacoes["ano_mes"].dropna().unique().tolist())
+    return sorted(
+        transacoes["ano_mes"]
+        .dropna()
+        .unique()
+        .tolist()
+    )
 
 
 def filtrar_transacoes_por_mes(
     transacoes: pd.DataFrame,
-    ano_mes: str
+    ano_mes: str,
 ) -> pd.DataFrame:
     """
     Filtra as transações de um período específico no formato AAAA-MM.
     """
-    if "ano_mes" not in transacoes.columns:
-        transacoes = transacoes.copy()
-        transacoes["ano_mes"] = transacoes["data"].dt.to_period("M").astype(str)
+    transacoes = garantir_coluna_ano_mes(transacoes)
 
     return transacoes[transacoes["ano_mes"] == ano_mes].copy()
