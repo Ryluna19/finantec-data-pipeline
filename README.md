@@ -98,6 +98,12 @@ finantec-data-pipeline/
 │   └── transacoes.csv
 ├── database/
 ├── docs/
+│   ├── ai_prompting.md
+│   ├── data_contract.md
+│   ├── knowledge_base.md
+│   ├── project_overview.md
+│   ├── roadmap.md
+│   └──  validation.md
 ├── logs/
 ├── scripts/
 │   └── etl_transacoes.py
@@ -117,6 +123,18 @@ finantec-data-pipeline/
 ├── README.md
 └── requirements.txt
 ```
+## Documentação
+
+A pasta `docs/` reúne a documentação técnica e de produto do projeto.
+
+| Arquivo | Finalidade |
+|---|---|
+| `docs/project_overview.md` | Visão geral do projeto, problema, solução, componentes e decisões técnicas. |
+| `docs/data_contract.md` | Contrato de dados dos arquivos CSV de transações. |
+| `docs/knowledge_base.md` | Explicação das fontes de dados usadas pelo pipeline, dashboard e IA. |
+| `docs/ai_prompting.md` | Regras de prompt, uso da IA e estratégia para reduzir respostas inventadas. |
+| `docs/validation.md` | Estratégia de validação, testes automatizados, testes manuais e limitações. |
+| `docs/roadmap.md` | Próximas evoluções planejadas para o projeto. |
 
 ## Base de Dados Simulada
 
