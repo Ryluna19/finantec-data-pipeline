@@ -1,7 +1,21 @@
+"""
+Executor principal do FinanTec Data Pipeline.
+
+Este arquivo funciona como uma entrada simples para o projeto, parecido com a
+ideia de scripts do npm. Em vez de digitar comandos longos, é possível usar:
+
+- python main.py
+- python main.py app
+- python main.py etl
+- python main.py test
+- python main.py dev
+"""
+
 from __future__ import annotations
 
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 
@@ -9,10 +23,15 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 APP_PATH = PROJECT_ROOT / "src" / "app.py"
 ETL_PATH = PROJECT_ROOT / "scripts" / "etl_transacoes.py"
 
+Comando = Callable[[], int]
+
 
 def executar_comando(comando: list[str]) -> int:
     """
     Executa um comando usando o mesmo Python do ambiente atual.
+
+    Usar sys.executable ajuda a garantir que o comando rode dentro do ambiente
+    virtual ativo, quando ele estiver sendo usado.
     """
     processo = subprocess.run(
         comando,
@@ -63,7 +82,7 @@ def executar_testes() -> int:
     )
 
 
-def executar_fluxo_completo() -> int:
+def executar_fluxo_dev() -> int:
     """
     Executa o ETL e, se tudo der certo, inicia o dashboard.
     """
@@ -75,7 +94,10 @@ def executar_fluxo_completo() -> int:
     return executar_app()
 
 
-def exibir_ajuda() -> None:
+def exibir_ajuda() -> int:
+    """
+    Exibe os comandos disponíveis.
+    """
     print(
         """
 Uso:
@@ -83,25 +105,39 @@ Uso:
   python main.py app      Inicia o dashboard Streamlit
   python main.py etl      Executa o pipeline ETL
   python main.py test     Executa os testes automatizados
+  python main.py tests    Executa os testes automatizados
   python main.py dev      Executa o ETL e inicia o dashboard
   python main.py help     Mostra esta ajuda
 """.strip()
     )
 
+    return 0
 
-def main() -> int:
-    comando = sys.argv[1].lower() if len(sys.argv) > 1 else "app"
 
-    comandos = {
+def obter_comandos() -> dict[str, Comando]:
+    """
+    Retorna os comandos disponíveis para execução.
+    """
+    return {
         "app": executar_app,
         "etl": executar_etl,
         "test": executar_testes,
         "tests": executar_testes,
-        "dev": executar_fluxo_completo,
-        "help": lambda: (exibir_ajuda() or 0),
-        "-h": lambda: (exibir_ajuda() or 0),
-        "--help": lambda: (exibir_ajuda() or 0),
+        "dev": executar_fluxo_dev,
+        "help": exibir_ajuda,
+        "-h": exibir_ajuda,
+        "--help": exibir_ajuda,
     }
+
+
+def main(argumentos: list[str] | None = None) -> int:
+    """
+    Interpreta o comando recebido pelo terminal e executa a ação correspondente.
+    """
+    argumentos = argumentos if argumentos is not None else sys.argv[1:]
+    comando = argumentos[0].lower() if argumentos else "app"
+
+    comandos = obter_comandos()
 
     if comando not in comandos:
         print(f"Comando desconhecido: {comando}")

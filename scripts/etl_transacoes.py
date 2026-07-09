@@ -1,13 +1,4 @@
-﻿from __future__ import annotations
-
-import logging
-import sqlite3
-from pathlib import Path
-
-import pandas as pd
-
-
-"""
+﻿"""
 Pipeline ETL de transacoes financeiras simuladas.
 
 Etapas:
@@ -15,9 +6,17 @@ Etapas:
 - Transform: valida, limpa e padroniza os dados.
 - Load: salva os dados tratados em CSV e SQLite.
 
-O pipeline tambem gera um relatorio de linhas rejeitadas quando encontra
-dados invalidos.
+O pipeline tambem gera um relatorio de linhas rejeitadas quando encontra dados
+invalidos nos arquivos de entrada.
 """
+
+from __future__ import annotations
+
+import logging
+import sqlite3
+from pathlib import Path
+
+import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +36,8 @@ TABELA_TRANSACOES = "transacoes_processadas"
 COLUNAS_OBRIGATORIAS = ["data", "tipo", "descricao", "categoria", "valor"]
 TIPOS_VALIDOS = {"receita", "despesa"}
 
+LOGGER = logging.getLogger(__name__)
+
 
 def configurar_logs() -> None:
     """
@@ -51,6 +52,7 @@ def configurar_logs() -> None:
             logging.FileHandler(ARQUIVO_LOG, encoding="utf-8"),
             logging.StreamHandler(),
         ],
+        force=True,
     )
 
 
@@ -58,8 +60,8 @@ def validar_colunas(transacoes: pd.DataFrame, arquivo: Path) -> None:
     """
     Valida se o arquivo possui as colunas minimas esperadas.
 
-    Se faltar alguma coluna obrigatoria, o pipeline deve parar. Nesse caso,
-    o problema esta na estrutura do arquivo, nao apenas em uma linha isolada.
+    Se faltar alguma coluna obrigatoria, o pipeline deve parar. Nesse caso, o
+    problema esta na estrutura do arquivo, nao apenas em uma linha isolada.
     """
     colunas_ausentes = [
         coluna
@@ -74,13 +76,27 @@ def validar_colunas(transacoes: pd.DataFrame, arquivo: Path) -> None:
         )
 
 
+def listar_arquivos_raw() -> list[Path]:
+    """
+    Lista os arquivos CSV de transacoes disponiveis na pasta data/raw/.
+    """
+    arquivos_csv = sorted(RAW_DIR.glob("transacoes_*.csv"))
+
+    if not arquivos_csv:
+        raise FileNotFoundError(
+            "Nenhum arquivo transacoes_*.csv foi encontrado em data/raw/."
+        )
+
+    return arquivos_csv
+
+
 def ler_transacoes_raw(arquivo: Path) -> pd.DataFrame:
     """
     Le um arquivo CSV bruto da pasta data/raw/.
 
     A coluna arquivo_origem permite rastrear de qual arquivo cada linha veio.
     """
-    logging.info("Lendo arquivo: %s", arquivo.name)
+    LOGGER.info("Lendo arquivo: %s", arquivo.name)
 
     transacoes = pd.read_csv(arquivo, encoding="utf-8-sig")
     validar_colunas(transacoes, arquivo)
@@ -89,6 +105,20 @@ def ler_transacoes_raw(arquivo: Path) -> pd.DataFrame:
     transacoes["arquivo_origem"] = arquivo.name
 
     return transacoes
+
+
+def ler_todas_transacoes_raw() -> pd.DataFrame:
+    """
+    Le e junta todos os arquivos CSV brutos encontrados em data/raw/.
+    """
+    arquivos_csv = listar_arquivos_raw()
+
+    bases = [
+        ler_transacoes_raw(arquivo)
+        for arquivo in arquivos_csv
+    ]
+
+    return pd.concat(bases, ignore_index=True)
 
 
 def preparar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
@@ -132,6 +162,13 @@ def preparar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
     return transacoes
 
 
+def campo_vazio(coluna: pd.Series) -> pd.Series:
+    """
+    Identifica valores vazios em colunas de texto.
+    """
+    return coluna.isna() | (coluna.astype("string").str.strip() == "")
+
+
 def adicionar_motivo(
     motivos: pd.Series,
     mascara: pd.Series,
@@ -143,7 +180,11 @@ def adicionar_motivo(
     Uma linha pode ter mais de um problema. Por isso, os motivos sao
     concatenados em uma unica coluna.
     """
-    mascara = pd.Series(mascara, index=motivos.index).fillna(False)
+    mascara = (
+        pd.Series(mascara, index=motivos.index)
+        .fillna(False)
+        .astype(bool)
+    )
 
     motivos.loc[mascara] = motivos.loc[mascara].apply(
         lambda valor_atual: motivo
@@ -160,6 +201,11 @@ def identificar_motivos_rejeicao(transacoes: pd.DataFrame) -> pd.Series:
     """
     motivos = pd.Series("", index=transacoes.index, dtype="object")
 
+    tipo_vazio = campo_vazio(transacoes["tipo"])
+    descricao_vazia = campo_vazio(transacoes["descricao"])
+    categoria_vazia = campo_vazio(transacoes["categoria"])
+    valor_invalido_ou_vazio = transacoes["valor"].isna()
+
     motivos = adicionar_motivo(
         motivos,
         transacoes["data"].isna(),
@@ -168,45 +214,83 @@ def identificar_motivos_rejeicao(transacoes: pd.DataFrame) -> pd.Series:
 
     motivos = adicionar_motivo(
         motivos,
-        transacoes["tipo"].isna() | (transacoes["tipo"] == ""),
+        tipo_vazio,
         "tipo vazio",
     )
 
     motivos = adicionar_motivo(
         motivos,
-        transacoes["descricao"].isna() | (transacoes["descricao"] == ""),
+        descricao_vazia,
         "descricao vazia",
     )
 
     motivos = adicionar_motivo(
         motivos,
-        transacoes["categoria"].isna() | (transacoes["categoria"] == ""),
+        categoria_vazia,
         "categoria vazia",
     )
 
     motivos = adicionar_motivo(
         motivos,
-        transacoes["valor"].isna(),
+        valor_invalido_ou_vazio,
         "valor invalido ou vazio",
     )
 
-    tipo_preenchido = ~(transacoes["tipo"].isna() | (transacoes["tipo"] == ""))
-
     motivos = adicionar_motivo(
         motivos,
-        tipo_preenchido & ~transacoes["tipo"].isin(TIPOS_VALIDOS),
+        (~tipo_vazio) & ~transacoes["tipo"].isin(TIPOS_VALIDOS),
         "tipo invalido",
     )
 
-    valor_preenchido = ~transacoes["valor"].isna()
-
     motivos = adicionar_motivo(
         motivos,
-        valor_preenchido & (transacoes["valor"] <= 0),
+        (~valor_invalido_ou_vazio) & (transacoes["valor"] <= 0),
         "valor menor ou igual a zero",
     )
 
     return motivos
+
+
+def separar_transacoes_por_validade(
+    transacoes: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Separa as transacoes em validas e rejeitadas.
+
+    As rejeitadas recebem a coluna motivo_rejeicao para facilitar auditoria e
+    correcao dos arquivos de entrada.
+    """
+    transacoes_preparadas = preparar_transacoes(transacoes)
+    motivos_rejeicao = identificar_motivos_rejeicao(transacoes_preparadas)
+
+    linhas_validas = motivos_rejeicao == ""
+    linhas_rejeitadas = ~linhas_validas
+
+    transacoes_validas = transacoes_preparadas.loc[linhas_validas].copy()
+    rejeicoes = transacoes_preparadas.loc[linhas_rejeitadas].copy()
+
+    if not rejeicoes.empty:
+        rejeicoes["motivo_rejeicao"] = motivos_rejeicao.loc[linhas_rejeitadas]
+
+    return transacoes_validas, rejeicoes
+
+
+def finalizar_transacoes_validas(transacoes: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adiciona colunas finais e ordena as transacoes validas.
+    """
+    transacoes = transacoes.copy()
+
+    transacoes["ano_mes"] = (
+        transacoes["data"]
+        .dt.to_period("M")
+        .astype(str)
+    )
+
+    return (
+        transacoes.sort_values(by=["data", "tipo", "categoria"])
+        .reset_index(drop=True)
+    )
 
 
 def transformar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
@@ -216,47 +300,22 @@ def transformar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
     Linhas invalidas sao removidas da base final. O relatorio detalhado de
     rejeicoes e gerado separadamente pela funcao gerar_relatorio_rejeicoes.
     """
-    transacoes = preparar_transacoes(transacoes)
-    motivos_rejeicao = identificar_motivos_rejeicao(transacoes)
+    transacoes_validas, rejeicoes = separar_transacoes_por_validade(transacoes)
 
-    linhas_validas = motivos_rejeicao == ""
-    transacoes_validas = transacoes.loc[linhas_validas].copy()
-
-    linhas_removidas = len(transacoes) - len(transacoes_validas)
-
-    if linhas_removidas > 0:
-        logging.warning(
+    if not rejeicoes.empty:
+        LOGGER.warning(
             "%s linha(s) foram removidas por dados invalidos.",
-            linhas_removidas,
+            len(rejeicoes),
         )
 
-    transacoes_validas["ano_mes"] = (
-        transacoes_validas["data"]
-        .dt.to_period("M")
-        .astype(str)
-    )
-
-    transacoes_validas = transacoes_validas.sort_values(
-        by=["data", "tipo", "categoria"]
-    ).reset_index(drop=True)
-
-    return transacoes_validas
+    return finalizar_transacoes_validas(transacoes_validas)
 
 
 def gerar_relatorio_rejeicoes(transacoes: pd.DataFrame) -> pd.DataFrame:
     """
     Gera um DataFrame com as linhas rejeitadas e o motivo da rejeicao.
     """
-    transacoes = preparar_transacoes(transacoes)
-    motivos_rejeicao = identificar_motivos_rejeicao(transacoes)
-
-    linhas_rejeitadas = motivos_rejeicao != ""
-    rejeicoes = transacoes.loc[linhas_rejeitadas].copy()
-
-    if rejeicoes.empty:
-        return rejeicoes
-
-    rejeicoes["motivo_rejeicao"] = motivos_rejeicao.loc[linhas_rejeitadas]
+    _, rejeicoes = separar_transacoes_por_validade(transacoes)
 
     return rejeicoes
 
@@ -273,7 +332,7 @@ def salvar_csv_processado(transacoes: pd.DataFrame) -> None:
         encoding="utf-8-sig",
     )
 
-    logging.info("Arquivo processado gerado: %s", ARQUIVO_SAIDA)
+    LOGGER.info("Arquivo processado gerado: %s", ARQUIVO_SAIDA)
 
 
 def salvar_relatorio_rejeicoes(rejeicoes: pd.DataFrame) -> None:
@@ -289,7 +348,7 @@ def salvar_relatorio_rejeicoes(rejeicoes: pd.DataFrame) -> None:
         if ARQUIVO_REJEICOES.exists():
             ARQUIVO_REJEICOES.unlink()
 
-        logging.info("Nenhuma linha rejeitada no pipeline.")
+        LOGGER.info("Nenhuma linha rejeitada no pipeline.")
         return
 
     rejeicoes.to_csv(
@@ -298,7 +357,7 @@ def salvar_relatorio_rejeicoes(rejeicoes: pd.DataFrame) -> None:
         encoding="utf-8-sig",
     )
 
-    logging.warning(
+    LOGGER.warning(
         "Relatorio de rejeicoes gerado com %s linha(s): %s",
         len(rejeicoes),
         ARQUIVO_REJEICOES,
@@ -321,7 +380,7 @@ def salvar_em_sqlite(transacoes: pd.DataFrame) -> None:
             index=False,
         )
 
-    logging.info(
+    LOGGER.info(
         "Dados carregados no SQLite: %s | tabela: %s",
         ARQUIVO_BANCO,
         TABELA_TRANSACOES,
@@ -334,30 +393,27 @@ def executar_etl() -> pd.DataFrame:
     """
     configurar_logs()
 
-    logging.info("Iniciando pipeline ETL de transacoes.")
+    LOGGER.info("Iniciando pipeline ETL de transacoes.")
 
-    arquivos_csv = sorted(RAW_DIR.glob("transacoes_*.csv"))
+    transacoes_brutas = ler_todas_transacoes_raw()
 
-    if not arquivos_csv:
-        raise FileNotFoundError(
-            "Nenhum arquivo transacoes_*.csv foi encontrado em data/raw/."
+    transacoes_validas, rejeicoes = separar_transacoes_por_validade(
+        transacoes_brutas
+    )
+
+    if not rejeicoes.empty:
+        LOGGER.warning(
+            "%s linha(s) foram removidas por dados invalidos.",
+            len(rejeicoes),
         )
 
-    bases = [
-        ler_transacoes_raw(arquivo)
-        for arquivo in arquivos_csv
-    ]
-
-    transacoes_brutas = pd.concat(bases, ignore_index=True)
-
-    transacoes_processadas = transformar_transacoes(transacoes_brutas)
-    rejeicoes = gerar_relatorio_rejeicoes(transacoes_brutas)
+    transacoes_processadas = finalizar_transacoes_validas(transacoes_validas)
 
     salvar_csv_processado(transacoes_processadas)
     salvar_relatorio_rejeicoes(rejeicoes)
     salvar_em_sqlite(transacoes_processadas)
 
-    logging.info(
+    LOGGER.info(
         "Pipeline concluido. %s transacao(oes) processada(s).",
         len(transacoes_processadas),
     )
