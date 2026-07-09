@@ -1,9 +1,13 @@
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
 .env
 .streamlit/secrets.toml
+
+.pytest_cache/
+
+data/processed/*.csv
+!data/processed/.gitkeep
+
 database/*.db
 logs/*.log
-!data/processed/.gitkeep
-data/processed/*.csv
