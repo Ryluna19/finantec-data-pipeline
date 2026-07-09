@@ -1,0 +1,45 @@
+﻿{
+  "conceitos": [
+    {
+      "termo": "Orçamento mensal",
+      "definicao": "Organização das receitas e despesas de um período, normalmente um mês.",
+      "orientacao_pratica": "Registrar entradas e saídas ajuda a entender quanto pode ser usado, guardado ou reduzido."
+    },
+    {
+      "termo": "Gastos fixos",
+      "definicao": "Despesas que costumam se repetir com valores parecidos, como transporte, internet ou assinaturas.",
+      "orientacao_pratica": "Acompanhar esses gastos ajuda a evitar comprometer uma parte grande da renda antes do fim do mês."
+    },
+    {
+      "termo": "Gastos variáveis",
+      "definicao": "Despesas que podem mudar de valor ou frequência, como lazer, alimentação fora de casa e compras.",
+      "orientacao_pratica": "Definir um limite mensal pode ajudar a reduzir gastos por impulso."
+    },
+    {
+      "termo": "Reserva para imprevistos",
+      "definicao": "Valor separado para lidar com situações inesperadas, como despesas de saúde, transporte ou consertos.",
+      "orientacao_pratica": "A reserva pode ser criada aos poucos, com valores compatíveis com a realidade da pessoa."
+    },
+    {
+      "termo": "Meta financeira",
+      "definicao": "Objetivo que possui um valor e um prazo definidos, como comprar um notebook ou montar uma reserva.",
+      "orientacao_pratica": "Dividir o valor da meta pelo número de meses ajuda a estimar quanto precisa ser separado mensalmente."
+    },
+    {
+      "termo": "Cartão de crédito",
+      "definicao": "Forma de pagamento que permite realizar compras para pagamento posterior por meio de fatura.",
+      "orientacao_pratica": "O ideal é usar apenas valores que possam ser pagos integralmente na data de vencimento da fatura."
+    },
+    {
+      "termo": "Endividamento",
+      "definicao": "Situação em que a pessoa possui compromissos financeiros que ultrapassam sua capacidade de pagamento.",
+      "orientacao_pratica": "Antes de assumir uma nova parcela, é importante verificar se ela cabe no orçamento mensal."
+    }
+  ],
+  "limites_do_agente": [
+    "O FinanTec não faz recomendação personalizada de investimento.",
+    "O FinanTec não garante rentabilidade, aprovação de crédito ou resultados financeiros.",
+    "O FinanTec deve informar quando não houver dados suficientes para responder com segurança.",
+    "As respostas possuem caráter educativo e não substituem orientação profissional."
+  ]
+}

@@ -1,0 +1,17 @@
+﻿data,tipo,descricao,categoria,valor
+2026-07-05,receita,Bolsa-estágio,Trabalho,1600.00
+2026-07-02,despesa,Passagem de ônibus,Transporte,120.00
+2026-07-03,despesa,Plano de internet compartilhado,Serviços,60.00
+2026-07-04,despesa,Compra no mercado,Alimentação,210.00
+2026-07-06,despesa,Almoço próximo ao estágio,Alimentação,50.00
+2026-07-08,despesa,Assinatura de streaming,Assinaturas,29.90
+2026-07-09,despesa,Material de estudo,Educação,45.00
+2026-07-11,despesa,Lanche por aplicativo,Alimentação,36.00
+2026-07-13,despesa,Farmácia,Saúde,32.00
+2026-07-15,despesa,Saída com amigos,Lazer,70.00
+2026-07-17,despesa,Compra de roupa,Compras,95.00
+2026-07-20,despesa,Passagem de ônibus,Transporte,120.00
+2026-07-22,despesa,Almoço próximo ao estágio,Alimentação,48.00
+2026-07-25,despesa,Presente,Compras,60.00
+2026-07-28,despesa,Lazer fim de semana,Lazer,65.00
+2026-07-30,despesa,Transferência para reserva,Reserva,250.00

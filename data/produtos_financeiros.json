@@ -1,0 +1,29 @@
+﻿{
+  "produtos": [
+    {
+      "nome": "Conta remunerada",
+      "tipo": "Conta digital",
+      "descricao": "Conta que pode oferecer rendimento sobre valores parados, conforme regras da instituição financeira.",
+      "liquidez": "Geralmente imediata",
+      "risco": "Baixo, mas depende da instituição e das regras do produto",
+      "uso_educativo": "Pode ser citada como exemplo de local para manter valores de curto prazo, desde que a pessoa confira as condições."
+    },
+    {
+      "nome": "CDB com liquidez diária",
+      "tipo": "Renda fixa",
+      "descricao": "Título emitido por bancos em que a pessoa empresta dinheiro à instituição e recebe uma remuneração definida pelas condições do produto.",
+      "liquidez": "Pode ser diária, dependendo do CDB",
+      "risco": "Baixo a moderado, conforme emissor e cobertura aplicável",
+      "uso_educativo": "Pode ser explicado como alternativa de renda fixa, sem recomendar uma instituição ou produto específico."
+    },
+    {
+      "nome": "Tesouro Selic",
+      "tipo": "Título público",
+      "descricao": "Título público negociado pelo Tesouro Direto e associado à taxa Selic.",
+      "liquidez": "Possui possibilidade de venda em dias úteis, sujeita às regras do programa",
+      "risco": "Baixo em comparação com produtos de maior oscilação, mas pode haver variação em caso de venda antes do vencimento",
+      "uso_educativo": "Pode ser apresentado como exemplo de título público para fins de aprendizado."
+    }
+  ],
+  "aviso": "Os produtos são apresentados apenas para fins educativos. O FinanTec não recomenda investimentos personalizados, não garante rentabilidade e não substitui orientação profissional."
+}

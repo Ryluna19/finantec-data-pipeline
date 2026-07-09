@@ -1,0 +1,40 @@
+﻿{
+  "nome": "Marina Costa",
+  "idade": 21,
+  "ocupacao": "Estudante universitária e estagiária",
+  "renda_mensal_principal": 1600.00,
+  "fontes_de_renda": [
+    {
+      "tipo": "Bolsa-estágio",
+      "valor_mensal": 1600.00
+    }
+  ],
+  "objetivos_financeiros": [
+    {
+      "nome": "Montar reserva para imprevistos",
+      "valor_meta": 1500.00,
+      "valor_atual": 500.00,
+      "prazo_meses": 10,
+      "prioridade": "alta"
+    },
+    {
+      "nome": "Comprar um notebook",
+      "valor_meta": 2800.00,
+      "valor_atual": 0.00,
+      "prazo_meses": 14,
+      "prioridade": "média"
+    }
+  ],
+  "situacao_atual": {
+    "reserva_antes_do_mes": 300.00,
+    "valor_separado_no_mes": 200.00,
+    "reserva_atual": 500.00,
+    "possui_dividas": false,
+    "utiliza_cartao_de_credito": true,
+    "observacao": "Marina quer reduzir gastos por impulso e começar a guardar dinheiro todos os meses."
+  },
+  "preferencias_de_comunicacao": {
+    "tom": "claro, direto e educativo",
+    "nivel_de_conhecimento_financeiro": "iniciante"
+  }
+}
