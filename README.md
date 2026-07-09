@@ -75,11 +75,11 @@ IA explicando os indicadores calculados
 
 ## Etapas do ETL
 
-| Etapa | Descrição |
-|---|---|
-| Extract | Lê os arquivos CSV mensais armazenados em `data/raw/`. |
+| Etapa     | Descrição                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------ |
+| Extract   | Lê os arquivos CSV mensais armazenados em `data/raw/`.                                     |
 | Transform | Valida colunas, converte datas, padroniza textos, trata valores e cria a coluna `ano_mes`. |
-| Load | Salva os dados tratados em CSV processado e em uma base SQLite. |
+| Load      | Salva os dados tratados em CSV processado e em uma base SQLite.                            |
 
 ## Estrutura do Projeto
 
@@ -214,18 +214,22 @@ Qual banco oferece o melhor CDB hoje?
 
 Para perguntas que dependem de dados externos ou informações em tempo real, o assistente deve informar que não possui dados suficientes.
 
-## Testes Manuais e Scripts de Apoio
+## Testes
 
-O projeto possui scripts simples para validar partes do fluxo:
+O projeto possui testes automatizados com `pytest` para validar partes importantes do pipeline e da lógica financeira.
 
-| Arquivo | Finalidade |
-|---|---|
-| `src/teste_dados.py` | Testa leitura de transações e cálculos financeiros. |
-| `src/teste_metas.py` | Testa cálculo das metas financeiras. |
-| `src/teste_contexto.py` | Exibe o contexto enviado para a IA. |
-| `src/teste_ia.py` | Testa uma chamada simples ao assistente com IA. |
-| `src/teste_periodos.py` | Testa a listagem e o resumo por período após o ETL. |
+### Testes automatizados
 
+| Arquivo                      | Finalidade                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `tests/test_analytics.py`    | Testa cálculos financeiros, separação entre consumo e reserva, metas e filtros por período. |
+| `tests/test_etl_pipeline.py` | Testa validação de colunas, limpeza, padronização e transformação dos dados brutos.         |
+| `tests/test_sqlite_load.py`  | Testa a carga dos dados tratados em uma base SQLite temporária.                             |
+
+Para executar os testes:
+
+````bash
+pytest
 ## Limitações
 
 O FinanTec Data Pipeline não:
@@ -262,4 +266,4 @@ Fluxo atual:
 
 ```text
 CSV bruto → ETL com pandas → CSV processado → SQLite → dashboard Streamlit → IA explicando indicadores
-```
+````
