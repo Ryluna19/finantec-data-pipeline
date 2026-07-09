@@ -1,15 +1,19 @@
 ﻿from __future__ import annotations
 
 import logging
+import sqlite3
 from pathlib import Path
 
-import pandas as pd
+import pandas as pd 
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 LOGS_DIR = PROJECT_ROOT / "logs"
+DATABASE_DIR = PROJECT_ROOT / "database"
+ARQUIVO_BANCO = DATABASE_DIR / "finantec.db"
+TABELA_TRANSACOES = "transacoes_processadas"
 
 ARQUIVO_SAIDA = PROCESSED_DIR / "transacoes_processadas.csv"
 ARQUIVO_LOG = LOGS_DIR / "etl_transacoes.log"
@@ -119,6 +123,22 @@ def transformar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
 
     return transacoes
 
+def salvar_em_sqlite(transacoes: pd.DataFrame) -> None:
+    DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+
+    with sqlite3.connect(ARQUIVO_BANCO) as conexao:
+        transacoes.to_sql(
+            TABELA_TRANSACOES,
+            conexao,
+            if_exists="replace",
+            index=False,
+        )
+
+    logging.info(
+        "Dados carregados no SQLite: %s | tabela: %s",
+        ARQUIVO_BANCO,
+        TABELA_TRANSACOES,
+    )
 
 def executar_etl() -> pd.DataFrame:
     configurar_logs()
@@ -147,6 +167,7 @@ def executar_etl() -> pd.DataFrame:
         index=False,
         encoding="utf-8-sig"
     )
+    salvar_em_sqlite(transacoes_processadas)
 
     logging.info(
         "Pipeline concluído. %s transação(ões) processada(s).",
