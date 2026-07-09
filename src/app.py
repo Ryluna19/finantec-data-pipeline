@@ -17,9 +17,11 @@ from data_loader import (
     carregar_historico_atendimento,
     carregar_perfil_usuario,
     carregar_produtos_financeiros,
+    carregar_rejeicoes,
     carregar_transacoes,
 )
 from prompts import montar_contexto
+
 
 st.set_page_config(
     page_title="FinanTec",
@@ -30,11 +32,19 @@ st.set_page_config(
 
 @st.cache_data
 def carregar_dados():
+    """
+    Carrega todos os dados usados pelo dashboard.
+
+    O cache evita recarregar os mesmos arquivos a cada interação do usuário
+    no Streamlit. Caso os arquivos sejam alterados durante a execução,
+    pode ser necessário limpar o cache ou reiniciar o app.
+    """
     perfil_usuario = carregar_perfil_usuario()
     transacoes = carregar_transacoes()
     historico_atendimento = carregar_historico_atendimento()
     conceitos_financeiros = carregar_conceitos_financeiros()
     produtos_financeiros = carregar_produtos_financeiros()
+    rejeicoes = carregar_rejeicoes()
 
     return (
         perfil_usuario,
@@ -42,7 +52,58 @@ def carregar_dados():
         historico_atendimento,
         conceitos_financeiros,
         produtos_financeiros,
+        rejeicoes,
     )
+
+
+def criar_mensagem_inicial(mes: str) -> list[dict]:
+    """
+    Cria a primeira mensagem do chat para o período selecionado.
+    """
+    return [
+        {
+            "role": "assistant",
+            "content": (
+                f"Olá! Sou o FinanTec. Estou analisando o período "
+                f"{mes}. Posso ajudar você a entender gastos, "
+                f"metas e conceitos financeiros básicos."
+            ),
+        }
+    ]
+
+
+def exibir_validacao_dos_dados(
+    quantidade_transacoes_validas: int,
+    rejeicoes,
+) -> None:
+    """
+    Exibe um resumo simples da qualidade dos dados processados pelo ETL.
+    """
+    st.subheader("Validação dos dados")
+
+    coluna_validas, coluna_rejeitadas = st.columns(2)
+
+    coluna_validas.metric(
+        "Transações válidas no período",
+        quantidade_transacoes_validas,
+    )
+
+    coluna_rejeitadas.metric(
+        "Transações rejeitadas no último ETL",
+        len(rejeicoes),
+    )
+
+    if rejeicoes.empty:
+        st.success("Nenhuma transação rejeitada no último processamento.")
+        return
+
+    st.warning(
+        "Existem transações rejeitadas no último processamento. "
+        "Abra a tabela abaixo para conferir os motivos."
+    )
+
+    with st.expander("Ver transações rejeitadas"):
+        st.dataframe(rejeicoes, use_container_width=True)
 
 
 (
@@ -51,9 +112,11 @@ def carregar_dados():
     historico_atendimento,
     conceitos_financeiros,
     produtos_financeiros,
+    rejeicoes,
 ) = carregar_dados()
 
 
+# Filtro principal do dashboard.
 meses_disponiveis = listar_meses_disponiveis(transacoes)
 
 st.sidebar.title("Filtros")
@@ -68,10 +131,15 @@ transacoes_filtradas = filtrar_transacoes_por_mes(
     mes_selecionado,
 )
 
+
+# Cálculos financeiros feitos em Python.
+# A IA apenas explica os dados; ela não deve inventar valores.
 resumo = calcular_resumo_financeiro(transacoes_filtradas)
 gastos_por_categoria = calcular_gastos_por_categoria(transacoes_filtradas)
 simulacoes_metas = calcular_simulacoes_de_metas(perfil_usuario)
 
+
+# Montagem do contexto enviado para o modelo generativo.
 contexto = montar_contexto(
     perfil_usuario=perfil_usuario,
     resumo_financeiro=resumo,
@@ -90,19 +158,8 @@ PERÍODO ANALISADO:
 """.strip()
 
 
-def criar_mensagem_inicial(mes: str) -> list[dict]:
-    return [
-        {
-            "role": "assistant",
-            "content": (
-                f"Olá! Sou o FinanTec. Estou analisando o período "
-                f"{mes}. Posso ajudar você a entender gastos, "
-                f"metas e conceitos financeiros básicos."
-            ),
-        }
-    ]
-
-
+# O histórico do chat é separado por mês.
+# Assim, trocar o filtro não mistura conversas de períodos diferentes.
 if "mensagens_por_mes" not in st.session_state:
     st.session_state.mensagens_por_mes = {}
 
@@ -112,6 +169,7 @@ if mes_selecionado not in st.session_state.mensagens_por_mes:
     )
 
 mensagens_mes = st.session_state.mensagens_por_mes[mes_selecionado]
+
 
 st.title("💰 FinanTec")
 st.caption(
@@ -125,6 +183,14 @@ st.warning(
 
 st.info(f"Período analisado: **{mes_selecionado}**")
 
+
+exibir_validacao_dos_dados(
+    quantidade_transacoes_validas=len(transacoes_filtradas),
+    rejeicoes=rejeicoes,
+)
+
+
+st.divider()
 
 st.subheader("Resumo financeiro do período")
 
