@@ -1,4 +1,5 @@
-﻿from data_loader import carregar_perfil_usuario
+﻿import _path_setup
+from data_loader import carregar_perfil_usuario
 from analytics import calcular_meta_mensal, formatar_moeda
 
 perfil = carregar_perfil_usuario()

@@ -1,4 +1,5 @@
-﻿from data_loader import (
+﻿import _path_setup
+from data_loader import (
     carregar_conceitos_financeiros,
     carregar_historico_atendimento,
     carregar_perfil_usuario,

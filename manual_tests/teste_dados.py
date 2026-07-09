@@ -1,4 +1,5 @@
-﻿from data_loader import carregar_transacoes
+﻿import _path_setup
+from data_loader import carregar_transacoes
 from analytics import calcular_resumo_financeiro, calcular_gastos_por_categoria, formatar_moeda
 
 transacoes = carregar_transacoes()

@@ -3,10 +3,25 @@
 import pandas as pd
 
 
+"""
+Funções de análise financeira usadas pelo FinanTec.
+
+Este módulo concentra os cálculos do projeto para evitar que a IA invente
+valores financeiros. A IA recebe os números já calculados e apenas explica
+os resultados de forma contextualizada.
+"""
+
+
 def calcular_gastos_por_categoria(
     transacoes: pd.DataFrame,
     incluir_reserva: bool = False
 ) -> pd.Series:
+    """
+    Soma os gastos por categoria.
+
+    Por padrão, a categoria 'Reserva' não entra como gasto de consumo,
+    porque representa dinheiro guardado, não consumo do período.
+    """
     despesas = transacoes[transacoes["tipo"] == "despesa"].copy()
 
     if not incluir_reserva:
@@ -20,6 +35,12 @@ def calcular_gastos_por_categoria(
 
 
 def calcular_resumo_financeiro(transacoes: pd.DataFrame) -> dict:
+    """
+    Calcula o resumo financeiro do período analisado.
+
+    O cálculo separa despesas totais de gasto de consumo para deixar claro
+    quanto foi realmente consumido e quanto foi separado para reserva.
+    """
     receitas = transacoes.loc[
         transacoes["tipo"] == "receita",
         "valor"
@@ -64,6 +85,12 @@ def calcular_meta_mensal(
     prazo_meses: int,
     valor_ja_reservado: float
 ) -> dict:
+    """
+    Calcula quanto falta para uma meta e o valor mensal necessário.
+
+    Cada meta usa seu próprio valor atual. A reserva geral da pessoa usuária
+    não é automaticamente usada para outras metas, como compra de notebook.
+    """
     valor_restante = max(valor_meta - valor_ja_reservado, 0)
 
     if prazo_meses <= 0:
@@ -81,6 +108,9 @@ def calcular_meta_mensal(
 
 
 def formatar_moeda(valor: float) -> str:
+    """
+    Formata valores numéricos no padrão de moeda brasileira.
+    """
     valor_formatado = f"{valor:,.2f}"
 
     return (
@@ -90,7 +120,14 @@ def formatar_moeda(valor: float) -> str:
         .replace("X", ".")
     )
 
+
 def calcular_simulacoes_de_metas(perfil_usuario: dict) -> list[dict]:
+    """
+    Gera simulações calculadas para todas as metas cadastradas.
+
+    Esses valores são enviados prontos para a IA, reduzindo o risco de erro
+    em contas feitas pelo modelo de linguagem.
+    """
     simulacoes = []
 
     for meta in perfil_usuario["objetivos_financeiros"]:
@@ -126,7 +163,12 @@ def calcular_simulacoes_de_metas(perfil_usuario: dict) -> list[dict]:
         )
 
     return simulacoes
+
+
 def listar_meses_disponiveis(transacoes: pd.DataFrame) -> list[str]:
+    """
+    Lista os períodos disponíveis na base de transações.
+    """
     if "ano_mes" not in transacoes.columns:
         transacoes = transacoes.copy()
         transacoes["ano_mes"] = transacoes["data"].dt.to_period("M").astype(str)
@@ -138,6 +180,9 @@ def filtrar_transacoes_por_mes(
     transacoes: pd.DataFrame,
     ano_mes: str
 ) -> pd.DataFrame:
+    """
+    Filtra as transações de um período específico no formato AAAA-MM.
+    """
     if "ano_mes" not in transacoes.columns:
         transacoes = transacoes.copy()
         transacoes["ano_mes"] = transacoes["data"].dt.to_period("M").astype(str)

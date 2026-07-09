@@ -1,3 +1,4 @@
+import _path_setup
 from pathlib import Path
 import sqlite3
 

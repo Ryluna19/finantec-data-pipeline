@@ -1,4 +1,5 @@
-﻿from data_loader import carregar_transacoes
+﻿import _path_setup
+from data_loader import carregar_transacoes
 from analytics import (
     listar_meses_disponiveis,
     filtrar_transacoes_por_mes,
