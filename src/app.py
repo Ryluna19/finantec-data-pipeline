@@ -711,14 +711,23 @@ def exibir_aba_dashboard(
     """
     Exibe a visão geral do dashboard.
     """
-    exibir_validacao_dos_dados(
-        quantidade_transacoes_validas=len(transacoes_filtradas),
-        rejeicoes=rejeicoes,
+    st.subheader("Visão geral")
+
+    exibir_resumo_financeiro(resumo)
+
+    st.divider()
+
+    exibir_indicadores_complementares(
+        transacoes_periodo=transacoes_filtradas,
+        resumo=resumo,
     )
 
     st.divider()
 
-    exibir_resumo_financeiro(resumo)
+    exibir_validacao_dos_dados(
+        quantidade_transacoes_validas=len(transacoes_filtradas),
+        rejeicoes=rejeicoes,
+    )
 
     st.divider()
 
@@ -734,6 +743,51 @@ def exibir_aba_dashboard(
 
     exibir_ultimas_transacoes(transacoes_filtradas)
 
+def exibir_indicadores_complementares(
+    transacoes_periodo: pd.DataFrame,
+    resumo: dict[str, Any],
+) -> None:
+    """
+    Exibe indicadores complementares para dar mais contexto ao dashboard.
+    """
+    despesas = transacoes_periodo[
+        transacoes_periodo["tipo"] == "despesa"
+    ]
+
+    quantidade_transacoes = len(transacoes_periodo)
+    quantidade_despesas = len(despesas)
+
+    gasto_medio = (
+        despesas["valor"].mean()
+        if quantidade_despesas > 0
+        else 0
+    )
+
+    receitas = resumo["receitas_totais"]
+    reserva = resumo["valor_guardado_reserva"]
+
+    percentual_reserva = (
+        (reserva / receitas) * 100
+        if receitas > 0
+        else 0
+    )
+
+    coluna_total, coluna_media, coluna_reserva = st.columns(3)
+
+    coluna_total.metric(
+        "Total de transações",
+        quantidade_transacoes,
+    )
+
+    coluna_media.metric(
+        "Gasto médio por despesa",
+        formatar_moeda(gasto_medio),
+    )
+
+    coluna_reserva.metric(
+        "% da renda reservado",
+        f"{percentual_reserva:.1f}%",
+    )
 
 def main() -> None:
     """
@@ -774,23 +828,6 @@ def main() -> None:
 
     exibir_cabecalho(rotulo_periodo)
 
-    abrir_editor_transacoes = "resultado_etl" in st.session_state
-
-    with st.expander(
-        "Entrada manual de transações",
-        expanded=abrir_editor_transacoes,
-    ):
-        etl_executado = exibir_editor_transacoes_manuais()
-
-    st.caption(
-        "Observação: transações manuais só aparecem nos indicadores depois de "
-        "clicar em 'Salvar e processar ETL' e no período correspondente à data cadastrada."
-    )
-
-    if etl_executado:
-        carregar_dados.clear()
-        st.rerun()
-
     aba_dashboard, aba_transacoes, aba_metas, aba_ia = st.tabs(
         [
             "Dashboard",
@@ -813,6 +850,25 @@ def main() -> None:
             exibir_evolucao_mensal(transacoes_filtradas)
 
     with aba_transacoes:
+        abrir_editor_transacoes = "resultado_etl" in st.session_state
+
+        with st.expander(
+            "Entrada manual de transações",
+            expanded=abrir_editor_transacoes,
+        ):
+            etl_executado = exibir_editor_transacoes_manuais()
+
+        st.caption(
+            "Observação: transações manuais só aparecem nos indicadores depois de "
+            "clicar em 'Salvar e processar ETL' e no período correspondente à data cadastrada."
+        )
+
+        if etl_executado:
+            carregar_dados.clear()
+            st.rerun()
+
+        st.divider()
+
         exibir_transacoes_do_periodo(transacoes_filtradas)
 
     with aba_metas:
