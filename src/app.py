@@ -21,6 +21,10 @@ from components.chat import (
     get_period_messages,
     render_chat,
 )
+from components.file_transfer import (
+    render_transaction_file_tools,
+)
+
 from components.goals import render_goal_simulator
 from components.header import render_header
 from components.metrics import (
@@ -233,7 +237,7 @@ def render_transactions_tab(
     transactions: pd.DataFrame,
     rejections: pd.DataFrame,
 ) -> None:
-    """Compõe entrada, validação e consulta de transações."""
+    """Compõe entrada, arquivos, validação e consulta de transações."""
     should_expand_editor = (
         "resultado_etl" in st.session_state
     )
@@ -249,6 +253,13 @@ def render_transactions_tab(
     if etl_executed:
         load_data.clear()
         st.rerun()
+
+    with st.expander(
+        "Importar ou exportar transações",
+    ):
+        render_transaction_file_tools(
+            transactions
+        )
 
     st.caption(
         "Transações manuais aparecem nos indicadores "
