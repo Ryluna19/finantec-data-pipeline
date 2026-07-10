@@ -1,6 +1,7 @@
 ﻿streamlit
 pandas
+altair
 python-dotenv
 google-genai
+openpyxl
 pytest
-altair
