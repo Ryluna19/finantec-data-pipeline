@@ -15,8 +15,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from scripts.etl_transacoes import executar_etl
-
+from scripts.etl_transacoes import executar_etl, separar_transacoes_por_validade
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
@@ -90,25 +89,15 @@ def preparar_transacoes_para_salvar(transacoes: pd.DataFrame) -> pd.DataFrame:
     )
 
     transacoes["tipo"] = (
-        transacoes["tipo"]
-        .astype("string")
-        .fillna("")
-        .str.strip()
-        .str.lower()
+        transacoes["tipo"].astype("string").fillna("").str.strip().str.lower()
     )
 
     transacoes["descricao"] = (
-        transacoes["descricao"]
-        .astype("string")
-        .fillna("")
-        .str.strip()
+        transacoes["descricao"].astype("string").fillna("").str.strip()
     )
 
     transacoes["categoria"] = (
-        transacoes["categoria"]
-        .astype("string")
-        .fillna("")
-        .str.strip()
+        transacoes["categoria"].astype("string").fillna("").str.strip()
     )
 
     transacoes["valor"] = pd.to_numeric(
@@ -117,6 +106,28 @@ def preparar_transacoes_para_salvar(transacoes: pd.DataFrame) -> pd.DataFrame:
     )
 
     return transacoes
+
+
+def validar_transacoes_editadas(
+    transacoes: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Valida a tabela editada antes de salvar ou processar.
+
+    A validação reutiliza a mesma regra do ETL para manter consistência entre
+    o editor manual e o pipeline.
+    """
+    transacoes_preparadas = preparar_transacoes_para_salvar(transacoes)
+
+    transacoes_preparadas = transacoes_preparadas.dropna(
+        how="all",
+        subset=COLUNAS_TRANSACOES,
+    )
+
+    if transacoes_preparadas.empty:
+        return transacoes_preparadas, pd.DataFrame()
+
+    return separar_transacoes_por_validade(transacoes_preparadas)
 
 
 def salvar_transacoes_manuais(transacoes: pd.DataFrame) -> None:
@@ -132,6 +143,14 @@ def salvar_transacoes_manuais(transacoes: pd.DataFrame) -> None:
         index=False,
         encoding="utf-8-sig",
     )
+
+
+def limpar_transacoes_manuais() -> None:
+    """
+    Remove o arquivo local de transações manuais, caso ele exista.
+    """
+    if ARQUIVO_TRANSACOES_MANUAIS.exists():
+        ARQUIVO_TRANSACOES_MANUAIS.unlink()
 
 
 def exibir_editor_transacoes_manuais() -> bool:
@@ -183,8 +202,24 @@ def exibir_editor_transacoes_manuais() -> bool:
             ),
         },
     )
+    validas_preview, rejeicoes_preview = validar_transacoes_editadas(
+        transacoes_editadas
+    )
 
-    coluna_salvar, coluna_processar = st.columns(2)
+    st.caption(
+        f"Prévia da validação: {len(validas_preview)} linha(s) válida(s) "
+        f"e {len(rejeicoes_preview)} linha(s) com erro."
+    )
+
+    if not rejeicoes_preview.empty:
+        st.warning(
+            "Corrija as linhas com erro antes de salvar e processar o ETL."
+        )
+
+        with st.expander("Ver problemas antes de salvar"):
+            st.dataframe(rejeicoes_preview, use_container_width=True)
+
+    coluna_salvar, coluna_processar, coluna_limpar = st.columns(3)
 
     with coluna_salvar:
         if st.button("Salvar transações manuais"):
@@ -192,10 +227,19 @@ def exibir_editor_transacoes_manuais() -> bool:
             st.success("Transações manuais salvas em data/raw/transacoes_manuais.csv.")
 
     with coluna_processar:
-        if st.button("Salvar e processar ETL"):
+        if st.button(
+            "Salvar e processar ETL",
+            disabled=not rejeicoes_preview.empty,
+        ):
             salvar_transacoes_manuais(transacoes_editadas)
             executar_etl()
             st.success("Transações salvas e ETL executado com sucesso.")
+            return True
+    with coluna_limpar:
+        if st.button("Limpar transações manuais"):
+            limpar_transacoes_manuais()
+            executar_etl()
+            st.success("Transações manuais removidas e ETL executado novamente.")
             return True
 
     st.info(

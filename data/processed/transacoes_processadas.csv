@@ -1,5 +1,5 @@
 ﻿data,tipo,descricao,categoria,valor,arquivo_origem,ano_mes
-2026-03-26,despesa,Teste Mercado,Alimentação,50.0,transacoes_manuais.csv,2026-03
+2026-02-10,receita,Drogas,Lazer,500.0,transacoes_manuais.csv,2026-02
 2026-06-01,despesa,Passagem de ônibus,Transporte,120.0,transacoes_2026_06.csv,2026-06
 2026-06-03,despesa,Recarga do celular,Serviços,35.0,transacoes_2026_06.csv,2026-06
 2026-06-04,despesa,Plano de internet compartilhado,Serviços,60.0,transacoes_2026_06.csv,2026-06
