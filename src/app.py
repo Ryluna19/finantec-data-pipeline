@@ -291,11 +291,7 @@ def exibir_simulador_de_metas(
         nomes_metas,
     )
 
-    meta_escolhida = next(
-        meta
-        for meta in metas
-        if meta["nome"] == nome_meta_escolhida
-    )
+    meta_escolhida = next(meta for meta in metas if meta["nome"] == nome_meta_escolhida)
 
     valor_meta = float(meta_escolhida["valor_meta"])
     valor_atual = float(meta_escolhida["valor_atual"])
@@ -449,16 +445,21 @@ def main() -> None:
 
     exibir_cabecalho(mes_selecionado)
 
-    with st.expander("Entrada manual de transações", expanded=False):
-     etl_executado = exibir_editor_transacoes_manuais()
+    abrir_editor_transacoes = "resultado_etl" in st.session_state
+
+    with st.expander(
+        "Entrada manual de transações",
+        expanded=abrir_editor_transacoes,
+    ):
+        etl_executado = exibir_editor_transacoes_manuais()
 
     if etl_executado:
-     carregar_dados.clear()
-     st.rerun()
+        carregar_dados.clear()
+        st.rerun()
 
     exibir_validacao_dos_dados(
-    quantidade_transacoes_validas=len(transacoes_filtradas),
-    rejeicoes=rejeicoes,
+        quantidade_transacoes_validas=len(transacoes_filtradas),
+        rejeicoes=rejeicoes,
     )
 
     st.divider()

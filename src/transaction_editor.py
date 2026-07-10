@@ -15,7 +15,10 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from scripts.etl_transacoes import executar_etl, separar_transacoes_por_validade
+from scripts.etl_transacoes import (
+    executar_etl_com_resumo,
+    separar_transacoes_por_validade,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
@@ -153,6 +156,26 @@ def limpar_transacoes_manuais() -> None:
         ARQUIVO_TRANSACOES_MANUAIS.unlink()
 
 
+def exibir_resultado_etl_salvo() -> None:
+    """
+    Exibe o resultado do ETL salvo no estado da sessão após o rerun do Streamlit.
+    """
+    resultado = st.session_state.pop("resultado_etl", None)
+
+    if not resultado:
+        return
+
+    if resultado["sucesso"]:
+        st.success(
+            f"{resultado['mensagem']}\n\n"
+            f"Transações processadas: {resultado['transacoes_processadas']} | "
+            f"Transações rejeitadas: {resultado['transacoes_rejeitadas']}"
+        )
+        return
+
+    st.error(resultado["mensagem"])
+
+
 def exibir_editor_transacoes_manuais() -> bool:
     """
     Exibe o editor de transações manuais.
@@ -160,6 +183,8 @@ def exibir_editor_transacoes_manuais() -> bool:
     Retorna True quando o ETL for executado pelo botão da interface.
     """
     st.subheader("Entrada manual de transações")
+
+    exibir_resultado_etl_salvo()
 
     st.caption(
         "Use esta seção para cadastrar ou editar transações locais. "
@@ -212,9 +237,7 @@ def exibir_editor_transacoes_manuais() -> bool:
     )
 
     if not rejeicoes_preview.empty:
-        st.warning(
-            "Corrija as linhas com erro antes de salvar e processar o ETL."
-        )
+        st.warning("Corrija as linhas com erro antes de salvar e processar o ETL.")
 
         with st.expander("Ver problemas antes de salvar"):
             st.dataframe(rejeicoes_preview, use_container_width=True)
@@ -232,14 +255,36 @@ def exibir_editor_transacoes_manuais() -> bool:
             disabled=not rejeicoes_preview.empty,
         ):
             salvar_transacoes_manuais(transacoes_editadas)
-            executar_etl()
-            st.success("Transações salvas e ETL executado com sucesso.")
+
+            try:
+                resultado = executar_etl_com_resumo()
+                st.session_state["resultado_etl"] = {
+                    **resultado,
+                    "mensagem": "Transações salvas e ETL executado com sucesso.",
+                }
+            except Exception as erro:
+                st.session_state["resultado_etl"] = {
+                    "sucesso": False,
+                    "mensagem": f"Erro ao executar ETL: {erro}",
+                }
+
             return True
     with coluna_limpar:
         if st.button("Limpar transações manuais"):
             limpar_transacoes_manuais()
-            executar_etl()
-            st.success("Transações manuais removidas e ETL executado novamente.")
+
+            try:
+                resultado = executar_etl_com_resumo()
+                st.session_state["resultado_etl"] = {
+                    **resultado,
+                    "mensagem": "Transações manuais removidas e ETL executado novamente.",
+                }
+            except Exception as erro:
+                st.session_state["resultado_etl"] = {
+                    "sucesso": False,
+                    "mensagem": f"Erro ao executar ETL: {erro}",
+                }
+
             return True
 
     st.info(

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 """
 Pipeline ETL de transacoes financeiras simuladas.
 
@@ -62,9 +61,7 @@ def validar_colunas(transacoes: pd.DataFrame, arquivo: Path) -> None:
     o problema esta na estrutura do arquivo, nao apenas em uma linha isolada.
     """
     colunas_ausentes = [
-        coluna
-        for coluna in COLUNAS_OBRIGATORIAS
-        if coluna not in transacoes.columns
+        coluna for coluna in COLUNAS_OBRIGATORIAS if coluna not in transacoes.columns
     ]
 
     if colunas_ausentes:
@@ -105,24 +102,11 @@ def preparar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
         errors="coerce",
     )
 
-    transacoes["tipo"] = (
-        transacoes["tipo"]
-        .astype("string")
-        .str.strip()
-        .str.lower()
-    )
+    transacoes["tipo"] = transacoes["tipo"].astype("string").str.strip().str.lower()
 
-    transacoes["descricao"] = (
-        transacoes["descricao"]
-        .astype("string")
-        .str.strip()
-    )
+    transacoes["descricao"] = transacoes["descricao"].astype("string").str.strip()
 
-    transacoes["categoria"] = (
-        transacoes["categoria"]
-        .astype("string")
-        .str.strip()
-    )
+    transacoes["categoria"] = transacoes["categoria"].astype("string").str.strip()
 
     transacoes["valor"] = pd.to_numeric(
         transacoes["valor"],
@@ -146,9 +130,7 @@ def adicionar_motivo(
     mascara = pd.Series(mascara, index=motivos.index).fillna(False)
 
     motivos.loc[mascara] = motivos.loc[mascara].apply(
-        lambda valor_atual: motivo
-        if not valor_atual
-        else f"{valor_atual}; {motivo}"
+        lambda valor_atual: motivo if not valor_atual else f"{valor_atual}; {motivo}"
     )
 
     return motivos
@@ -209,54 +191,68 @@ def identificar_motivos_rejeicao(transacoes: pd.DataFrame) -> pd.Series:
     return motivos
 
 
+def separar_transacoes_por_validade(
+    transacoes: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Prepara os dados e separa as transacoes entre validas e rejeitadas.
+
+    As rejeicoes recebem uma coluna motivo_rejeicao para facilitar auditoria
+    e exibicao no dashboard.
+    """
+    transacoes_preparadas = preparar_transacoes(transacoes)
+    motivos_rejeicao = identificar_motivos_rejeicao(transacoes_preparadas)
+
+    linhas_validas = motivos_rejeicao == ""
+    linhas_rejeitadas = ~linhas_validas
+
+    transacoes_validas = transacoes_preparadas.loc[linhas_validas].copy()
+    rejeicoes = transacoes_preparadas.loc[linhas_rejeitadas].copy()
+
+    if not rejeicoes.empty:
+        rejeicoes["motivo_rejeicao"] = motivos_rejeicao.loc[linhas_rejeitadas]
+
+    return transacoes_validas, rejeicoes
+
+
+def finalizar_transacoes_validas(transacoes: pd.DataFrame) -> pd.DataFrame:
+    """
+    Finaliza as transacoes validas criando ano_mes e ordenando os dados.
+    """
+    transacoes_finalizadas = transacoes.copy()
+
+    transacoes_finalizadas["ano_mes"] = (
+        transacoes_finalizadas["data"].dt.to_period("M").astype(str)
+    )
+
+    return transacoes_finalizadas.sort_values(
+        by=["data", "tipo", "categoria"]
+    ).reset_index(drop=True)
+
+
 def transformar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
     """
-    Limpa e padroniza os dados de transacoes.
+    Limpa, valida e padroniza os dados de transacoes.
 
     Linhas invalidas sao removidas da base final. O relatorio detalhado de
     rejeicoes e gerado separadamente pela funcao gerar_relatorio_rejeicoes.
     """
-    transacoes = preparar_transacoes(transacoes)
-    motivos_rejeicao = identificar_motivos_rejeicao(transacoes)
+    transacoes_validas, rejeicoes = separar_transacoes_por_validade(transacoes)
 
-    linhas_validas = motivos_rejeicao == ""
-    transacoes_validas = transacoes.loc[linhas_validas].copy()
-
-    linhas_removidas = len(transacoes) - len(transacoes_validas)
-
-    if linhas_removidas > 0:
+    if not rejeicoes.empty:
         logging.warning(
             "%s linha(s) foram removidas por dados invalidos.",
-            linhas_removidas,
+            len(rejeicoes),
         )
 
-    transacoes_validas["ano_mes"] = (
-        transacoes_validas["data"]
-        .dt.to_period("M")
-        .astype(str)
-    )
-
-    transacoes_validas = transacoes_validas.sort_values(
-        by=["data", "tipo", "categoria"]
-    ).reset_index(drop=True)
-
-    return transacoes_validas
+    return finalizar_transacoes_validas(transacoes_validas)
 
 
 def gerar_relatorio_rejeicoes(transacoes: pd.DataFrame) -> pd.DataFrame:
     """
     Gera um DataFrame com as linhas rejeitadas e o motivo da rejeicao.
     """
-    transacoes = preparar_transacoes(transacoes)
-    motivos_rejeicao = identificar_motivos_rejeicao(transacoes)
-
-    linhas_rejeitadas = motivos_rejeicao != ""
-    rejeicoes = transacoes.loc[linhas_rejeitadas].copy()
-
-    if rejeicoes.empty:
-        return rejeicoes
-
-    rejeicoes["motivo_rejeicao"] = motivos_rejeicao.loc[linhas_rejeitadas]
+    _, rejeicoes = separar_transacoes_por_validade(transacoes)
 
     return rejeicoes
 
@@ -343,10 +339,7 @@ def executar_etl() -> pd.DataFrame:
             "Nenhum arquivo transacoes_*.csv foi encontrado em data/raw/."
         )
 
-    bases = [
-        ler_transacoes_raw(arquivo)
-        for arquivo in arquivos_csv
-    ]
+    bases = [ler_transacoes_raw(arquivo) for arquivo in arquivos_csv]
 
     transacoes_brutas = pd.concat(bases, ignore_index=True)
 
@@ -364,6 +357,24 @@ def executar_etl() -> pd.DataFrame:
 
     return transacoes_processadas
 
+
+def executar_etl_com_resumo() -> dict[str, int | bool]:
+    """
+    Executa o ETL e retorna um resumo simples para uso na interface.
+    """
+    transacoes_processadas = executar_etl()
+
+    quantidade_rejeicoes = 0
+
+    if ARQUIVO_REJEICOES.exists():
+        rejeicoes = pd.read_csv(ARQUIVO_REJEICOES, encoding="utf-8-sig")
+        quantidade_rejeicoes = len(rejeicoes)
+
+    return {
+        "sucesso": True,
+        "transacoes_processadas": len(transacoes_processadas),
+        "transacoes_rejeitadas": quantidade_rejeicoes,
+    }
 
 if __name__ == "__main__":
     executar_etl()
