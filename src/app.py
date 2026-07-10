@@ -3,8 +3,10 @@ Interface Streamlit do FinanTec.
 
 Este arquivo organiza a visualização principal do projeto:
 - filtro por período;
+- entrada manual de transações;
 - validação dos dados carregados;
 - resumo financeiro;
+- tabela de transações;
 - gráfico de gastos por categoria;
 - simulador de metas;
 - chat com IA generativa usando contexto calculado em Python.
@@ -44,6 +46,20 @@ st.set_page_config(
     layout="wide",
 )
 
+MESES_PTBR = {
+    1: "Janeiro",
+    2: "Fevereiro",
+    3: "Março",
+    4: "Abril",
+    5: "Maio",
+    6: "Junho",
+    7: "Julho",
+    8: "Agosto",
+    9: "Setembro",
+    10: "Outubro",
+    11: "Novembro",
+    12: "Dezembro",
+}
 
 @st.cache_data
 def carregar_dados() -> tuple[
@@ -94,27 +110,80 @@ def criar_mensagem_inicial(mes: str) -> list[dict[str, str]]:
     ]
 
 
-def selecionar_periodo(transacoes: pd.DataFrame) -> str:
+def selecionar_periodo(
+    transacoes: pd.DataFrame,
+) -> tuple[int, int, str, pd.DataFrame]:
     """
-    Exibe o filtro lateral e retorna o período selecionado.
-    """
-    meses_disponiveis = listar_meses_disponiveis(transacoes)
+    Exibe filtros de ano e mês no menu lateral.
 
-    if not meses_disponiveis:
-        st.error("Nenhum período disponível na base de transações.")
+    Retorna:
+    - ano selecionado
+    - mês selecionado (0 = Todos)
+    - rótulo do período
+    - transações filtradas
+    """
+    if transacoes.empty:
+        st.error("Não há transações disponíveis.")
+        st.stop()
+
+    transacoes = transacoes.copy()
+    transacoes["ano"] = transacoes["data"].dt.year
+    transacoes["mes"] = transacoes["data"].dt.month
+
+    anos_disponiveis = sorted(
+        transacoes["ano"].dropna().astype(int).unique().tolist()
+    )
+
+    if not anos_disponiveis:
+        st.error("Nenhum ano disponível na base.")
         st.stop()
 
     st.sidebar.title("Filtros")
 
-    return st.sidebar.selectbox(
-        "Período analisado",
-        meses_disponiveis,
-        index=len(meses_disponiveis) - 1,
+    ano_selecionado = st.sidebar.selectbox(
+        "Ano",
+        anos_disponiveis,
+        index=len(anos_disponiveis) - 1,
+    )
+
+    meses_disponiveis = sorted(
+        transacoes.loc[
+            transacoes["ano"] == ano_selecionado,
+            "mes"
+        ].dropna().astype(int).unique().tolist()
+    )
+
+    opcoes_mes = [0] + meses_disponiveis
+
+    mes_selecionado = st.sidebar.selectbox(
+        "Mês",
+        opcoes_mes,
+        format_func=lambda mes: "Todos" if mes == 0 else MESES_PTBR[mes],
+        index=0,
+    )
+
+    if mes_selecionado == 0:
+        transacoes_filtradas = transacoes[
+            transacoes["ano"] == ano_selecionado
+        ].copy()
+        rotulo_periodo = f"{ano_selecionado}"
+    else:
+        transacoes_filtradas = transacoes[
+            (transacoes["ano"] == ano_selecionado)
+            & (transacoes["mes"] == mes_selecionado)
+        ].copy()
+        rotulo_periodo = f"{MESES_PTBR[mes_selecionado]}/{ano_selecionado}"
+
+    return (
+        ano_selecionado,
+        mes_selecionado,
+        rotulo_periodo,
+        transacoes_filtradas,
     )
 
 
 def montar_contexto_do_periodo(
-    mes_selecionado: str,
+    rotulo_periodo: str,
     perfil_usuario: dict,
     resumo: dict[str, Any],
     gastos_por_categoria: pd.Series,
@@ -138,28 +207,28 @@ def montar_contexto_do_periodo(
 
     return f"""
 PERÍODO ANALISADO:
-{mes_selecionado}
+{rotulo_periodo}
 
 {contexto}
 """.strip()
 
 
-def obter_mensagens_do_periodo(mes_selecionado: str) -> list[dict[str, str]]:
+def obter_mensagens_do_periodo(rotulo_periodo: str) -> list[dict[str, str]]:
     """
     Mantém um histórico de conversa separado para cada período analisado.
     """
-    if "mensagens_por_mes" not in st.session_state:
-        st.session_state.mensagens_por_mes = {}
+    if "mensagens_por_periodo" not in st.session_state:
+        st.session_state.mensagens_por_periodo = {}
 
-    if mes_selecionado not in st.session_state.mensagens_por_mes:
-        st.session_state.mensagens_por_mes[mes_selecionado] = criar_mensagem_inicial(
-            mes_selecionado
+    if rotulo_periodo not in st.session_state.mensagens_por_periodo:
+        st.session_state.mensagens_por_periodo[rotulo_periodo] = criar_mensagem_inicial(
+            rotulo_periodo
         )
 
-    return st.session_state.mensagens_por_mes[mes_selecionado]
+    return st.session_state.mensagens_por_periodo[rotulo_periodo]
 
 
-def exibir_cabecalho(mes_selecionado: str) -> None:
+def exibir_cabecalho(rotulo_periodo: str) -> None:
     """
     Exibe o cabeçalho principal do dashboard.
     """
@@ -173,7 +242,52 @@ def exibir_cabecalho(mes_selecionado: str) -> None:
         "personalizada de investimento."
     )
 
-    st.info(f"Período analisado: **{mes_selecionado}**")
+    st.info(f"Período analisado: **{rotulo_periodo}**")
+    
+def exibir_evolucao_mensal(transacoes_periodo: pd.DataFrame) -> None:
+    """
+    Exibe receitas e despesas por mês para a visão anual.
+    """
+    if transacoes_periodo.empty:
+        st.info("Não há dados suficientes para exibir a evolução mensal.")
+        return
+
+    dados = transacoes_periodo.copy()
+    dados["mes_num"] = dados["data"].dt.month
+
+    resumo_mensal = (
+        dados.groupby(["mes_num", "tipo"])["valor"]
+        .sum()
+        .unstack(fill_value=0)
+        .reset_index()
+        .sort_values("mes_num")
+    )
+
+    if "receita" not in resumo_mensal.columns:
+        resumo_mensal["receita"] = 0.0
+
+    if "despesa" not in resumo_mensal.columns:
+        resumo_mensal["despesa"] = 0.0
+
+    resumo_mensal["Mês"] = resumo_mensal["mes_num"].map(MESES_PTBR)
+
+    st.subheader("Receitas e despesas por mês")
+
+    st.line_chart(
+        resumo_mensal.set_index("Mês")[["receita", "despesa"]]
+    )
+
+    tabela_resumo = resumo_mensal[["Mês", "receita", "despesa"]].copy()
+    tabela_resumo.columns = ["Mês", "Receitas", "Despesas"]
+
+    tabela_resumo["Receitas"] = tabela_resumo["Receitas"].map(formatar_moeda)
+    tabela_resumo["Despesas"] = tabela_resumo["Despesas"].map(formatar_moeda)
+
+    st.dataframe(
+        tabela_resumo,
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 def exibir_validacao_dos_dados(
@@ -224,12 +338,12 @@ def exibir_resumo_financeiro(resumo: dict[str, Any]) -> None:
     )
 
     coluna_consumo.metric(
-        "Gasto de consumo no período",
+        "Gasto de consumo",
         formatar_moeda(resumo["despesas_do_mes"]),
     )
 
     coluna_reserva.metric(
-        "Valor separado para reserva",
+        "Separado para reserva",
         formatar_moeda(resumo["valor_guardado_reserva"]),
     )
 
@@ -267,6 +381,189 @@ def exibir_gastos_por_categoria(
             f"**{resumo['maior_categoria']}**, com "
             f"{formatar_moeda(resumo['maior_gasto'])}."
         )
+
+
+def exibir_ranking_de_categorias(gastos_por_categoria: pd.Series) -> None:
+    """
+    Exibe uma tabela simples com o ranking de gastos por categoria.
+    """
+    st.subheader("Ranking de categorias")
+
+    if gastos_por_categoria.empty:
+        st.info("Não há categorias de consumo para listar neste período.")
+        return
+
+    ranking = (
+        gastos_por_categoria.sort_values(ascending=False).rename("valor").reset_index()
+    )
+    ranking.columns = ["Categoria", "Valor"]
+
+    ranking["Valor"] = ranking["Valor"].map(formatar_moeda)
+
+    st.dataframe(
+        ranking,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+def exibir_ultimas_transacoes(
+    transacoes_periodo: pd.DataFrame,
+    limite: int = 5,
+) -> None:
+    """
+    Exibe as últimas transações do período no dashboard principal.
+    """
+    st.subheader("Últimas transações do período")
+
+    if transacoes_periodo.empty:
+        st.info("Nenhuma transação encontrada para o período selecionado.")
+        return
+
+    ultimas = transacoes_periodo.sort_values(
+        by="data",
+        ascending=False,
+    ).head(limite)
+
+    ultimas = preparar_transacoes_para_exibicao(ultimas)
+
+    st.dataframe(
+        ultimas,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+def preparar_transacoes_para_exibicao(transacoes: pd.DataFrame) -> pd.DataFrame:
+    """
+    Prepara a tabela de transações para exibição no dashboard.
+    """
+    transacoes_exibicao = transacoes.copy()
+
+    transacoes_exibicao["data"] = pd.to_datetime(
+        transacoes_exibicao["data"],
+        errors="coerce",
+    ).dt.strftime("%d/%m/%Y")
+
+    transacoes_exibicao["valor"] = transacoes_exibicao["valor"].map(formatar_moeda)
+
+    colunas_exibicao = [
+        "data",
+        "tipo",
+        "descricao",
+        "categoria",
+        "valor",
+    ]
+
+    return transacoes_exibicao[colunas_exibicao]
+
+
+def filtrar_tabela_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
+    """
+    Aplica filtros simples na tabela de transações do período.
+    """
+    transacoes_filtradas = transacoes.copy()
+
+    tipos = ["Todos"] + sorted(
+        transacoes_filtradas["tipo"].dropna().astype(str).unique().tolist()
+    )
+
+    categorias = ["Todas"] + sorted(
+        transacoes_filtradas["categoria"].dropna().astype(str).unique().tolist()
+    )
+
+    coluna_tipo, coluna_categoria, coluna_busca = st.columns([1, 1, 2])
+
+    tipo_escolhido = coluna_tipo.selectbox(
+        "Tipo",
+        tipos,
+    )
+
+    categoria_escolhida = coluna_categoria.selectbox(
+        "Categoria",
+        categorias,
+    )
+
+    busca = coluna_busca.text_input(
+        "Buscar descrição",
+        placeholder="Ex: mercado, transporte, bolsa...",
+    )
+
+    if tipo_escolhido != "Todos":
+        transacoes_filtradas = transacoes_filtradas[
+            transacoes_filtradas["tipo"] == tipo_escolhido
+        ]
+
+    if categoria_escolhida != "Todas":
+        transacoes_filtradas = transacoes_filtradas[
+            transacoes_filtradas["categoria"] == categoria_escolhida
+        ]
+
+    if busca:
+        transacoes_filtradas = transacoes_filtradas[
+            transacoes_filtradas["descricao"]
+            .astype(str)
+            .str.contains(busca, case=False, na=False)
+        ]
+
+    return transacoes_filtradas
+
+
+def exibir_transacoes_do_periodo(transacoes_periodo: pd.DataFrame) -> None:
+    """
+    Exibe a tabela de transações do período selecionado.
+    """
+    st.subheader("Transações do período")
+
+    if transacoes_periodo.empty:
+        st.info("Nenhuma transação encontrada para o período selecionado.")
+        return
+
+    transacoes_filtradas = filtrar_tabela_transacoes(transacoes_periodo)
+
+    receitas = transacoes_filtradas.loc[
+        transacoes_filtradas["tipo"] == "receita",
+        "valor",
+    ].sum()
+
+    despesas = transacoes_filtradas.loc[
+        transacoes_filtradas["tipo"] == "despesa",
+        "valor",
+    ].sum()
+
+    coluna_quantidade, coluna_receitas, coluna_despesas = st.columns(3)
+
+    coluna_quantidade.metric(
+        "Transações exibidas",
+        len(transacoes_filtradas),
+    )
+
+    coluna_receitas.metric(
+        "Receitas filtradas",
+        formatar_moeda(receitas),
+    )
+
+    coluna_despesas.metric(
+        "Despesas filtradas",
+        formatar_moeda(despesas),
+    )
+
+    if transacoes_filtradas.empty:
+        st.info("Nenhuma transação encontrada com os filtros selecionados.")
+        return
+
+    transacoes_exibicao = preparar_transacoes_para_exibicao(
+        transacoes_filtradas.sort_values(
+            by="data",
+            ascending=False,
+        )
+    )
+
+    st.dataframe(
+        transacoes_exibicao,
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 def exibir_simulador_de_metas(
@@ -405,6 +702,39 @@ def exibir_chat(
     )
 
 
+def exibir_aba_dashboard(
+    transacoes_filtradas: pd.DataFrame,
+    rejeicoes: pd.DataFrame,
+    resumo: dict[str, Any],
+    gastos_por_categoria: pd.Series,
+) -> None:
+    """
+    Exibe a visão geral do dashboard.
+    """
+    exibir_validacao_dos_dados(
+        quantidade_transacoes_validas=len(transacoes_filtradas),
+        rejeicoes=rejeicoes,
+    )
+
+    st.divider()
+
+    exibir_resumo_financeiro(resumo)
+
+    st.divider()
+
+    coluna_grafico, coluna_ranking = st.columns([2, 1])
+
+    with coluna_grafico:
+        exibir_gastos_por_categoria(gastos_por_categoria, resumo)
+
+    with coluna_ranking:
+        exibir_ranking_de_categorias(gastos_por_categoria)
+
+    st.divider()
+
+    exibir_ultimas_transacoes(transacoes_filtradas)
+
+
 def main() -> None:
     """
     Executa a interface principal do dashboard.
@@ -418,20 +748,19 @@ def main() -> None:
         rejeicoes,
     ) = carregar_dados()
 
-    mes_selecionado = selecionar_periodo(transacoes)
-
-    transacoes_filtradas = filtrar_transacoes_por_mes(
-        transacoes,
+    (
+        ano_selecionado,
         mes_selecionado,
-    )
+        rotulo_periodo,
+        transacoes_filtradas,
+    ) = selecionar_periodo(transacoes)
 
-    # Os cálculos ficam em Python. A IA só recebe os resultados para explicar.
     resumo = calcular_resumo_financeiro(transacoes_filtradas)
     gastos_por_categoria = calcular_gastos_por_categoria(transacoes_filtradas)
     simulacoes_metas = calcular_simulacoes_de_metas(perfil_usuario)
 
     contexto = montar_contexto_do_periodo(
-        mes_selecionado=mes_selecionado,
+        rotulo_periodo=rotulo_periodo,
         perfil_usuario=perfil_usuario,
         resumo=resumo,
         gastos_por_categoria=gastos_por_categoria,
@@ -441,9 +770,9 @@ def main() -> None:
         produtos_financeiros=produtos_financeiros,
     )
 
-    mensagens_mes = obter_mensagens_do_periodo(mes_selecionado)
+    mensagens_mes = obter_mensagens_do_periodo(rotulo_periodo)
 
-    exibir_cabecalho(mes_selecionado)
+    exibir_cabecalho(rotulo_periodo)
 
     abrir_editor_transacoes = "resultado_etl" in st.session_state
 
@@ -453,37 +782,47 @@ def main() -> None:
     ):
         etl_executado = exibir_editor_transacoes_manuais()
 
+    st.caption(
+        "Observação: transações manuais só aparecem nos indicadores depois de "
+        "clicar em 'Salvar e processar ETL' e no período correspondente à data cadastrada."
+    )
+
     if etl_executado:
         carregar_dados.clear()
         st.rerun()
 
-    exibir_validacao_dos_dados(
-        quantidade_transacoes_validas=len(transacoes_filtradas),
-        rejeicoes=rejeicoes,
+    aba_dashboard, aba_transacoes, aba_metas, aba_ia = st.tabs(
+        [
+            "Dashboard",
+            "Transações",
+            "Metas",
+            "IA",
+        ]
     )
 
-    st.divider()
+    with aba_dashboard:
+        exibir_aba_dashboard(
+            transacoes_filtradas=transacoes_filtradas,
+            rejeicoes=rejeicoes,
+            resumo=resumo,
+            gastos_por_categoria=gastos_por_categoria,
+        )
 
-    exibir_resumo_financeiro(resumo)
+        if mes_selecionado == 0:
+            st.divider()
+            exibir_evolucao_mensal(transacoes_filtradas)
 
-    exibir_gastos_por_categoria(
-        gastos_por_categoria=gastos_por_categoria,
-        resumo=resumo,
-    )
+    with aba_transacoes:
+        exibir_transacoes_do_periodo(transacoes_filtradas)
 
-    st.divider()
+    with aba_metas:
+        exibir_simulador_de_metas(perfil_usuario, resumo)
 
-    exibir_simulador_de_metas(
-        perfil_usuario=perfil_usuario,
-        resumo=resumo,
-    )
-
-    st.divider()
-
-    exibir_chat(
-        mensagens_mes=mensagens_mes,
-        contexto=contexto,
-    )
+    with aba_ia:
+        exibir_chat(
+            mensagens_mes=mensagens_mes,
+            contexto=contexto,
+        )
 
 
 if __name__ == "__main__":
