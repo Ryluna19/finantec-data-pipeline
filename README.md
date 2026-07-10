@@ -2,31 +2,41 @@
 
 Pipeline de dados financeiros simulados com Python, pandas, SQLite, Streamlit e IA generativa.
 
-Este projeto é uma evolução independente do FinanTec, inspirado em um projeto acadêmico anterior, com foco em ETL, análise de dados, validação, persistência local, visualização de indicadores financeiros e explicação dos dados com IA generativa.
+O projeto simula um fluxo de organização financeira pessoal a partir de arquivos CSV mensais. Ele processa transações, valida dados, separa linhas inválidas, salva a base tratada em SQLite, exibe indicadores em um dashboard e usa IA generativa para explicar os resultados.
+
+O FinanTec Data Pipeline não utiliza dados bancários reais. Todos os dados são simulados.
+
+---
 
 ## Sobre o Projeto
 
-O FinanTec Data Pipeline simula um fluxo de processamento de dados financeiros pessoais a partir de arquivos CSV mensais.
+O FinanTec Data Pipeline transforma arquivos brutos de transações financeiras em uma base organizada para análise.
 
-A proposta é transformar arquivos brutos de transações em uma base tratada, gerar indicadores financeiros e disponibilizar esses dados em um dashboard interativo com apoio de IA generativa para explicações contextualizadas.
+A proposta é demonstrar um fluxo completo de dados aplicado a um contexto financeiro pessoal:
 
-O projeto não utiliza dados bancários reais. Todos os dados são simulados.
+```text
+CSV bruto → ETL → SQLite → dashboard → IA explicando indicadores
+```
 
-A ideia atual é manter o projeto como uma ferramenta local/pessoal de gestão financeira simulada, sem autenticação, múltiplos usuários ou integração bancária real.
+A ideia atual é manter o projeto como uma ferramenta local/pessoal de gestão financeira simulada, sem login, múltiplos usuários ou integração bancária real.
+
+---
 
 ## Objetivo
 
-Demonstrar um fluxo básico de dados aplicado a um contexto financeiro:
+Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 
 - leitura de múltiplos arquivos CSV;
 - validação da estrutura dos dados;
 - limpeza e padronização com pandas;
-- geração de relatório de linhas rejeitadas;
-- geração de dados processados;
-- carga em SQLite;
+- separação entre transações válidas e rejeitadas;
+- geração de relatório de rejeições;
+- carga dos dados processados em SQLite;
 - análise por período;
 - visualização em Streamlit;
 - explicação dos indicadores com IA generativa.
+
+---
 
 ## Funcionalidades
 
@@ -48,6 +58,8 @@ Demonstrar um fluxo básico de dados aplicado a um contexto financeiro:
 - histórico de conversa separado por período analisado;
 - comando centralizado de execução com `main.py`.
 
+---
+
 ## Tecnologias Utilizadas
 
 - Python
@@ -60,6 +72,8 @@ Demonstrar um fluxo básico de dados aplicado a um contexto financeiro:
 - CSV
 - JSON
 - Gemini API
+
+---
 
 ## Fluxo do Pipeline
 
@@ -83,13 +97,15 @@ Dashboard em Streamlit
 IA explicando os indicadores calculados
 ```
 
+---
+
 ## Etapas do ETL
 
 | Etapa | Descrição |
 |---|---|
 | Extract | Lê os arquivos CSV mensais armazenados em `data/raw/`. |
-| Transform | Valida colunas, converte datas, padroniza textos, trata valores e cria a coluna `ano_mes`. |
-| Load | Salva os dados tratados em CSV processado e em uma base SQLite. |
+| Transform | Valida colunas, converte datas, padroniza textos, trata valores, separa linhas válidas e rejeitadas, e cria a coluna `ano_mes`. |
+| Load | Salva os dados tratados em CSV processado e em uma base SQLite local. |
 
 Quando existem linhas inválidas, o pipeline também gera:
 
@@ -98,6 +114,8 @@ data/processed/transacoes_rejeitadas.csv
 ```
 
 Esse arquivo contém as transações descartadas e uma coluna `motivo_rejeicao`, explicando por que cada linha não entrou na base final.
+
+---
 
 ## Estrutura do Projeto
 
@@ -129,6 +147,7 @@ finantec-data-pipeline/
 ├── logs/
 │   └── .gitkeep
 ├── manual_tests/
+│   ├── README.md
 │   ├── _path_setup.py
 │   ├── teste_contexto.py
 │   ├── teste_dados.py
@@ -156,6 +175,8 @@ finantec-data-pipeline/
 └── requirements.txt
 ```
 
+---
+
 ## Documentação
 
 A pasta `docs/` reúne a documentação técnica e de produto do projeto.
@@ -168,6 +189,8 @@ A pasta `docs/` reúne a documentação técnica e de produto do projeto.
 | `docs/ai_prompting.md` | Regras de prompt, uso da IA e estratégia para reduzir respostas inventadas. |
 | `docs/validation.md` | Estratégia de validação, testes automatizados, testes manuais e limitações. |
 | `docs/roadmap.md` | Próximas evoluções planejadas para o projeto. |
+
+---
 
 ## Base de Dados Simulada
 
@@ -184,6 +207,8 @@ Os dados incluem:
 - produtos financeiros apenas informativos.
 
 Os arquivos em `data/raw/` representam transações mensais brutas. O pipeline processa esses arquivos e gera uma base tratada para análise.
+
+---
 
 ## Como Executar o Projeto
 
@@ -211,15 +236,25 @@ pip install -r requirements.txt
 
 ### 4. Configure a chave da IA
 
-Crie um arquivo `.env` na raiz do projeto e adicione sua chave da Gemini API:
+Copie o arquivo `.env.example` para `.env`:
+
+```bash
+copy .env.example .env
+```
+
+Depois preencha sua chave da Gemini API no arquivo `.env`:
 
 ```env
-GEMINI_API_KEY=SUA_CHAVE_AQUI
+GEMINI_API_KEY=SUA_CHAVE_DA_GEMINI_AQUI
 ```
 
 O arquivo `.env` não deve ser enviado para o GitHub.
 
-### 5. Execute o projeto
+Sem a chave configurada, o pipeline, os testes e o dashboard continuam funcionando, mas o chat com IA não conseguirá consultar a Gemini API.
+
+---
+
+## Comandos Principais
 
 Para abrir o dashboard:
 
@@ -251,6 +286,14 @@ Para executar o ETL e depois abrir o dashboard:
 python main.py dev
 ```
 
+Para ver os comandos disponíveis:
+
+```bash
+python main.py help
+```
+
+---
+
 ## Arquivos Gerados Localmente
 
 Ao executar o ETL, o projeto pode gerar os seguintes arquivos:
@@ -265,6 +308,8 @@ logs/etl_transacoes.log
 Esses arquivos são gerados localmente e não precisam ser versionados no GitHub.
 
 O arquivo `transacoes_rejeitadas.csv` só é criado quando existem linhas inválidas nos arquivos de entrada.
+
+---
 
 ## Exemplos de Perguntas para o Chat
 
@@ -285,19 +330,25 @@ Quanto preciso guardar por mês para montar a reserva?
 ```
 
 ```text
+Quanto eu separei para reserva neste período?
+```
+
+```text
 Qual banco oferece o melhor CDB hoje?
 ```
 
 Para perguntas que dependem de dados externos ou informações em tempo real, o assistente deve informar que não possui dados suficientes.
 
-## Testes
+---
+
+## Testes Automatizados
 
 O projeto possui testes automatizados com `pytest` para validar partes importantes do pipeline e da lógica financeira.
 
 | Arquivo | Finalidade |
 |---|---|
-| `tests/test_analytics.py` | Testa cálculos financeiros, separação entre consumo e reserva, metas e filtros por período. |
-| `tests/test_etl_pipeline.py` | Testa validação de colunas, limpeza, padronização e transformação dos dados brutos. |
+| `tests/test_analytics.py` | Testa cálculos financeiros, separação entre consumo e reserva, metas, formatação de moeda e filtros por período. |
+| `tests/test_etl_pipeline.py` | Testa validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
 | `tests/test_rejections.py` | Testa a geração do relatório de transações rejeitadas e seus motivos. |
 | `tests/test_sqlite_load.py` | Testa a carga dos dados tratados em uma base SQLite temporária. |
 
@@ -313,17 +364,31 @@ Ou diretamente com pytest:
 pytest
 ```
 
+---
+
 ## Testes Manuais
 
 A pasta `manual_tests/` contém scripts auxiliares usados para verificar partes do projeto durante o desenvolvimento.
 
 Esses arquivos não substituem os testes automatizados, mas ajudam a validar manualmente pontos como contexto enviado para IA, leitura de dados, períodos disponíveis e conexão com SQLite.
 
-Exemplo:
+Exemplos:
 
 ```bash
+python manual_tests/teste_dados.py
+python manual_tests/teste_metas.py
 python manual_tests/teste_periodos.py
+python manual_tests/teste_contexto.py
+python manual_tests/teste_sqlite.py
 ```
+
+O teste manual da IA depende do `.env` configurado:
+
+```bash
+python manual_tests/teste_ia.py
+```
+
+---
 
 ## Limitações
 
@@ -338,6 +403,8 @@ O FinanTec Data Pipeline não:
 - executa operações financeiras;
 - possui login, autenticação ou múltiplos usuários;
 - integra com instituições financeiras reais.
+
+---
 
 ## Possíveis Evoluções Futuras
 
@@ -354,7 +421,10 @@ Algumas melhorias possíveis:
 - criar logs mais detalhados;
 - mover arquivos processados automaticamente;
 - evoluir para um fluxo simples de automação/RPA;
+- persistir histórico de conversas em banco;
 - ampliar a cobertura de testes automatizados.
+
+---
 
 ## Status
 

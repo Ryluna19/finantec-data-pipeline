@@ -36,7 +36,7 @@ from data_loader import (
     carregar_transacoes,
 )
 from prompts import montar_contexto
-
+from transaction_editor import exibir_editor_transacoes_manuais
 
 st.set_page_config(
     page_title="FinanTec",
@@ -449,9 +449,16 @@ def main() -> None:
 
     exibir_cabecalho(mes_selecionado)
 
+    with st.expander("Entrada manual de transações", expanded=False):
+     etl_executado = exibir_editor_transacoes_manuais()
+
+    if etl_executado:
+     carregar_dados.clear()
+     st.rerun()
+
     exibir_validacao_dos_dados(
-        quantidade_transacoes_validas=len(transacoes_filtradas),
-        rejeicoes=rejeicoes,
+    quantidade_transacoes_validas=len(transacoes_filtradas),
+    rejeicoes=rejeicoes,
     )
 
     st.divider()
