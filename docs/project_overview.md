@@ -195,7 +195,8 @@ Os scripts manuais ajudam a verificar:
 O projeto ainda não possui:
 
 - upload de planilhas pela interface;
-- entrada manual de transações;
+- validação visual avançada para transações manuais;
+- edição avançada de registros já processados;
 - autenticação;
 - múltiplos usuários;
 - controle de permissões;
@@ -217,6 +218,10 @@ A direção futura mais coerente é evoluir o projeto para uma ferramenta local 
 A ideia não é criar um sistema multiusuário com login, autenticação e integração bancária real neste momento.
 
 A evolução mais útil seria permitir que uma pessoa registre ou importe suas próprias transações em uma experiência parecida com uma planilha simples de gastos.
+
+A versão inicial da entrada manual já permite registrar transações pelo dashboard e salvar os dados localmente em `data/raw/transacoes_manuais.csv`.
+
+As próximas evoluções devem melhorar a validação visual, a experiência de edição e a integração com SQLite.
 
 Fluxo futuro possível:
 
@@ -255,6 +260,8 @@ O projeto já possui:
 - testes manuais documentados;
 - contrato de dados para arquivos de transações;
 - comando principal com `main.py`.
+- entrada manual inicial de transações pelo dashboard;
+- salvamento local de transações manuais em `data/raw/transacoes_manuais.csv`;
 
 Fluxo atual:
 

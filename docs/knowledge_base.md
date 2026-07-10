@@ -25,6 +25,7 @@ O projeto não utiliza dados bancários reais.
 | `data/conceitos_financeiros.json` | JSON | Contém explicações básicas sobre organização financeira. |
 | `data/produtos_financeiros.json` | JSON | Contém produtos financeiros informativos e simulados. |
 | `data/templates/transacoes_template.csv` | CSV | Modelo de preenchimento para novas transações. |
+| `data/raw/transacoes_manuais.csv` | CSV | Arquivo local criado pelo editor manual de transações no dashboard. |
 
 Os arquivos gerados em `data/processed/`, `database/` e `logs/` são locais e não são versionados no GitHub.
 
@@ -48,6 +49,9 @@ O uso de uma pessoa fictícia permite demonstrar o fluxo técnico sem utilizar d
 ## Transações Financeiras
 
 Os arquivos de transações representam receitas e despesas mensais.
+Além dos arquivos mensais simulados, o projeto também pode usar o arquivo `data/raw/transacoes_manuais.csv`, criado pela entrada manual de transações no dashboard.
+
+Esse arquivo é local, ignorado pelo Git e processado pelo mesmo pipeline ETL.
 
 Cada arquivo bruto deve seguir o padrão definido em:
 

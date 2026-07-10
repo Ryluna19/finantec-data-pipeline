@@ -57,6 +57,9 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - chat com IA generativa usando contexto dos dados;
 - histórico de conversa separado por período analisado;
 - comando centralizado de execução com `main.py`.
+- entrada manual de transações pelo dashboard;
+- edição local de transações em formato de tabela com `st.data_editor`;
+- salvamento de transações manuais em `data/raw/transacoes_manuais.csv`;
 
 ---
 
@@ -303,12 +306,13 @@ data/processed/transacoes_processadas.csv
 data/processed/transacoes_rejeitadas.csv
 database/finantec.db
 logs/etl_transacoes.log
+data/raw/transacoes_manuais.csv
 ```
 
 Esses arquivos são gerados localmente e não precisam ser versionados no GitHub.
 
 O arquivo `transacoes_rejeitadas.csv` só é criado quando existem linhas inválidas nos arquivos de entrada.
-
+O arquivo `data/raw/transacoes_manuais.csv` é criado pelo editor manual de transações e representa dados locais inseridos pela interface. Ele não deve ser versionado no GitHub.
 ---
 
 ## Exemplos de Perguntas para o Chat
@@ -351,6 +355,7 @@ O projeto possui testes automatizados com `pytest` para validar partes important
 | `tests/test_etl_pipeline.py` | Testa validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
 | `tests/test_rejections.py` | Testa a geração do relatório de transações rejeitadas e seus motivos. |
 | `tests/test_sqlite_load.py` | Testa a carga dos dados tratados em uma base SQLite temporária. |
+| `tests/test_transaction_editor.py` | Testa preparação, salvamento e carregamento das transações manuais. |
 
 Para executar os testes:
 
@@ -410,7 +415,7 @@ O FinanTec Data Pipeline não:
 
 Algumas melhorias possíveis:
 
-- permitir entrada manual de transações pela interface;
+- melhorar a entrada manual de transações pela interface;
 - permitir upload de uma planilha-modelo;
 - criar uma experiência parecida com uma planilha simples de gastos;
 - adicionar validações mais detalhadas dos arquivos enviados;

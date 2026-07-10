@@ -58,11 +58,18 @@ IA explicando indicadores
 
 Demonstrar um fluxo completo e simples de dados financeiros simulados, desde a entrada dos arquivos até a validação, persistência, visualização e explicação dos indicadores.
 
+- entrada manual inicial de transações pelo dashboard;
+- salvamento local de transações manuais em CSV;
+
 ---
 
 ## Próximas Evoluções Prioritárias
 
-### 1. Evoluir entrada de dados para controle financeiro local
+### 1. Melhorar o controle financeiro local
+
+A versão inicial da entrada manual já permite editar transações pelo dashboard e salvar os dados em `data/raw/transacoes_manuais.csv`.
+
+As próximas melhorias devem focar em validação visual, experiência de uso e integração mais clara com o pipeline ETL.
 
 Permitir que a pessoa registre ou edite transações em uma experiência parecida com uma planilha simples de gastos.
 

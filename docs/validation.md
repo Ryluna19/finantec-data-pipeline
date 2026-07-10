@@ -60,6 +60,7 @@ pytest
 | `tests/test_etl_pipeline.py` | Validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
 | `tests/test_rejections.py` | Geração do relatório de transações rejeitadas e acúmulo de motivos de rejeição. |
 | `tests/test_sqlite_load.py` | Carga dos dados tratados em SQLite usando banco temporário. |
+| `tests/test_transaction_editor.py` | Valida a camada de preparação, salvamento e carregamento das transações manuais. |
 
 ---
 
@@ -323,6 +324,8 @@ A versão atual possui validação automatizada para:
 - transformação dos dados;
 - relatório de rejeições;
 - carga em SQLite.
+- editor manual de transações;
+- salvamento e carregamento de transações manuais;
 
 Além disso, possui testes manuais para:
 
