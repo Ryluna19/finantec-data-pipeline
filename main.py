@@ -58,13 +58,12 @@ def executar_app() -> int:
 
 
 def executar_etl() -> int:
-    """
-    Executa o pipeline ETL.
-    """
+    """Executa o pipeline ETL como módulo Python."""
     return executar_comando(
         [
             sys.executable,
-            str(ETL_PATH),
+            "-m",
+            "scripts.etl_transacoes",
         ]
     )
 

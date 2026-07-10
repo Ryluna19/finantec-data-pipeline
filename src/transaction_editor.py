@@ -15,7 +15,10 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from scripts.etl_transacoes import executar_etl_com_resumo, separar_transacoes_por_validade
+from scripts.etl_transacoes import run_etl_with_summary
+from src.transaction_validation import (
+    split_transactions_by_validity,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
@@ -127,7 +130,9 @@ def validar_transacoes_editadas(
     if transacoes_preparadas.empty:
         return transacoes_preparadas, pd.DataFrame()
 
-    return separar_transacoes_por_validade(transacoes_preparadas)
+    return split_transactions_by_validity(
+    transacoes_preparadas
+    )
 
 
 def salvar_transacoes_manuais(transacoes: pd.DataFrame) -> None:
@@ -254,7 +259,7 @@ def exibir_editor_transacoes_manuais() -> bool:
             salvar_transacoes_manuais(transacoes_editadas)
 
             try:
-                resultado = executar_etl_com_resumo()
+                resultado = run_etl_with_summary()
                 st.session_state["resultado_etl"] = {
                     **resultado,
                     "mensagem": "Transações salvas e ETL executado com sucesso.",
