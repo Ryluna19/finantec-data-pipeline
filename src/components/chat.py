@@ -1,0 +1,127 @@
+"""Componente de conversa contextual com o assistente FinanTec."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pandas as pd
+import streamlit as st
+
+from agent import gerar_resposta_finantec as generate_finantec_response
+from prompts import montar_contexto as build_context
+
+
+def create_initial_message(
+    period: str,
+) -> list[dict[str, str]]:
+    """Cria a mensagem inicial do chat para o período selecionado."""
+    return [
+        {
+            "role": "assistant",
+            "content": (
+                f"Olá! Sou o FinanTec. Estou analisando o período "
+                f"{period}. Posso ajudar você a entender gastos, "
+                "metas e conceitos financeiros básicos."
+            ),
+        }
+    ]
+
+
+def get_period_messages(
+    period: str,
+) -> list[dict[str, str]]:
+    """Mantém um histórico de conversa independente para cada período."""
+    messages_by_period = st.session_state.setdefault(
+        "messages_by_period",
+        {},
+    )
+
+    if period not in messages_by_period:
+        messages_by_period[period] = create_initial_message(period)
+
+    return messages_by_period[period]
+
+
+def build_period_context(
+    period: str,
+    user_profile: dict[str, Any],
+    summary: dict[str, Any],
+    expenses_by_category: pd.Series,
+    goal_simulations: list[dict[str, Any]],
+    service_history: pd.DataFrame,
+    financial_concepts: dict[str, Any],
+    financial_products: dict[str, Any],
+) -> str:
+    """Monta o contexto financeiro enviado ao modelo de IA."""
+    context = build_context(
+        perfil_usuario=user_profile,
+        resumo_financeiro=summary,
+        gastos_por_categoria=expenses_by_category,
+        simulacoes_metas=goal_simulations,
+        historico_atendimento=service_history,
+        conceitos_financeiros=financial_concepts,
+        produtos_financeiros=financial_products,
+    )
+
+    return (
+        f"PERÍODO ANALISADO:\n"
+        f"{period}\n\n"
+        f"{context}"
+    ).strip()
+
+
+def render_chat(
+    messages: list[dict[str, str]],
+    context: str,
+) -> None:
+    """Exibe o histórico da conversa e processa novas perguntas."""
+    st.subheader("Converse com o FinanTec")
+
+    st.caption(
+        "Exemplos: “Em qual categoria eu mais gastei?”, "
+        "“Qual é meu saldo?” ou "
+        "“Quanto preciso guardar para o notebook?”"
+    )
+
+    for message in messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    user_question = st.chat_input(
+        "Digite sua pergunta sobre organização financeira",
+        key="finantec_question",
+    )
+
+    if not user_question:
+        return
+
+    messages.append(
+        {
+            "role": "user",
+            "content": user_question,
+        }
+    )
+
+    with st.chat_message("user"):
+        st.markdown(user_question)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Analisando os dados disponíveis..."):
+            try:
+                response = generate_finantec_response(
+                    pergunta_usuario=user_question,
+                    contexto=context,
+                )
+
+                st.markdown(response)
+
+            except RuntimeError as error:
+                response = str(error)
+                st.error(response)
+
+    messages.append(
+        {
+            "role": "assistant",
+            "content": response,
+        }
+    )

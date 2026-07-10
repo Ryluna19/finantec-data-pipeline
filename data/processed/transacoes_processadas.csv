@@ -1,5 +1,4 @@
 ﻿data,tipo,descricao,categoria,valor,arquivo_origem,ano_mes
-2026-02-10,receita,Drogas,Lazer,500.0,transacoes_manuais.csv,2026-02
 2026-06-01,despesa,Passagem de ônibus,Transporte,120.0,transacoes_2026_06.csv,2026-06
 2026-06-03,despesa,Recarga do celular,Serviços,35.0,transacoes_2026_06.csv,2026-06
 2026-06-04,despesa,Plano de internet compartilhado,Serviços,60.0,transacoes_2026_06.csv,2026-06
@@ -27,6 +26,7 @@
 2026-07-09,despesa,Material de estudo,Educação,45.0,transacoes_2026_07.csv,2026-07
 2026-07-11,despesa,Lanche por aplicativo,Alimentação,36.0,transacoes_2026_07.csv,2026-07
 2026-07-13,despesa,Farmácia,Saúde,32.0,transacoes_2026_07.csv,2026-07
+2026-07-15,despesa,McDonalds,Alimentação,80.0,transacoes_manuais.csv,2026-07
 2026-07-15,despesa,Saída com amigos,Lazer,70.0,transacoes_2026_07.csv,2026-07
 2026-07-17,despesa,Compra de roupa,Compras,95.0,transacoes_2026_07.csv,2026-07
 2026-07-20,despesa,Passagem de ônibus,Transporte,120.0,transacoes_2026_07.csv,2026-07

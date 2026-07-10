@@ -35,13 +35,12 @@
     --shadow: 0 20px 40px rgba(0, 0, 0, 0.30);
     --shadow-soft: 0 20px 40px rgba(0, 0, 0, 0.30);
 }
-/* Remove aspecto azulado do container principal */
-
-.main .block-container {
-    max-width: 1180px;
+/* Limita a largura do conteúdo em monitores grandes. */
+[data-testid="stMainBlockContainer"] {
+    width: 100%;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 2rem 3rem 3rem;
-    background: transparent;
+    padding: 2rem 2rem 4rem;
 }
 
 /* Fundo geral da aplicação */
@@ -70,8 +69,6 @@ body,
     background: var(--bg-sidebar) !important;
     border-right: 1px solid var(--border);
 }
-
-
 
 /* Títulos */
 h1, h2, h3 {
@@ -133,16 +130,38 @@ p, label, .stCaption, small {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
 }
+/* Organização do resumo financeiro */
+.finantec-overview-grid {
+    display: grid;
+    gap: 1rem;
+    width: 100%;
+}
 
+.finantec-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(220px, 1fr)
+    );
+    gap: 1rem;
+}
 /* Saldo principal */
 .finantec-balance-panel {
-  padding: 1.4rem;
-  min-height: 236px;
-  border: 1px solid var(--accent-line);
-  background:
-    radial-gradient(circle at top right, rgba(255, 122, 0, 0.10), transparent 34%),
-    linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0)),
-    var(--bg-panel);
+    padding: 1.5rem;
+    min-height: 190px;
+    border: 1px solid var(--accent-line);
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(255, 122, 0, 0.10),
+            transparent 34%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.01),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel);
 }
 
 .finantec-balance-label,
@@ -155,11 +174,11 @@ p, label, .stCaption, small {
 }
 
 .finantec-balance-value {
-  font-size: 3.6rem;
-  line-height: 1;
-  font-weight: 800;
-  margin: 1rem 0 0.9rem;
-  color: #ffffff;
+    font-size: clamp(2.5rem, 4vw, 3.4rem);
+    line-height: 1;
+    font-weight: 800;
+    margin: 1rem 0 0.9rem;
+    color: #ffffff;
 }
 
 .finantec-balance-desc,
@@ -170,8 +189,8 @@ p, label, .stCaption, small {
 
 /* Mini cards */
 .finantec-mini-card {
-  padding: 1.2rem;
-  min-height: 160px;
+    padding: 1.2rem;
+    min-height: 130px;
 }
 
 .finantec-mini-value {
@@ -265,6 +284,14 @@ p, label, .stCaption, small {
   font-size: 2rem;
   font-weight: 800;
   margin-top: 0.7rem;
+}
+.finantec-diagnosis-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(280px, 1fr)
+    );
+    gap: 1.25rem;
 }
 
 /* Alertas */
@@ -375,4 +402,22 @@ hr {
 .finantec-alert.error {
     background: rgba(239, 68, 68, 0.10);
     border-color: rgba(239, 68, 68, 0.25);
+}
+
+@media (max-width: 900px) {
+    [data-testid="stMainBlockContainer"] {
+        padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .finantec-mini-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-balance-panel {
+        min-height: auto;
+    }
+
+    .finantec-mini-card {
+        min-height: auto;
+    }
 }
