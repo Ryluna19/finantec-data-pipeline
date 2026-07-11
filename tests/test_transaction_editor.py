@@ -2,11 +2,14 @@ import pandas as pd
 
 from transaction_editor import (
     COLUNAS_TRANSACOES,
+    add_pending_transaction,
     carregar_transacoes_manuais,
     criar_dataframe_vazio,
     limpar_transacoes_manuais,
     preparar_transacoes_para_salvar,
+    remove_pending_transaction,
     salvar_transacoes_manuais,
+    update_pending_transaction,
     validar_transacoes_editadas,
 )
 
@@ -146,3 +149,84 @@ def test_limpar_transacoes_manuais_remove_arquivo(monkeypatch, tmp_path):
     limpar_transacoes_manuais()
 
     assert not arquivo_teste.exists()
+    
+def test_add_pending_transaction_adds_new_row():
+    transactions = criar_dataframe_vazio()
+
+    result = add_pending_transaction(
+        transactions,
+        {
+            "data": "2026-07-15",
+            "tipo": "despesa",
+            "descricao": "McDonalds",
+            "categoria": "Alimentação",
+            "valor": 45.90,
+        },
+    )
+
+    assert len(result) == 1
+    assert result.loc[0, "descricao"] == "McDonalds"
+    assert result.loc[0, "valor"] == 45.90
+
+
+def test_update_pending_transaction_updates_selected_row():
+    transactions = pd.DataFrame(
+        {
+            "data": ["2026-07-15"],
+            "tipo": ["despesa"],
+            "descricao": ["McDonalds"],
+            "categoria": ["Alimentação"],
+            "valor": [45.90],
+        }
+    )
+
+    result = update_pending_transaction(
+        transactions,
+        index=0,
+        transaction={
+            "data": "2026-07-15",
+            "tipo": "despesa",
+            "descricao": "Mercado",
+            "categoria": "Alimentação",
+            "valor": 80.00,
+        },
+    )
+
+    assert len(result) == 1
+    assert result.loc[0, "descricao"] == "Mercado"
+    assert result.loc[0, "valor"] == 80.00
+
+
+def test_remove_pending_transaction_removes_selected_row():
+    transactions = pd.DataFrame(
+        {
+            "data": [
+                "2026-07-15",
+                "2026-07-16",
+            ],
+            "tipo": [
+                "despesa",
+                "receita",
+            ],
+            "descricao": [
+                "Mercado",
+                "Pagamento",
+            ],
+            "categoria": [
+                "Alimentação",
+                "Trabalho",
+            ],
+            "valor": [
+                80.00,
+                1000.00,
+            ],
+        }
+    )
+
+    result = remove_pending_transaction(
+        transactions,
+        index=0,
+    )
+
+    assert len(result) == 1
+    assert result.loc[0, "descricao"] == "Pagamento"
