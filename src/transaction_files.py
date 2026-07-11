@@ -9,24 +9,59 @@ from pathlib import Path
 from typing import BinaryIO
 
 import pandas as pd
+import unicodedata
 
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
     prepare_transactions,
 )
 
+from openpyxl.styles import (
+    Alignment,
+    Border,
+    Font,
+    PatternFill,
+    Side,
+)
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.table import (
+    Table,
+    TableStyleInfo,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-IMPORTED_RAW_DIR = (
-    PROJECT_ROOT
-    / "data"
-    / "raw"
-    / "imported"
-)
+IMPORTED_RAW_DIR = PROJECT_ROOT / "data" / "raw" / "imported"
 
 TRANSACTION_SHEET_NAME = "Transacoes"
 INSTRUCTIONS_SHEET_NAME = "Instrucoes"
+
+TRANSACTION_HEADER_LABELS = {
+    "data": "DATA",
+    "tipo": "TIPO",
+    "descricao": "DESCRIÇÃO",
+    "categoria": "CATEGORIA",
+    "valor": "VALOR",
+}
+
+EXCEL_HEADER_COLOR = "1F2937"
+EXCEL_HEADER_TEXT_COLOR = "FFFFFF"
+EXCEL_ACCENT_COLOR = "F97316"
+EXCEL_BORDER_COLOR = "D1D5DB"
+
+EXCEL_TRANSACTION_COLUMN_WIDTHS = {
+    "A": 16,
+    "B": 14,
+    "C": 38,
+    "D": 24,
+    "E": 18,
+}
+
+EXCEL_INSTRUCTION_COLUMN_WIDTHS = {
+    "A": 18,
+    "B": 48,
+    "C": 30,
+}
 
 FileSource = str | Path | BinaryIO
 
@@ -39,30 +74,62 @@ def _rewind_file(source: FileSource) -> None:
         seek(0)
 
 
+def normalize_transaction_headers(
+    transactions: pd.DataFrame,
+) -> pd.DataFrame:
+    """Normaliza os cabeçalhos recebidos para o contrato interno."""
+    normalized_transactions = transactions.copy()
+
+    normalized_columns = []
+
+    for column in normalized_transactions.columns:
+        normalized_column = unicodedata.normalize(
+            "NFKD",
+            str(column),
+        )
+
+        normalized_column = normalized_column.encode(
+            "ascii",
+            "ignore",
+        ).decode("ascii")
+
+        normalized_column = normalized_column.strip().lower().replace(" ", "_")
+
+        normalized_columns.append(normalized_column)
+
+    normalized_transactions.columns = normalized_columns
+
+    return normalized_transactions
+
+
 def read_csv_transactions(
     source: FileSource,
 ) -> pd.DataFrame:
-    """Lê transações de um arquivo CSV."""
+    """Lê e normaliza transações de um arquivo CSV."""
     _rewind_file(source)
 
-    return pd.read_csv(
+    transactions = pd.read_csv(
         source,
         encoding="utf-8-sig",
     )
+
+    return normalize_transaction_headers(transactions)
 
 
 def read_excel_transactions(
     source: FileSource,
     sheet_name: str = TRANSACTION_SHEET_NAME,
 ) -> pd.DataFrame:
-    """Lê transações da planilha principal de um arquivo Excel."""
+    """Lê e normaliza a planilha principal de um arquivo Excel."""
     _rewind_file(source)
 
-    return pd.read_excel(
+    transactions = pd.read_excel(
         source,
         sheet_name=sheet_name,
         engine="openpyxl",
     )
+
+    return normalize_transaction_headers(transactions)
 
 
 def prepare_transactions_for_export(
@@ -82,17 +149,12 @@ def prepare_transactions_for_export(
             f"{', '.join(missing_columns)}"
         )
 
-    export_data = transactions[
-        REQUIRED_TRANSACTION_COLUMNS
-    ].copy()
+    export_data = transactions[REQUIRED_TRANSACTION_COLUMNS].copy()
 
-    export_data["data"] = (
-        pd.to_datetime(
-            export_data["data"],
-            errors="coerce",
-        )
-        .dt.strftime("%Y-%m-%d")
-    )
+    export_data["data"] = pd.to_datetime(
+        export_data["data"],
+        errors="coerce",
+    ).dt.strftime("%Y-%m-%d")
 
     export_data["valor"] = pd.to_numeric(
         export_data["valor"],
@@ -102,13 +164,311 @@ def prepare_transactions_for_export(
     return export_data
 
 
+def _style_header(
+    worksheet,
+    column_count: int,
+) -> None:
+    """Aplica cabeçalho grafite com detalhe inferior laranja."""
+    header_fill = PatternFill(
+        fill_type="solid",
+        fgColor=EXCEL_HEADER_COLOR,
+    )
+
+    header_font = Font(
+        color=EXCEL_HEADER_TEXT_COLOR,
+        bold=True,
+    )
+
+    regular_side = Side(
+        style="thin",
+        color=EXCEL_BORDER_COLOR,
+    )
+
+    accent_side = Side(
+        style="medium",
+        color=EXCEL_ACCENT_COLOR,
+    )
+
+    header_border = Border(
+        left=regular_side,
+        right=regular_side,
+        bottom=accent_side,
+    )
+
+    for cell in worksheet[1][:column_count]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = header_border
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center",
+        )
+
+    worksheet.row_dimensions[1].height = 26
+
+
+def _set_column_widths(
+    worksheet,
+    widths: dict[str, int],
+) -> None:
+    """Define larguras adequadas para as colunas da planilha."""
+    for column, width in widths.items():
+        worksheet.column_dimensions[column].width = width
+
+
+def _add_transaction_type_validation(
+    worksheet,
+    last_row: int = 1000,
+) -> None:
+    """Adiciona uma lista suspensa para o tipo da transação."""
+    type_validation = DataValidation(
+        type="list",
+        formula1='"receita,despesa"',
+        allow_blank=True,
+    )
+
+    type_validation.error = "Use somente receita ou despesa."
+
+    type_validation.errorTitle = "Tipo de transação inválido"
+
+    type_validation.prompt = "Selecione receita ou despesa."
+
+    type_validation.promptTitle = "Tipo da transação"
+
+    type_validation.showErrorMessage = True
+    type_validation.showInputMessage = True
+
+    worksheet.add_data_validation(type_validation)
+
+    type_validation.add(f"B2:B{last_row}")
+
+
+def _add_transaction_date_validation(
+    worksheet,
+    last_row: int = 1000,
+) -> None:
+    """Restringe a coluna de data a valores válidos."""
+    date_validation = DataValidation(
+        type="date",
+        operator="between",
+        formula1="DATE(2000,1,1)",
+        formula2="DATE(2100,12,31)",
+        allow_blank=True,
+    )
+
+    date_validation.error = "Informe uma data válida no formato DD/MM/AAAA."
+
+    date_validation.errorTitle = "Data inválida"
+
+    date_validation.prompt = "Informe a data da transação no formato DD/MM/AAAA."
+
+    date_validation.promptTitle = "Data da transação"
+    date_validation.showErrorMessage = True
+    date_validation.showInputMessage = True
+
+    worksheet.add_data_validation(date_validation)
+
+    date_validation.add(f"A2:A{last_row}")
+
+
+def _add_transaction_amount_validation(
+    worksheet,
+    last_row: int = 1000,
+) -> None:
+    """Restringe a coluna de valor a números positivos."""
+    amount_validation = DataValidation(
+        type="decimal",
+        operator="greaterThan",
+        formula1="0",
+        allow_blank=True,
+    )
+
+    amount_validation.error = "Informe um valor numérico maior que zero."
+
+    amount_validation.errorTitle = "Valor inválido"
+
+    amount_validation.prompt = "Informe somente o valor numérico, sem escrever R$."
+
+    amount_validation.promptTitle = "Valor da transação"
+    amount_validation.showErrorMessage = True
+    amount_validation.showInputMessage = True
+
+    worksheet.add_data_validation(amount_validation)
+
+    amount_validation.add(f"E2:E{last_row}")
+
+
+def _format_transaction_columns(
+    worksheet,
+    last_row: int,
+) -> None:
+    """Aplica formatos e alinhamentos por tipo de informação."""
+    centered_alignment = Alignment(
+        horizontal="center",
+        vertical="center",
+    )
+
+    left_alignment = Alignment(
+        horizontal="left",
+        vertical="center",
+        wrap_text=True,
+    )
+
+    right_alignment = Alignment(
+        horizontal="right",
+        vertical="center",
+    )
+
+    for row_number in range(
+        2,
+        last_row + 1,
+    ):
+        date_cell = worksheet[f"A{row_number}"]
+        type_cell = worksheet[f"B{row_number}"]
+        description_cell = worksheet[f"C{row_number}"]
+        category_cell = worksheet[f"D{row_number}"]
+        amount_cell = worksheet[f"E{row_number}"]
+
+        date_cell.number_format = "dd/mm/yyyy"
+        amount_cell.number_format = "R$ #,##0.00"
+
+        date_cell.alignment = centered_alignment
+        type_cell.alignment = centered_alignment
+
+        description_cell.alignment = left_alignment
+        category_cell.alignment = left_alignment
+
+        # Valores à direita facilitam comparar quantias verticalmente.
+        amount_cell.alignment = right_alignment
+
+        worksheet.row_dimensions[row_number].height = 22
+
+
+def _style_transaction_sheet(
+    worksheet,
+    data_row_count: int,
+    enable_input_validation: bool = False,
+) -> None:
+    """Configura aparência e validações da aba de transações."""
+    _style_header(
+        worksheet,
+        column_count=5,
+    )
+
+    _set_column_widths(
+        worksheet,
+        EXCEL_TRANSACTION_COLUMN_WIDTHS,
+    )
+
+    worksheet.freeze_panes = "A2"
+
+    # As linhas de grade ajudam no preenchimento manual.
+    worksheet.sheet_view.showGridLines = True
+
+    worksheet.sheet_properties.tabColor = EXCEL_ACCENT_COLOR
+
+    if enable_input_validation:
+        last_row = 1000
+
+        worksheet.auto_filter.ref = f"A1:E{last_row}"
+
+        _add_transaction_date_validation(
+            worksheet,
+            last_row=last_row,
+        )
+
+        _add_transaction_type_validation(
+            worksheet,
+            last_row=last_row,
+        )
+
+        _add_transaction_amount_validation(
+            worksheet,
+            last_row=last_row,
+        )
+
+        _format_transaction_columns(
+            worksheet,
+            last_row=last_row,
+        )
+
+        return
+
+    last_row = data_row_count + 1
+
+    if data_row_count <= 0:
+        return
+
+    table_reference = f"A1:E{last_row}"
+
+    worksheet.auto_filter.ref = table_reference
+
+    _format_transaction_columns(
+        worksheet,
+        last_row=last_row,
+    )
+
+    transactions_table = Table(
+        displayName="FinanTecTransactions",
+        ref=table_reference,
+    )
+
+    transactions_table.tableStyleInfo = TableStyleInfo(
+        name="TableStyleMedium2",
+        showFirstColumn=False,
+        showLastColumn=False,
+        showRowStripes=True,
+        showColumnStripes=False,
+    )
+
+    worksheet.add_table(transactions_table)
+
+
+def _style_instructions_sheet(
+    worksheet,
+) -> None:
+    """Organiza visualmente a aba de instruções."""
+    _style_header(
+        worksheet,
+        column_count=3,
+    )
+
+    _set_column_widths(
+        worksheet,
+        EXCEL_INSTRUCTION_COLUMN_WIDTHS,
+    )
+
+    worksheet.freeze_panes = "A2"
+    worksheet.sheet_view.showGridLines = False
+    worksheet.auto_filter.ref = "A1:C6"
+
+    for row in worksheet.iter_rows(
+        min_row=2,
+        max_row=6,
+        min_col=1,
+        max_col=3,
+    ):
+        for cell in row:
+            cell.alignment = Alignment(
+                vertical="top",
+                wrap_text=True,
+            )
+
+
 def export_transactions_to_excel(
     transactions: pd.DataFrame,
 ) -> bytes:
-    """Gera um arquivo Excel com as transações informadas."""
-    export_data = prepare_transactions_for_export(
-        transactions
+    """Gera um arquivo Excel formatado com as transações."""
+    export_data = prepare_transactions_for_export(transactions)
+
+    excel_data = export_data.copy()
+
+    # Mantém datas como valores reais do Excel, não apenas texto.
+    excel_data["data"] = pd.to_datetime(
+        excel_data["data"],
+        errors="coerce",
     )
+    excel_data = excel_data.rename(columns=TRANSACTION_HEADER_LABELS)
 
     output = BytesIO()
 
@@ -116,58 +476,51 @@ def export_transactions_to_excel(
         output,
         engine="openpyxl",
     ) as writer:
-        export_data.to_excel(
+        excel_data.to_excel(
             writer,
             sheet_name=TRANSACTION_SHEET_NAME,
             index=False,
         )
 
-        worksheet = writer.sheets[
-            TRANSACTION_SHEET_NAME
-        ]
+        worksheet = writer.sheets[TRANSACTION_SHEET_NAME]
 
-        worksheet.freeze_panes = "A2"
-
-        column_widths = {
-            "A": 14,
-            "B": 14,
-            "C": 36,
-            "D": 22,
-            "E": 16,
-        }
-
-        for column, width in column_widths.items():
-            worksheet.column_dimensions[
-                column
-            ].width = width
+        _style_transaction_sheet(
+            worksheet,
+            data_row_count=len(excel_data),
+        )
 
     return output.getvalue()
 
 
 def create_excel_template() -> bytes:
-    """Gera um modelo Excel vazio com instruções de preenchimento."""
+    """Gera um modelo Excel formatado com instruções."""
     transactions_template = pd.DataFrame(
-        columns=REQUIRED_TRANSACTION_COLUMNS
+        columns=[
+            TRANSACTION_HEADER_LABELS[column] for column in REQUIRED_TRANSACTION_COLUMNS
+        ]
     )
 
     instructions = pd.DataFrame(
         {
-            "Campo": [
+            "CAMPO": [
                 "data",
                 "tipo",
                 "descricao",
                 "categoria",
                 "valor",
             ],
-            "Orientação": [
-                "Use o formato AAAA-MM-DD.",
-                "Use apenas receita ou despesa.",
+            "ORIENTAÇÃO": [
+                (
+                    "Use uma data válida. "
+                    "A planilha exibirá DD/MM/AAAA."
+                ),
+                "Selecione receita ou despesa.",
                 "Informe uma descrição curta.",
                 "Informe uma categoria financeira.",
                 "Use um número positivo, sem R$.",
             ],
-            "Exemplo": [
-                "2026-08-05",
+            "EXEMPLO": [
+                "05/08/2026",
                 "despesa",
                 "Compra no mercado",
                 "Alimentação",
@@ -194,40 +547,17 @@ def create_excel_template() -> bytes:
             index=False,
         )
 
-        transactions_sheet = writer.sheets[
-            TRANSACTION_SHEET_NAME
-        ]
+        transactions_sheet = writer.sheets[TRANSACTION_SHEET_NAME]
 
-        instructions_sheet = writer.sheets[
-            INSTRUCTIONS_SHEET_NAME
-        ]
+        instructions_sheet = writer.sheets[INSTRUCTIONS_SHEET_NAME]
 
-        transactions_sheet.freeze_panes = "A2"
-        instructions_sheet.freeze_panes = "A2"
+        _style_transaction_sheet(
+            transactions_sheet,
+            data_row_count=0,
+            enable_input_validation=True,
+        )
 
-        transaction_widths = {
-            "A": 14,
-            "B": 14,
-            "C": 36,
-            "D": 22,
-            "E": 16,
-        }
-
-        for column, width in transaction_widths.items():
-            transactions_sheet.column_dimensions[
-                column
-            ].width = width
-
-        instruction_widths = {
-            "A": 18,
-            "B": 46,
-            "C": 28,
-        }
-
-        for column, width in instruction_widths.items():
-            instructions_sheet.column_dimensions[
-                column
-            ].width = width
+        _style_instructions_sheet(instructions_sheet)
 
     return output.getvalue()
 
@@ -236,23 +566,13 @@ def normalize_transaction_keys(
     transactions: pd.DataFrame,
 ) -> pd.DataFrame:
     """Normaliza os campos usados na comparação de transações."""
-    normalized = prepare_transactions(
-        transactions
-    )
+    normalized = prepare_transactions(transactions)
 
-    normalized = normalized[
-        REQUIRED_TRANSACTION_COLUMNS
-    ].copy()
+    normalized = normalized[REQUIRED_TRANSACTION_COLUMNS].copy()
 
-    normalized["data"] = (
-        normalized["data"]
-        .dt.strftime("%Y-%m-%d")
-    )
+    normalized["data"] = normalized["data"].dt.strftime("%Y-%m-%d")
 
-    normalized["valor"] = (
-        normalized["valor"]
-        .round(2)
-    )
+    normalized["valor"] = normalized["valor"].round(2)
 
     return normalized
 
@@ -261,28 +581,20 @@ def create_transactions_fingerprint(
     transactions: pd.DataFrame,
 ) -> str:
     """Cria uma identificação estável baseada no conteúdo do lote."""
-    normalized = normalize_transaction_keys(
-        transactions
-    )
+    normalized = normalize_transaction_keys(transactions)
 
     # A ordem das linhas não deve alterar a identidade do mesmo lote.
-    canonical = (
-        normalized
-        .sort_values(
-            by=REQUIRED_TRANSACTION_COLUMNS,
-            kind="stable",
-        )
-        .reset_index(drop=True)
-    )
+    canonical = normalized.sort_values(
+        by=REQUIRED_TRANSACTION_COLUMNS,
+        kind="stable",
+    ).reset_index(drop=True)
 
     canonical_content = canonical.to_csv(
         index=False,
         lineterminator="\n",
     )
 
-    return hashlib.sha256(
-        canonical_content.encode("utf-8")
-    ).hexdigest()
+    return hashlib.sha256(canonical_content.encode("utf-8")).hexdigest()
 
 
 def build_import_file_path(
@@ -290,14 +602,9 @@ def build_import_file_path(
     import_dir: Path = IMPORTED_RAW_DIR,
 ) -> Path:
     """Cria o caminho de um lote usando sua identificação de conteúdo."""
-    fingerprint = create_transactions_fingerprint(
-        transactions
-    )
+    fingerprint = create_transactions_fingerprint(transactions)
 
-    file_name = (
-        "transacoes_importadas_"
-        f"{fingerprint[:16]}.csv"
-    )
+    file_name = "transacoes_importadas_" f"{fingerprint[:16]}.csv"
 
     return import_dir / file_name
 
@@ -314,8 +621,7 @@ def save_imported_transactions(
 
     if import_path.exists():
         raise FileExistsError(
-            "Este mesmo lote de transações "
-            "já foi importado anteriormente."
+            "Este mesmo lote de transações " "já foi importado anteriormente."
         )
 
     import_dir.mkdir(
@@ -323,11 +629,7 @@ def save_imported_transactions(
         exist_ok=True,
     )
 
-    transactions_to_save = (
-        prepare_transactions_for_export(
-            transactions
-        )
-    )
+    transactions_to_save = prepare_transactions_for_export(transactions)
 
     transactions_to_save.to_csv(
         import_path,
@@ -353,13 +655,9 @@ def split_imported_transactions_by_match(
             imported_transactions.iloc[0:0].copy(),
         )
 
-    imported_normalized = normalize_transaction_keys(
-        imported_transactions
-    )
+    imported_normalized = normalize_transaction_keys(imported_transactions)
 
-    existing_normalized = normalize_transaction_keys(
-        existing_transactions
-    )
+    existing_normalized = normalize_transaction_keys(existing_transactions)
 
     existing_counts = Counter(
         existing_normalized.itertuples(
@@ -383,13 +681,9 @@ def split_imported_transactions_by_match(
         else:
             new_positions.append(position)
 
-    new_transactions = imported_transactions.iloc[
-        new_positions
-    ].copy()
+    new_transactions = imported_transactions.iloc[new_positions].copy()
 
-    matching_transactions = imported_transactions.iloc[
-        matching_positions
-    ].copy()
+    matching_transactions = imported_transactions.iloc[matching_positions].copy()
 
     return (
         new_transactions,
@@ -402,11 +696,9 @@ def find_matching_transactions(
     existing_transactions: pd.DataFrame,
 ) -> pd.DataFrame:
     """Retorna as ocorrências importadas já presentes na base."""
-    _, matching_transactions = (
-        split_imported_transactions_by_match(
-            imported_transactions,
-            existing_transactions,
-        )
+    _, matching_transactions = split_imported_transactions_by_match(
+        imported_transactions,
+        existing_transactions,
     )
 
     return matching_transactions

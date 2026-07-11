@@ -337,3 +337,12 @@ Depois disso, basta preencher as transações mantendo as mesmas colunas.
 5. Verificar se houve rejeições
 6. Abrir o dashboard com python main.py
 ```
+
+---
+
+## Importação por Excel
+
+O FinanTec também aceita arquivos Excel no formato:
+
+```text
+.xlsx
