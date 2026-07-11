@@ -34,6 +34,7 @@ from src.transaction_repository import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
+DEMO_DIR = PROJECT_ROOT / "data" / "demo"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 DATABASE_DIR = PROJECT_ROOT / "database"
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -217,28 +218,60 @@ def save_to_sqlite(
         TABELA_TRANSACOES,
     )
 
+def find_transaction_files(
+    use_demo_data: bool = False,
+) -> list[Path]:
+    """Localiza arquivos reais ou de demonstração."""
+    source_dir = (
+        DEMO_DIR
+        if use_demo_data
+        else RAW_DIR
+    )
 
-def run_etl() -> pd.DataFrame:
+    return sorted(
+        source_dir.rglob(
+            "transacoes_*.csv"
+        )
+    )
+
+def run_etl(
+    use_demo_data: bool = False,
+) -> pd.DataFrame:
     """Executa todas as etapas do pipeline ETL."""
     configure_logging()
 
-    logging.info(
-        "Iniciando pipeline ETL de transações."
+    data_mode = (
+        "demonstração"
+        if use_demo_data
+        else "usuário"
     )
 
-    # Inclui fontes mensais, manuais e lotes importados.
-    csv_files = sorted(
-        RAW_DIR.rglob("transacoes_*.csv")
+    logging.info(
+        "Iniciando pipeline ETL "
+        "com dados de %s.",
+        data_mode,
+    )
+
+    csv_files = find_transaction_files(
+        use_demo_data=use_demo_data
     )
 
     if not csv_files:
+        source_dir = (
+            DEMO_DIR
+            if use_demo_data
+            else RAW_DIR
+        )
+
         raise FileNotFoundError(
             "Nenhum arquivo transacoes_*.csv "
-            "foi encontrado em data/raw/."
+            f"foi encontrado em {source_dir}."
         )
 
     raw_sources = [
-        read_raw_transactions(source_file)
+        read_raw_transactions(
+            source_file
+        )
         for source_file in csv_files
     ]
 
@@ -280,9 +313,13 @@ def run_etl() -> pd.DataFrame:
     return processed_transactions
 
 
-def run_etl_with_summary() -> dict[str, int | bool]:
+def run_etl_with_summary(
+    use_demo_data: bool = False,
+) -> dict[str, int | bool]:
     """Executa o ETL e retorna um resumo para a interface."""
-    processed_transactions = run_etl()
+    processed_transactions = run_etl(
+        use_demo_data=use_demo_data
+    )
 
     rejection_count = 0
 

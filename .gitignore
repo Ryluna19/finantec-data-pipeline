@@ -34,3 +34,10 @@ logs/*.log
 # Lotes importados pela interface
 data/raw/imported/*.csv
 !data/raw/imported/.gitkeep
+
+
+# Transações manuais do usuário
+data/raw/transacoes_manuais.csv
+
+
+
