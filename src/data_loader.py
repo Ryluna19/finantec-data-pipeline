@@ -12,10 +12,14 @@ quando o banco local ainda não foi gerado.
 from __future__ import annotations
 
 import json
-import sqlite3
+
 from pathlib import Path
 
 import pandas as pd
+
+from src.transaction_repository import (
+    load_transactions,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -81,10 +85,10 @@ def carregar_transacoes_sqlite() -> pd.DataFrame:
     """
     Carrega transações da base SQLite gerada pelo pipeline ETL.
     """
-    consulta = f"SELECT * FROM {TABELA_TRANSACOES}"
-
-    with sqlite3.connect(ARQUIVO_BANCO) as conexao:
-        return pd.read_sql_query(consulta, conexao)
+    return load_transactions(
+        database_path=ARQUIVO_BANCO,
+        table_name=TABELA_TRANSACOES,
+    )
 
 
 def carregar_transacoes_csv() -> pd.DataFrame:

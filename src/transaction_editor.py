@@ -276,7 +276,7 @@ def exibir_editor_transacoes_manuais() -> bool:
             limpar_transacoes_manuais()
 
             try:
-                resultado = executar_etl_com_resumo()
+                resultado = run_etl_with_summary()
                 st.session_state["resultado_etl"] = {
                     **resultado,
                     "mensagem": "Transações manuais removidas e ETL executado novamente.",

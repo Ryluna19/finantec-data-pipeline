@@ -11,7 +11,6 @@ O pipeline também gera um relatório com as linhas rejeitadas.
 from __future__ import annotations
 
 import logging
-import sqlite3
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +24,10 @@ from src.transaction_validation import (
     prepare_transactions,
     split_transactions_by_validity,
     validate_required_columns,
+)
+
+from src.transaction_repository import (
+    replace_transactions,
 )
 
 
@@ -202,20 +205,11 @@ def save_to_sqlite(
     transactions: pd.DataFrame,
 ) -> None:
     """Substitui a tabela SQLite pelas transações processadas."""
-    DATABASE_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
+    replace_transactions(
+        transactions=transactions,
+        database_path=ARQUIVO_BANCO,
+        table_name=TABELA_TRANSACOES,
     )
-
-    with sqlite3.connect(
-        ARQUIVO_BANCO
-    ) as connection:
-        transactions.to_sql(
-            TABELA_TRANSACOES,
-            connection,
-            if_exists="replace",
-            index=False,
-        )
 
     logging.info(
         "Dados carregados no SQLite: %s | tabela: %s",
