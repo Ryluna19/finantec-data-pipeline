@@ -31,9 +31,18 @@ DATABASE_DIR = PROJECT_ROOT / "database"
 ARQUIVO_BANCO = DATABASE_DIR / "finantec.db"
 ARQUIVO_TRANSACOES_PROCESSADAS = PROCESSED_DIR / "transacoes_processadas.csv"
 ARQUIVO_REJEICOES = PROCESSED_DIR / "transacoes_rejeitadas.csv"
-ARQUIVO_TRANSACOES_ORIGINAL = DATA_DIR / "transacoes.csv"
+
 
 TABELA_TRANSACOES = "transacoes_processadas"
+COLUNAS_TRANSACOES_VAZIAS = [
+    "data",
+    "tipo",
+    "descricao",
+    "categoria",
+    "valor",
+    "arquivo_origem",
+    "ano_mes",
+]
 
 
 def carregar_json(nome_arquivo: str) -> dict:
@@ -66,19 +75,23 @@ def carregar_produtos_financeiros() -> dict:
     """
     return carregar_json("produtos_financeiros.json")
 
+def criar_dataframe_transacoes_vazio() -> pd.DataFrame:
+    """Cria uma estrutura vazia compatível com o dashboard."""
+    return pd.DataFrame(
+        columns=COLUNAS_TRANSACOES_VAZIAS
+    )
 
-def obter_caminho_csv_transacoes() -> Path:
+def obter_caminho_csv_transacoes() -> Path | None:
     """
-    Retorna o melhor CSV de transações disponível.
+    Retorna o CSV processado, caso ele exista.
 
-    Ordem de prioridade:
-    1. CSV processado pelo ETL;
-    2. CSV original da primeira versão do projeto.
+    Dados antigos ou de demonstração não são usados
+    automaticamente como fallback.
     """
     if ARQUIVO_TRANSACOES_PROCESSADAS.exists():
         return ARQUIVO_TRANSACOES_PROCESSADAS
 
-    return ARQUIVO_TRANSACOES_ORIGINAL
+    return None
 
 
 def carregar_transacoes_sqlite() -> pd.DataFrame:
@@ -93,9 +106,12 @@ def carregar_transacoes_sqlite() -> pd.DataFrame:
 
 def carregar_transacoes_csv() -> pd.DataFrame:
     """
-    Carrega transações a partir do CSV processado ou do CSV original.
+    Carrega o CSV processado ou retorna uma base vazia.
     """
     caminho = obter_caminho_csv_transacoes()
+
+    if caminho is None:
+        return criar_dataframe_transacoes_vazio()
 
     return pd.read_csv(
         caminho,

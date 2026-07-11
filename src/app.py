@@ -21,10 +21,12 @@ from components.chat import (
     get_period_messages,
     render_chat,
 )
+from components.data_management import (
+    render_data_management,
+)
 from components.file_transfer import (
     render_transaction_file_tools,
 )
-
 from components.goals import render_goal_simulator
 from components.header import render_header
 from components.metrics import (
@@ -85,10 +87,20 @@ def load_data() -> tuple[
 def select_period(
     transactions: pd.DataFrame,
 ) -> tuple[int, str, pd.DataFrame]:
-    """Filtra as transações pelo ano e mês escolhidos na barra lateral."""
+    """Filtra transações sem bloquear a aplicação quando a base está vazia."""
+    st.sidebar.title("Filtros")
+
     if transactions.empty:
-        st.error("Não há transações disponíveis.")
-        st.stop()
+        st.sidebar.info(
+            "Adicione transações ou carregue "
+            "os dados de demonstração."
+        )
+
+        return (
+            0,
+            "Sem dados",
+            transactions.copy(),
+        )
 
     data = transactions.copy()
 
@@ -97,24 +109,38 @@ def select_period(
         errors="coerce",
     )
 
-    data["ano"] = data["data"].dt.year
-    data["mes"] = data["data"].dt.month
+    data = data.dropna(
+        subset=["data"]
+    ).copy()
+
+    if data.empty:
+        st.sidebar.warning(
+            "Nenhuma transação possui uma data válida."
+        )
+
+        return (
+            0,
+            "Sem período válido",
+            data,
+        )
+
+    data["ano"] = (
+        data["data"]
+        .dt.year
+        .astype(int)
+    )
+
+    data["mes"] = (
+        data["data"]
+        .dt.month
+        .astype(int)
+    )
 
     years = sorted(
         data["ano"]
-        .dropna()
-        .astype(int)
         .unique()
         .tolist()
     )
-
-    if not years:
-        st.error(
-            "Nenhum ano válido foi encontrado na base."
-        )
-        st.stop()
-
-    st.sidebar.title("Filtros")
 
     selected_year = st.sidebar.selectbox(
         "Ano",
@@ -128,8 +154,6 @@ def select_period(
             data["ano"] == selected_year,
             "mes",
         ]
-        .dropna()
-        .astype(int)
         .unique()
         .tolist()
     )
@@ -180,6 +204,47 @@ def select_period(
     )
 
 
+def render_empty_dashboard() -> None:
+    """Exibe uma orientação quando ainda não existem transações."""
+    st.header(
+        "Visão geral"
+    )
+
+    st.info(
+        "O dashboard ainda não possui transações para analisar."
+    )
+
+    st.markdown(
+        """
+        Para começar, você pode:
+
+        - cadastrar uma transação na aba **Transações**;
+        - importar um arquivo CSV ou Excel;
+        - carregar a base simulada na aba **Dados**.
+        """
+    )
+
+    st.caption(
+        "Os dados de demonstração são opcionais "
+        "e ficam separados dos dados reais."
+    )
+
+
+def render_unavailable_feature(
+    title: str,
+    message: str,
+) -> None:
+    """Exibe um estado vazio para recursos que dependem de transações."""
+    st.header(title)
+
+    st.info(message)
+
+    st.caption(
+        "Adicione transações reais ou carregue "
+        "a demonstração na aba Dados."
+    )
+
+
 def render_dashboard_tab(
     transactions: pd.DataFrame,
     summary: dict[str, Any],
@@ -187,13 +252,19 @@ def render_dashboard_tab(
     show_yearly_evolution: bool,
 ) -> None:
     """Compõe a visão geral do dashboard."""
-    st.header("Visão geral")
+    st.header(
+        "Visão geral"
+    )
 
-    render_financial_summary(summary)
+    render_financial_summary(
+        summary
+    )
 
     st.divider()
 
-    render_financial_diagnosis(summary)
+    render_financial_diagnosis(
+        summary
+    )
 
     st.divider()
 
@@ -240,7 +311,8 @@ def render_transactions_tab(
 ) -> None:
     """Compõe entrada, arquivos, validação e consulta de transações."""
     should_expand_editor = (
-        "resultado_etl" in st.session_state
+        "resultado_etl"
+        in st.session_state
     )
 
     with st.expander(
@@ -293,6 +365,7 @@ def render_transactions_tab(
         period_transactions
     )
 
+
 def main() -> None:
     """Executa a interface principal."""
     apply_visual_styles()
@@ -310,7 +383,67 @@ def main() -> None:
         selected_month,
         period,
         filtered_transactions,
-    ) = select_period(transactions)
+    ) = select_period(
+        transactions
+    )
+
+    has_transactions = (
+        not filtered_transactions.empty
+    )
+
+    render_header(
+        period
+    )
+
+    (
+        dashboard_tab,
+        transactions_tab,
+        goals_tab,
+        ai_tab,
+        data_tab,
+    ) = st.tabs(
+        [
+            "Dashboard",
+            "Transações",
+            "Metas",
+            "IA",
+            "Dados",
+        ]
+    )
+
+    if not has_transactions:
+        with dashboard_tab:
+            render_empty_dashboard()
+
+        with transactions_tab:
+            render_transactions_tab(
+                period_transactions=filtered_transactions,
+                all_transactions=transactions,
+                rejections=rejections,
+            )
+
+        with goals_tab:
+            render_unavailable_feature(
+                title="Metas",
+                message=(
+                    "O simulador de metas precisa "
+                    "de uma base financeira ativa."
+                ),
+            )
+
+        with ai_tab:
+            render_unavailable_feature(
+                title="Assistente financeiro",
+                message=(
+                    "O assistente precisa de transações "
+                    "para criar o contexto financeiro do período."
+                ),
+            )
+
+        with data_tab:
+            render_data_management()
+
+        return
 
     summary = calculate_financial_summary(
         filtered_transactions
@@ -339,22 +472,8 @@ def main() -> None:
         financial_products=financial_products,
     )
 
-    messages = get_period_messages(period)
-
-    render_header(period)
-
-    (
-        dashboard_tab,
-        transactions_tab,
-        goals_tab,
-        ai_tab,
-    ) = st.tabs(
-        [
-            "Dashboard",
-            "Transações",
-            "Metas",
-            "IA",
-        ]
+    messages = get_period_messages(
+        period
     )
 
     with dashboard_tab:
@@ -385,6 +504,9 @@ def main() -> None:
             messages=messages,
             context=context,
         )
+
+    with data_tab:
+        render_data_management()
 
 
 if __name__ == "__main__":

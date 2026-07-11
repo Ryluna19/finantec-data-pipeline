@@ -1,41 +1,90 @@
 :root {
-    --bg-main: #08090c;
-    --bg-sidebar: #0f1116;
+    color-scheme: dark;
 
-    --bg-panel: #121419;
-    --bg-panel-2: #17191f;
-    --bg-panel-soft: #17191f;
+    /* Fundo e superfícies */
+    --bg-main: #09090b;
+    --bg-sidebar: #09090b;
 
-    --bg-table: #111318;
-    --bg-table-head: #1a1d24;
-    --bg-table-row: #111318;
-    --bg-table-row-alt: #15171d;
+    --bg-panel: #18181b;
+    --bg-panel-2: #18181b;
+    --bg-panel-soft: #202024;
+    --bg-elevated: #27272a;
 
-    --border: rgba(255, 255, 255, 0.07);
-    --border-light: rgba(255, 255, 255, 0.12);
-    --accent-line: rgba(255, 122, 0, 0.28);
+    /* Tabelas */
+    --bg-table-head: #18181b;
+    --bg-table-row: #111113;
+    --bg-table-row-alt: #18181b;
+    --bg-table-hover: #27272a;
 
-    --text: #f7f8fb;
-    --text-main: #f7f8fb;
-    --text-soft: #a6b1c5;
-    --text-muted: #6f7a90;
+    /* Bordas */
+    --border: #27272a;
+    --border-light: #3f3f46;
+    --border-strong: #52525b;
 
-    --orange: #ff7a00;
-    --accent: #ff7a00;
+    --accent-line: rgba(249, 115, 22, 0.30);
 
+    /* Texto */
+    --text: #fafafa;
+    --text-main: #fafafa;
+    --text-soft: #d4d4d8;
+    --text-muted: #a1a1aa;
+    --text-disabled: #71717a;
+
+    /* Destaque */
+    --orange: #f97316;
+    --accent: #f97316;
+    --accent-hover: #fb923c;
+    --accent-active: #c2410c;
+    --accent-soft: rgba(249, 115, 22, 0.10);
+
+    /* Estados */
     --green: #22c55e;
     --success: #22c55e;
     --success-soft: rgba(34, 197, 94, 0.10);
 
-    --blue: #3b82f6;
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.10);
 
-    --radius: 18px;
-    --radius-lg: 18px;
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.10);
 
-    --shadow: 0 20px 40px rgba(0, 0, 0, 0.30);
-    --shadow-soft: 0 20px 40px rgba(0, 0, 0, 0.30);
+    --info: #a1a1aa;
+    --info-soft: rgba(161, 161, 170, 0.08);
+
+    /* Formatos */
+    --radius-sm: 10px;
+    --radius: 16px;
+    --radius-lg: 16px;
+
+    /* Interface plana */
+    --shadow: none;
+    --shadow-soft: none;
 }
-/* Limita a largura do conteúdo em monitores grandes. */
+
+/* =========================================================
+   ESTRUTURA PRINCIPAL
+   ========================================================= */
+
+html,
+body {
+    background: var(--bg-main);
+    color: var(--text-main);
+}
+
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    background:
+        radial-gradient(
+            circle at top center,
+            rgba(249, 115, 22, 0.035),
+            transparent 34rem
+        ),
+        var(--bg-main) !important;
+
+    color: var(--text-main);
+}
+
 [data-testid="stMainBlockContainer"] {
     width: 100%;
     max-width: 1280px;
@@ -43,80 +92,395 @@
     padding: 2rem 2rem 4rem;
 }
 
-/* Fundo geral da aplicação */
-html,
-body,
-[data-testid="stApp"],
-[data-testid="stAppViewContainer"],
-[data-testid="stMain"] {
-    background: var(--bg-main) !important;
-    color: var(--text-main);
-}
-
-/* Barra superior do Streamlit */
 [data-testid="stHeader"] {
-    background: var(--bg-main) !important;
+    background: rgba(15, 17, 21, 0.94) !important;
     border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
 }
 
-/* Área dos controles superiores */
 [data-testid="stToolbar"] {
     background: transparent !important;
 }
 
-/* Barra lateral */
 [data-testid="stSidebar"] {
     background: var(--bg-sidebar) !important;
     border-right: 1px solid var(--border);
 }
 
-/* Títulos */
-h1, h2, h3 {
-  color: var(--text-main);
-  letter-spacing: -0.02em;
+[data-testid="stSidebarContent"] {
+    background: transparent;
+}
+
+
+/* =========================================================
+   TIPOGRAFIA
+   ========================================================= */
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+html,
+body {
+    font-size: 14px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-main);
+    letter-spacing: -0.02em;
 }
 
 h1 {
-  font-weight: 800;
+    font-size: 1.875rem;
+    line-height: 1.2;
+    font-weight: 800;
 }
 
-h2, h3 {
-  font-weight: 700;
+h2 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 700;
 }
 
-/* Texto secundário */
-p, label, .stCaption, small {
-  color: var(--text-soft);
+h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 600;
 }
 
-/* Selectbox / inputs */
-.stSelectbox > div > div,
-.stTextInput > div > div > input,
-.stDateInput input {
-  background: #0d121a !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
+p {
+    color: var(--text-soft);
+    font-size: 0.875rem;
+    line-height: 1.5;
 }
 
-/* Tabs */
+label {
+    color: var(--text-soft) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+}
+
+small {
+    color: var(--text-muted);
+}
+
+[data-testid="stCaptionContainer"],
+.stCaption {
+    color: var(--text-muted) !important;
+    font-size: 0.8125rem !important;
+}
+
+[data-testid="stMarkdownContainer"] p {
+    line-height: 1.5;
+}
+
+a {
+    color: var(--accent);
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+/* =========================================================
+   INPUTS E CAMPOS
+   ========================================================= */
+
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea,
+[data-baseweb="input"] > div,
+[data-baseweb="textarea"] > div,
+[data-baseweb="select"] > div {
+    min-height: 42px;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-main) !important;
+
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--radius-sm) !important;
+
+    box-shadow: none !important;
+
+    transition:
+        border-color 140ms ease,
+        background-color 140ms ease,
+        outline-color 140ms ease;
+}
+
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea {
+    color: var(--text-main) !important;
+    caret-color: var(--accent);
+}
+
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder,
+.stDateInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: var(--text-disabled) !important;
+    opacity: 1;
+}
+
+.stTextInput input:hover,
+.stNumberInput input:hover,
+.stDateInput input:hover,
+.stTextArea textarea:hover,
+[data-baseweb="input"] > div:hover,
+[data-baseweb="textarea"] > div:hover,
+[data-baseweb="select"] > div:hover {
+    border-color: var(--border-strong) !important;
+}
+
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stDateInput input:focus,
+.stTextArea textarea:focus,
+[data-baseweb="input"] > div:focus-within,
+[data-baseweb="textarea"] > div:focus-within,
+[data-baseweb="select"] > div:focus-within {
+    border-color: var(--accent) !important;
+
+    outline: 2px solid rgba(249, 115, 22, 0.22) !important;
+    outline-offset: 1px;
+
+    box-shadow: none !important;
+}
+
+[data-baseweb="select"] span {
+    color: var(--text-main) !important;
+}
+
+[data-baseweb="popover"] {
+    background: var(--bg-elevated) !important;
+}
+
+[data-baseweb="menu"] {
+    background: var(--bg-elevated) !important;
+
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+
+    box-shadow: none;
+}
+
+[data-baseweb="menu"] li {
+    color: var(--text-soft);
+}
+
+[data-baseweb="menu"] li:hover {
+    background: var(--accent-soft) !important;
+    color: var(--text-main);
+}
+
+.stNumberInput button {
+    background: var(--bg-elevated) !important;
+    color: var(--text-soft) !important;
+
+    border-color: var(--border-light) !important;
+}
+
+.stNumberInput button:hover {
+    color: var(--text-main) !important;
+    border-color: var(--accent) !important;
+}
+
+/* =========================================================
+   BOTÕES
+   ========================================================= */
+
+.stButton > button,
+.stDownloadButton > button,
+[data-testid="stFormSubmitButton"] > button {
+    min-height: 42px;
+    padding: 0.625rem 1rem;
+
+    background: transparent;
+    color: var(--text-soft);
+
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+
+    font-size: 0.875rem;
+    font-weight: 600;
+
+    box-shadow: none;
+
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease,
+        transform 140ms ease;
+}
+
+.stButton > button:hover,
+.stDownloadButton > button:hover,
+[data-testid="stFormSubmitButton"] > button:hover {
+    background: var(--bg-elevated);
+    color: var(--text-main);
+
+    border-color: var(--accent);
+}
+
+.stButton > button:focus-visible,
+.stDownloadButton > button:focus-visible,
+[data-testid="stFormSubmitButton"] > button:focus-visible {
+    outline: 2px solid rgba(249, 115, 22, 0.40);
+    outline-offset: 2px;
+}
+
+.stButton > button:active,
+.stDownloadButton > button:active,
+[data-testid="stFormSubmitButton"] > button:active {
+    transform: translateY(1px);
+}
+
+
+/* Ação principal */
+button[kind="primary"],
+[data-testid="baseButton-primary"],
+.stButton > button[kind="primary"],
+[data-testid="stFormSubmitButton"] button[kind="primary"] {
+    background: var(--accent-active) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent) !important;
+
+    box-shadow: none !important;
+}
+
+button[kind="primary"]:hover,
+[data-testid="baseButton-primary"]:hover,
+.stButton > button[kind="primary"]:hover,
+[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent-hover) !important;
+}
+
+
+/* Estado desabilitado */
+.stButton > button:disabled,
+.stDownloadButton > button:disabled,
+[data-testid="stFormSubmitButton"] > button:disabled {
+    background: transparent !important;
+    color: var(--text-disabled) !important;
+
+    border-color: var(--border) !important;
+
+    opacity: 0.72 !important;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   ABAS
+   ========================================================= */
+
 .stTabs [data-baseweb="tab-list"] {
-  gap: 1.1rem;
-  border-bottom: 1px solid var(--border);
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--border);
 }
 
 .stTabs [data-baseweb="tab"] {
-  color: var(--text-soft);
-  padding: 0.4rem 0;
-  font-weight: 600;
+    padding: 0.55rem 0 0.65rem;
+
+    color: var(--text-muted) !important;
+    background: transparent;
+
+    font-weight: 650;
 }
 
-.stTabs [aria-selected="true"] {
-  color: #ffffff !important;
-  border-bottom: 2px solid var(--accent) !important;
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--text-soft) !important;
 }
 
-/* Cards / painéis */
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    color: var(--text-main) !important;
+}
+
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: var(--accent) !important;
+}
+
+
+/* =========================================================
+   FORMULÁRIOS, CONTAINERS E EXPANDERS
+   ========================================================= */
+
+[data-testid="stForm"] {
+    padding: 1.1rem;
+
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow-soft);
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--bg-panel);
+
+    border-color: var(--border) !important;
+    border-radius: var(--radius);
+}
+
+[data-testid="stExpander"] {
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius);
+
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+    min-height: 3rem;
+
+    background: var(--bg-panel-2);
+    color: var(--text-main);
+
+    border-bottom: 1px solid transparent;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background: var(--bg-panel-soft);
+}
+
+[data-testid="stExpander"] details[open] summary {
+    border-bottom-color: var(--border);
+}
+
+.streamlit-expanderHeader {
+    background: var(--bg-panel-2);
+    color: var(--text-main);
+}
+
+
+/* =========================================================
+   PAINÉIS PERSONALIZADOS
+   ========================================================= */
+
 .finantec-panel,
 .finantec-balance-panel,
 .finantec-mini-card,
@@ -124,13 +488,20 @@ p, label, .stCaption, small {
 .finantec-stat-card,
 .finantec-chart-panel,
 .finantec-table-panel {
-  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0)),
-              var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+
+    box-shadow: var(--shadow-soft);
 }
-/* Organização do resumo financeiro */
+
 .finantec-overview-grid {
     display: grid;
     gap: 1rem;
@@ -139,26 +510,35 @@ p, label, .stCaption, small {
 
 .finantec-mini-grid {
     display: grid;
+
     grid-template-columns: repeat(
         auto-fit,
         minmax(220px, 1fr)
     );
+
     gap: 1rem;
 }
-/* Saldo principal */
+
+
+/* =========================================================
+   SALDO PRINCIPAL
+   ========================================================= */
+
 .finantec-balance-panel {
     padding: 1.5rem;
     min-height: 190px;
-    border: 1px solid var(--accent-line);
+
+    border-color: var(--accent-line);
+
     background:
         radial-gradient(
             circle at top right,
-            rgba(255, 122, 0, 0.10),
-            transparent 34%
+            rgba(249, 115, 22, 0.12),
+            transparent 38%
         ),
         linear-gradient(
             180deg,
-            rgba(255, 255, 255, 0.01),
+            rgba(255, 255, 255, 0.025),
             rgba(255, 255, 255, 0)
         ),
         var(--bg-panel);
@@ -166,243 +546,646 @@ p, label, .stCaption, small {
 
 .finantec-balance-label,
 .finantec-mini-title {
-  color: #9fb0ca;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
+    color: #b5c0d1;
+
+    font-size: 0.78rem;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .finantec-balance-value {
-    font-size: clamp(2.5rem, 4vw, 3.4rem);
+    margin: 1rem 0 0.9rem;
+
+    color: #ffffff;
+
+    font-size: clamp(
+        2.5rem,
+        4vw,
+        3.4rem
+    );
+
     line-height: 1;
     font-weight: 800;
-    margin: 1rem 0 0.9rem;
-    color: #ffffff;
 }
 
 .finantec-balance-desc,
 .finantec-mini-desc {
-  color: var(--text-soft);
-  font-size: 0.95rem;
+    color: var(--text-soft);
+    font-size: 0.95rem;
 }
 
-/* Mini cards */
+
+/* =========================================================
+   MINI CARDS
+   ========================================================= */
+
 .finantec-mini-card {
     padding: 1.2rem;
     min-height: 130px;
 }
 
+.finantec-mini-card:hover {
+    border-color: var(--border-light);
+}
+
 .finantec-mini-value {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0.75rem 0 0.55rem;
+    margin: 0.75rem 0 0.55rem;
+
+    color: #ffffff;
+
+    font-size: 1.15rem;
+    font-weight: 800;
 }
 
 .finantec-mini-card.receita {
-  border-top: 3px solid var(--success);
+    border-top: 3px solid var(--success);
 }
 
 .finantec-mini-card.consumo {
-  border-top: 3px solid var(--accent);
+    border-top: 3px solid var(--accent);
 }
 
 .finantec-mini-card.reserva {
-  border-top: 3px solid #3b82f6;
+    border-top: 3px solid var(--blue);
 }
 
-/* Diagnóstico */
+
+/* =========================================================
+   DIAGNÓSTICO
+   ========================================================= */
+
 .finantec-diagnosis-panel {
-  padding: 1.3rem;
-  background:
-    radial-gradient(circle at top left, rgba(255, 122, 0, 0.08), transparent 28%),
-    var(--bg-panel);
+    padding: 1.3rem;
+
+    background:
+        radial-gradient(
+            circle at top left,
+            rgba(249, 115, 22, 0.08),
+            transparent 32%
+        ),
+        var(--bg-panel);
 }
 
 .finantec-diagnosis-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+
+    color: #ffffff;
+
+    font-size: 1.1rem;
+    font-weight: 800;
 }
 
 .finantec-diagnosis-text {
-  color: var(--text-soft);
-  line-height: 1.6;
-  margin-bottom: 1rem;
+    margin-bottom: 1rem;
+
+    color: var(--text-soft);
+    line-height: 1.6;
 }
 
-/* Barras */
-.finantec-bar-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  color: #b7c3d9;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.45rem;
-}
-
-.finantec-bar-track {
-  width: 100%;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.finantec-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-}
-
-.finantec-bar-fill.orange {
-  background: linear-gradient(90deg, #ff7a00, #ff9d42);
-}
-
-.finantec-bar-fill.green {
-  background: linear-gradient(90deg, #22c55e, #4ade80);
-}
-
-/* Métricas simples */
-.finantec-stat-card {
-  padding: 1rem 1.2rem;
-  min-height: 120px;
-}
-
-.finantec-stat-title {
-  color: #9fb0ca;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-}
-
-.finantec-stat-value {
-  color: #ffffff;
-  font-size: 2rem;
-  font-weight: 800;
-  margin-top: 0.7rem;
-}
 .finantec-diagnosis-grid {
     display: grid;
+
     grid-template-columns: repeat(
         auto-fit,
         minmax(280px, 1fr)
     );
+
     gap: 1.25rem;
 }
 
-/* Alertas */
+
+/* =========================================================
+   BARRAS
+   ========================================================= */
+
+.finantec-bar-label {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 1rem;
+    margin-bottom: 0.45rem;
+
+    color: var(--text-soft);
+
+    font-size: 0.85rem;
+    font-weight: 650;
+}
+
+.finantec-bar-track {
+    width: 100%;
+    height: 10px;
+
+    background: var(--bg-elevated);
+
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    overflow: hidden;
+}
+
+.finantec-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.finantec-bar-fill.orange {
+    background:
+        linear-gradient(
+            90deg,
+            var(--accent),
+            var(--accent-hover)
+        );
+}
+
+.finantec-bar-fill.green {
+    background:
+        linear-gradient(
+            90deg,
+            #22c55e,
+            #4ade80
+        );
+}
+
+
+/* =========================================================
+   MÉTRICAS PERSONALIZADAS
+   ========================================================= */
+
+.finantec-stat-card {
+    padding: 1rem 1.2rem;
+    min-height: 120px;
+}
+
+.finantec-stat-title {
+    color: #b5c0d1;
+
+    font-size: 0.8rem;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.finantec-stat-value {
+    margin-top: 0.7rem;
+
+    color: #ffffff;
+
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   MÉTRICAS NATIVAS
+   ========================================================= */
+
+[data-testid="stMetric"] {
+    min-height: 108px;
+    padding: 1rem 1.1rem;
+
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--text-muted) !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: var(--text-main) !important;
+    font-weight: 750;
+}
+
+
+/* =========================================================
+   ALERTAS
+   ========================================================= */
+
 [data-testid="stAlert"] {
-  border-radius: 14px;
-  border: 1px solid var(--border);
+    background: var(--bg-panel-2) !important;
+    color: var(--text-main);
+
+    border: 1px solid var(--border) !important;
+    border-left-width: 4px !important;
+    border-radius: var(--radius);
+
+    box-shadow: none;
+}
+
+[data-testid="stAlert"] p {
+    color: var(--text-soft) !important;
 }
 
 [data-testid="stAlert"][kind="info"] {
-  background: rgba(255, 122, 0, 0.08);
-  border-color: rgba(255, 122, 0, 0.20);
+    border-left-color: var(--info) !important;
 }
 
 [data-testid="stAlert"][kind="success"] {
-  background: var(--success-soft);
-  border-color: rgba(34, 197, 94, 0.22);
+    border-left-color: var(--success) !important;
 }
 
 [data-testid="stAlert"][kind="warning"] {
-  background: rgba(245, 158, 11, 0.10);
-  border-color: rgba(245, 158, 11, 0.22);
+    border-left-color: var(--warning) !important;
 }
 
-/* Expanders */
-.streamlit-expanderHeader {
-  background: var(--bg-panel-soft);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
-/* Tabelas HTML personalizadas */
-.finantec-table-panel {
-  padding: 0;
-  overflow: hidden;
-}
-
-.finantec-table {
-  width: 100%;
-  border-collapse: collapse;
-  overflow: hidden;
-}
-
-.finantec-table thead th {
-  background: var(--bg-table-head);
-  color: #b8c2d7;
-  font-size: 0.85rem;
-  text-align: left;
-  padding: 0.95rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.finantec-table tbody td {
-  padding: 0.95rem 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  color: #eef2f8;
-}
-
-.finantec-table tbody tr:nth-child(odd) {
-  background: var(--bg-table-row);
-}
-
-.finantec-table tbody tr:nth-child(even) {
-  background: var(--bg-table-row-alt);
-}
-
-.finantec-table tbody tr:hover {
-  background: rgba(255, 122, 0, 0.06);
-}
-
-/* Dataframe do Streamlit */
-[data-testid="stDataFrame"] {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-/* Separadores */
-hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 2rem 0;
+[data-testid="stAlert"][kind="error"] {
+    border-left-color: var(--danger) !important;
 }
 
 .finantec-alert {
-    padding: 0.9rem 1rem;
     margin: 0.75rem 0;
+    padding: 0.9rem 1rem;
+
+    background: var(--bg-panel-2);
+    color: var(--text-soft);
+
     border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+
     line-height: 1.5;
 }
 
 .finantec-alert.info {
-    background: rgba(59, 130, 246, 0.10);
-    border-color: rgba(59, 130, 246, 0.25);
-}
-
-.finantec-alert.warning {
-    background: rgba(245, 158, 11, 0.10);
-    border-color: rgba(245, 158, 11, 0.25);
+    border-left-color: var(--info);
 }
 
 .finantec-alert.success {
-    background: var(--success-soft);
-    border-color: rgba(34, 197, 94, 0.25);
+    border-left-color: var(--success);
+}
+
+.finantec-alert.warning {
+    border-left-color: var(--warning);
 }
 
 .finantec-alert.error {
-    background: rgba(239, 68, 68, 0.10);
-    border-color: rgba(239, 68, 68, 0.25);
+    border-left-color: var(--danger);
 }
+
+
+/* =========================================================
+   TABELAS PERSONALIZADAS
+   ========================================================= */
+
+.finantec-table-panel {
+    padding: 0;
+    overflow: hidden;
+}
+
+.finantec-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.finantec-table thead th {
+    padding: 0.95rem 1rem;
+
+    background: var(--bg-table-head);
+    color: var(--text-soft);
+
+    border-bottom: 1px solid var(--border-light);
+
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: left;
+}
+
+.finantec-table tbody td {
+    padding: 0.95rem 1rem;
+
+    color: var(--text-main);
+
+    border-bottom: 1px solid var(--border);
+}
+
+.finantec-table tbody tr:nth-child(odd) {
+    background: var(--bg-table-row);
+}
+
+.finantec-table tbody tr:nth-child(even) {
+    background: var(--bg-table-row-alt);
+}
+
+.finantec-table tbody tr:hover {
+    background: var(--bg-table-hover);
+}
+
+
+/* =========================================================
+   DATAFRAME E DATA EDITOR
+   ========================================================= */
+
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"] {
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   DIVISORES
+   ========================================================= */
+
+hr {
+    margin: 2rem 0;
+
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* =========================================================
+   AJUSTE 2 — LEGIBILIDADE E BOTÕES
+   ========================================================= */
+
+/* ---------- Tipos menores dos cards e painéis ---------- */
+
+.finantec-balance-desc,
+.finantec-mini-desc,
+.finantec-diagnosis-text,
+.finantec-alert,
+[data-testid="stCaptionContainer"],
+.stCaption {
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
+}
+
+.finantec-balance-label,
+.finantec-mini-title,
+.finantec-stat-title {
+    font-size: 0.82rem !important;
+    letter-spacing: 0.08em;
+    color: #c4c7d1 !important;
+}
+
+.finantec-mini-value {
+    font-size: 1.45rem !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+}
+
+.finantec-stat-value {
+    font-size: 2.15rem !important;
+    line-height: 1.08 !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+}
+
+.finantec-diagnosis-title {
+    font-size: 1.28rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+}
+
+.finantec-bar-label {
+    font-size: 0.9rem !important;
+    color: #e4e4e7 !important;
+}
+
+
+/* ---------- Métricas nativas do Streamlit ---------- */
+
+[data-testid="stMetric"] {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.01),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel) !important;
+
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    padding: 1rem 1.15rem !important;
+    min-height: 122px !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #d4d4d8 !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #ffffff !important;
+    font-size: clamp(2rem, 2.4vw, 2.4rem) !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+}
+
+
+/* ---------- Base de todos os botões ---------- */
+
+.stButton > button,
+.stDownloadButton > button,
+[data-testid="stFormSubmitButton"] > button,
+[data-testid="stFileUploader"] button {
+    min-height: 44px !important;
+    padding: 0.72rem 1rem !important;
+
+    border-radius: 10px !important;
+
+    font-size: 0.94rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+
+    box-shadow: none !important;
+
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease,
+        transform 140ms ease;
+}
+
+
+/* ---------- Botões secundários ativos ---------- */
+
+.stButton > button:not([kind="primary"]):not(:disabled),
+.stDownloadButton > button:not(:disabled),
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled),
+[data-testid="stFileUploader"] button:not(:disabled) {
+    background: #202226 !important;
+    color: #f4f4f5 !important;
+
+    border: 1px solid #52525b !important;
+
+    opacity: 1 !important;
+}
+
+.stButton > button:not([kind="primary"]):not(:disabled):hover,
+.stDownloadButton > button:not(:disabled):hover,
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled):hover,
+[data-testid="stFileUploader"] button:not(:disabled):hover {
+    background: #292b31 !important;
+    color: #ffffff !important;
+
+    border-color: #f97316 !important;
+}
+
+.stButton > button:focus-visible,
+.stDownloadButton > button:focus-visible,
+[data-testid="stFormSubmitButton"] > button:focus-visible,
+[data-testid="stFileUploader"] button:focus-visible {
+    outline: 2px solid rgba(249, 115, 22, 0.42) !important;
+    outline-offset: 2px !important;
+}
+
+.stButton > button:active,
+.stDownloadButton > button:active,
+[data-testid="stFormSubmitButton"] > button:active,
+[data-testid="stFileUploader"] button:active {
+    transform: translateY(1px);
+}
+
+
+/* Mantém texto e ícones claros dentro dos botões */
+.stButton > button p,
+.stDownloadButton > button p,
+[data-testid="stFormSubmitButton"] > button p,
+[data-testid="stFileUploader"] button p,
+.stButton > button span,
+.stDownloadButton > button span,
+[data-testid="stFormSubmitButton"] > button span,
+[data-testid="stFileUploader"] button span,
+.stButton > button svg,
+.stDownloadButton > button svg,
+[data-testid="stFormSubmitButton"] > button svg,
+[data-testid="stFileUploader"] button svg {
+    color: inherit !important;
+    fill: currentColor;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    opacity: 1 !important;
+}
+
+
+/* ---------- Botão principal ---------- */
+
+button[kind="primary"]:not(:disabled),
+[data-testid="baseButton-primary"]:not(:disabled),
+.stButton > button[kind="primary"]:not(:disabled),
+[data-testid="stFormSubmitButton"]
+    button[kind="primary"]:not(:disabled) {
+    background: #d94f08 !important;
+    color: #ffffff !important;
+
+    border: 1px solid #f97316 !important;
+
+    box-shadow: none !important;
+}
+
+button[kind="primary"]:not(:disabled):hover,
+[data-testid="baseButton-primary"]:not(:disabled):hover,
+.stButton > button[kind="primary"]:not(:disabled):hover,
+[data-testid="stFormSubmitButton"]
+    button[kind="primary"]:not(:disabled):hover {
+    background: #f97316 !important;
+    color: #ffffff !important;
+
+    border-color: #fb923c !important;
+}
+
+
+/* ---------- Botões desabilitados ---------- */
+
+.stButton > button:disabled,
+.stDownloadButton > button:disabled,
+[data-testid="stFormSubmitButton"] > button:disabled,
+[data-testid="stFileUploader"] button:disabled {
+    background: #121317 !important;
+    color: #707078 !important;
+
+    border: 1px solid #292a30 !important;
+
+    font-weight: 600 !important;
+
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+
+.stButton > button:disabled p,
+.stDownloadButton > button:disabled p,
+[data-testid="stFormSubmitButton"] > button:disabled p,
+.stButton > button:disabled span,
+.stDownloadButton > button:disabled span,
+[data-testid="stFormSubmitButton"] > button:disabled span,
+.stButton > button:disabled svg,
+.stDownloadButton > button:disabled svg,
+[data-testid="stFormSubmitButton"] > button:disabled svg {
+    color: #707078 !important;
+    fill: currentColor;
+    opacity: 1 !important;
+}
+
+
+/* ---------- Upload / file uploader ---------- */
+
+[data-testid="stFileUploader"] section {
+    background: #1a1d24 !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 12px !important;
+}
+
+[data-testid="stFileUploader"] button {
+    background: #13161c !important;
+    color: #fafafa !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stFileUploader"] button:hover {
+    background: #232833 !important;
+    border-color: #f97316 !important;
+}
+
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] label {
+    color: #d4d4d8 !important;
+}
+
+
+/* ---------- Tabela mais legível ---------- */
+
+.finantec-table thead th {
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    color: #d4d4d8 !important;
+}
+
+.finantec-table tbody td {
+    font-size: 0.92rem !important;
+    color: #f4f4f5 !important;
+}
+
+[data-testid="stDataFrame"] * {
+    font-size: 0.92rem !important;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
 @media (max-width: 900px) {
     [data-testid="stMainBlockContainer"] {
@@ -420,4 +1203,62 @@ hr {
     .finantec-mini-card {
         min-height: auto;
     }
+
+    [data-testid="stMetricValue"] {
+        font-size: 1.85rem !important;
+    }
+
+    .finantec-mini-value,
+    .finantec-stat-value {
+        font-size: 1.8rem !important;
+    }
+
+    .stButton > button,
+    .stDownloadButton > button,
+    [data-testid="stFormSubmitButton"] > button {
+        width: 100% !important;
+    }
 }
+
+
+@media (max-width: 560px) {
+    [data-testid="stMainBlockContainer"] {
+        padding: 1rem 0.8rem 2.5rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.55rem;
+    }
+
+    .finantec-balance-panel,
+    .finantec-mini-card,
+    .finantec-diagnosis-panel,
+    .finantec-stat-card {
+        border-radius: 14px;
+    }
+
+    .finantec-balance-panel {
+        padding: 1.2rem;
+    }
+
+    .finantec-balance-value {
+        font-size: 2.35rem;
+    }
+
+    .finantec-table {
+        min-width: 620px;
+    }
+
+    .finantec-table-panel {
+        overflow-x: auto;
+    }
+
+    [data-testid="stMetric"] {
+        min-height: auto;
+    }
+}
+

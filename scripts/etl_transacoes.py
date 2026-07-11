@@ -80,6 +80,7 @@ def configure_logging() -> None:
             ),
             logging.StreamHandler(),
         ],
+        force=True,
     )
 
 
