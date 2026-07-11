@@ -1,22 +1,42 @@
 ﻿data,tipo,descricao,categoria,valor,arquivo_origem,ano_mes
+2026-06-01,despesa,Passagem de ônibus,Transporte,120.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-01,despesa,Passagem de ônibus,Transporte,120.0,transacoes_2026_06.csv,2026-06
+2026-06-03,despesa,Recarga do celular,Serviços,35.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-03,despesa,Recarga do celular,Serviços,35.0,transacoes_2026_06.csv,2026-06
+2026-06-04,despesa,Plano de internet compartilhado,Serviços,60.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-04,despesa,Plano de internet compartilhado,Serviços,60.0,transacoes_2026_06.csv,2026-06
+2026-06-05,receita,Bolsa-estágio,Trabalho,1600.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-05,receita,Bolsa-estágio,Trabalho,1600.0,transacoes_2026_06.csv,2026-06
+2026-06-06,despesa,Almoço próximo ao estágio,Alimentação,48.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-06,despesa,Almoço próximo ao estágio,Alimentação,48.0,transacoes_2026_06.csv,2026-06
+2026-06-07,despesa,Compra no mercado,Alimentação,185.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-07,despesa,Compra no mercado,Alimentação,185.0,transacoes_2026_06.csv,2026-06
+2026-06-09,despesa,Assinatura de streaming,Assinaturas,29.9,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-09,despesa,Assinatura de streaming,Assinaturas,29.9,transacoes_2026_06.csv,2026-06
+2026-06-10,despesa,Curso complementar,Educação,79.9,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-10,despesa,Curso complementar,Educação,79.9,transacoes_2026_06.csv,2026-06
+2026-06-12,despesa,Lanche por aplicativo,Alimentação,42.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-12,despesa,Lanche por aplicativo,Alimentação,42.0,transacoes_2026_06.csv,2026-06
+2026-06-14,despesa,Cinema com amigos,Lazer,38.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-14,despesa,Cinema com amigos,Lazer,38.0,transacoes_2026_06.csv,2026-06
+2026-06-16,despesa,Medicamento,Saúde,26.5,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-16,despesa,Medicamento,Saúde,26.5,transacoes_2026_06.csv,2026-06
+2026-06-18,despesa,Compra de roupa,Compras,110.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-18,despesa,Compra de roupa,Compras,110.0,transacoes_2026_06.csv,2026-06
+2026-06-20,despesa,Passagem de ônibus,Transporte,120.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-20,despesa,Passagem de ônibus,Transporte,120.0,transacoes_2026_06.csv,2026-06
+2026-06-22,despesa,Almoço próximo ao estágio,Alimentação,52.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-22,despesa,Almoço próximo ao estágio,Alimentação,52.0,transacoes_2026_06.csv,2026-06
+2026-06-24,despesa,Lanche por aplicativo,Alimentação,39.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-24,despesa,Lanche por aplicativo,Alimentação,39.0,transacoes_2026_06.csv,2026-06
+2026-06-26,despesa,Presente de aniversário,Compras,65.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-26,despesa,Presente de aniversário,Compras,65.0,transacoes_2026_06.csv,2026-06
+2026-06-28,despesa,Saída com amigos,Lazer,55.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-28,despesa,Saída com amigos,Lazer,55.0,transacoes_2026_06.csv,2026-06
+2026-06-30,despesa,Transferência para reserva,Reserva,200.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
+2026-06-30,despesa,Transferência para reserva,Reserva,200.0,transacoes_importadas_485963a99a4215f9.csv,2026-06
 2026-06-30,despesa,Transferência para reserva,Reserva,200.0,transacoes_2026_06.csv,2026-06
+2026-06-30,receita,Presente Misterioso,Serviços,4000.0,transacoes_importadas_01d270ed40a94e25.csv,2026-06
 2026-07-02,despesa,Passagem de ônibus,Transporte,120.0,transacoes_2026_07.csv,2026-07
 2026-07-03,despesa,Plano de internet compartilhado,Serviços,60.0,transacoes_2026_07.csv,2026-07
 2026-07-04,despesa,Compra no mercado,Alimentação,210.0,transacoes_2026_07.csv,2026-07

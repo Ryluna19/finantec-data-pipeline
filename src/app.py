@@ -234,7 +234,8 @@ def render_dashboard_tab(
 
 
 def render_transactions_tab(
-    transactions: pd.DataFrame,
+    period_transactions: pd.DataFrame,
+    all_transactions: pd.DataFrame,
     rejections: pd.DataFrame,
 ) -> None:
     """Compõe entrada, arquivos, validação e consulta de transações."""
@@ -246,40 +247,51 @@ def render_transactions_tab(
         "Entrada manual de transações",
         expanded=should_expand_editor,
     ):
-        etl_executed = (
+        manual_etl_executed = (
             render_manual_transaction_editor()
         )
 
-    if etl_executed:
+    if manual_etl_executed:
         load_data.clear()
         st.rerun()
 
+    should_expand_files = (
+        "file_import_result"
+        in st.session_state
+    )
+
     with st.expander(
         "Importar ou exportar transações",
+        expanded=should_expand_files,
     ):
-        render_transaction_file_tools(
-            transactions
+        file_import_executed = (
+            render_transaction_file_tools(
+                period_transactions=period_transactions,
+                existing_transactions=all_transactions,
+            )
         )
 
+    if file_import_executed:
+        load_data.clear()
+        st.rerun()
+
     st.caption(
-        "Transações manuais aparecem nos indicadores "
-        "após o processamento do ETL e no período "
-        "correspondente à data cadastrada."
+        "Transações manuais e importadas aparecem "
+        "nos indicadores após o processamento do ETL."
     )
 
     st.divider()
 
     render_data_validation(
-        len(transactions),
+        len(period_transactions),
         rejections,
     )
 
     st.divider()
 
     render_period_transactions(
-        transactions
+        period_transactions
     )
-
 
 def main() -> None:
     """Executa a interface principal."""
@@ -357,7 +369,8 @@ def main() -> None:
 
     with transactions_tab:
         render_transactions_tab(
-            transactions=filtered_transactions,
+            period_transactions=filtered_transactions,
+            all_transactions=transactions,
             rejections=rejections,
         )
 

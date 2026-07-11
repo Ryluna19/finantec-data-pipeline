@@ -30,3 +30,7 @@ database/*.sqlite3
 # Logs locais
 logs/*.log
 !logs/.gitkeep
+
+# Lotes importados pela interface
+data/raw/imported/*.csv
+!data/raw/imported/.gitkeep

@@ -232,8 +232,9 @@ def run_etl() -> pd.DataFrame:
         "Iniciando pipeline ETL de transações."
     )
 
+    # Inclui fontes mensais, manuais e lotes importados.
     csv_files = sorted(
-        RAW_DIR.glob("transacoes_*.csv")
+        RAW_DIR.rglob("transacoes_*.csv")
     )
 
     if not csv_files:
