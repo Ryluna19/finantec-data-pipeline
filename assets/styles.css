@@ -1262,3 +1262,373 @@ button[kind="primary"]:not(:disabled):hover,
     }
 }
 
+/* =========================================================
+   AJUSTE 3 — ALERTAS E EXPANDERS
+   ========================================================= */
+
+/* Garante texto branco dentro do botão principal. */
+button[kind="primary"] p,
+button[kind="primary"] span,
+[data-testid="baseButton-primary"] p,
+[data-testid="baseButton-primary"] span,
+.stButton > button[kind="primary"] p,
+.stButton > button[kind="primary"] span,
+[data-testid="stFormSubmitButton"] button[kind="primary"] p,
+[data-testid="stFormSubmitButton"] button[kind="primary"] span {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+}
+
+
+/* Alertas nativos passam a usar uma superfície neutra. */
+[data-testid="stAlert"],
+[data-baseweb="notification"] {
+    min-height: auto !important;
+    padding: 0.85rem 1rem !important;
+
+    background: #18181b !important;
+    color: #d4d4d8 !important;
+
+    border: 1px solid #27272a !important;
+    border-left: 4px solid #3f3f46 !important;
+    border-radius: 12px !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stAlert"] > div,
+[data-baseweb="notification"] > div {
+    background: transparent !important;
+}
+
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] span,
+[data-baseweb="notification"] p,
+[data-baseweb="notification"] span {
+    color: #d4d4d8 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.5 !important;
+}
+
+
+/* Informação: cinza, sem bloco azul. */
+[data-testid="stAlert"][kind="info"],
+[data-baseweb="notification"][kind="info"] {
+    border-left-color: #71717a !important;
+}
+
+
+/* Sucesso: superfície neutra com detalhe verde. */
+[data-testid="stAlert"][kind="success"],
+[data-baseweb="notification"][kind="success"] {
+    border-left-color: #22c55e !important;
+}
+
+
+/* Aviso: superfície neutra com detalhe âmbar. */
+[data-testid="stAlert"][kind="warning"],
+[data-baseweb="notification"][kind="warning"] {
+    border-left-color: #f59e0b !important;
+}
+
+
+/* Erro: superfície neutra com detalhe vermelho. */
+[data-testid="stAlert"][kind="error"],
+[data-baseweb="notification"][kind="error"] {
+    border-left-color: #ef4444 !important;
+}
+
+
+/* Alertas HTML personalizados seguem a mesma regra. */
+.finantec-alert {
+    background: #18181b !important;
+    color: #d4d4d8 !important;
+
+    border: 1px solid #27272a !important;
+    border-left: 4px solid #3f3f46 !important;
+    border-radius: 12px !important;
+
+    box-shadow: none !important;
+}
+
+.finantec-alert.info {
+    border-left-color: #71717a !important;
+}
+
+.finantec-alert.success {
+    border-left-color: #22c55e !important;
+}
+
+.finantec-alert.warning {
+    border-left-color: #f59e0b !important;
+}
+
+.finantec-alert.error {
+    border-left-color: #ef4444 !important;
+}
+
+
+/* Expander mais claramente separado do conteúdo. */
+[data-testid="stExpander"] {
+    background: #111113 !important;
+
+    border: 1px solid #3f3f46 !important;
+    border-radius: 14px !important;
+
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+    min-height: 48px !important;
+    padding: 0 1rem !important;
+
+    background: #18181b !important;
+    color: #fafafa !important;
+
+    border-bottom: 1px solid transparent !important;
+
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background: #202024 !important;
+}
+
+[data-testid="stExpander"] details[open] summary {
+    border-bottom-color: #3f3f46 !important;
+}
+
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary svg {
+    color: #fafafa !important;
+    fill: currentColor;
+}
+
+/* =========================================================
+   CORREÇÃO — BOTÃO PRIMÁRIO DESABILITADO
+   ========================================================= */
+
+button[kind="primary"]:disabled,
+[data-testid="baseButton-primary"]:disabled,
+.stButton > button[kind="primary"]:disabled,
+[data-testid="stFormSubmitButton"] button[kind="primary"]:disabled {
+    background: #121317 !important;
+    color: #707078 !important;
+
+    border: 1px solid #292a30 !important;
+
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+
+button[kind="primary"]:disabled p,
+button[kind="primary"]:disabled span,
+button[kind="primary"]:disabled svg,
+[data-testid="baseButton-primary"]:disabled p,
+[data-testid="baseButton-primary"]:disabled span,
+[data-testid="baseButton-primary"]:disabled svg,
+.stButton > button[kind="primary"]:disabled p,
+.stButton > button[kind="primary"]:disabled span,
+.stButton > button[kind="primary"]:disabled svg,
+[data-testid="stFormSubmitButton"]
+    button[kind="primary"]:disabled p,
+[data-testid="stFormSubmitButton"]
+    button[kind="primary"]:disabled span,
+[data-testid="stFormSubmitButton"]
+    button[kind="primary"]:disabled svg {
+    color: #707078 !important;
+    fill: currentColor !important;
+
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* =========================================================
+   AJUSTE 4 — HIERARQUIA DA AÇÃO PRINCIPAL
+   ========================================================= */
+
+/* Botão primário ativo do Streamlit e dos formulários. */
+button[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="stFormSubmitButton"] button:not(:disabled) {
+    background: #e85d04 !important;
+    color: #ffffff !important;
+
+    border: 1px solid #f97316 !important;
+    border-radius: 10px !important;
+
+    font-weight: 700 !important;
+
+    box-shadow: none !important;
+}
+
+button[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="stFormSubmitButton"] button:not(:disabled):hover {
+    background: #f97316 !important;
+    color: #ffffff !important;
+
+    border-color: #fb923c !important;
+}
+
+button[data-testid="baseButton-primary"]:not(:disabled) p,
+button[data-testid="baseButton-primary"]:not(:disabled) span,
+[data-testid="stFormSubmitButton"] button:not(:disabled) p,
+[data-testid="stFormSubmitButton"] button:not(:disabled) span {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+}
+
+
+/* Primário desabilitado deve parecer realmente indisponível. */
+button[data-testid="baseButton-primary"]:disabled,
+[data-testid="stFormSubmitButton"] button:disabled {
+    background: #111216 !important;
+    color: #6f6f78 !important;
+
+    border: 1px solid #292a30 !important;
+
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+
+button[data-testid="baseButton-primary"]:disabled p,
+button[data-testid="baseButton-primary"]:disabled span,
+button[data-testid="baseButton-primary"]:disabled svg,
+[data-testid="stFormSubmitButton"] button:disabled p,
+[data-testid="stFormSubmitButton"] button:disabled span,
+[data-testid="stFormSubmitButton"] button:disabled svg {
+    color: #6f6f78 !important;
+    fill: currentColor !important;
+
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Formulário sem borda, mas com espaçamento organizado. */
+[data-testid="stForm"] {
+    padding: 0.35rem 0 0.5rem !important;
+
+    background: transparent !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stForm"] [data-testid="stVerticalBlock"] {
+    gap: 0.8rem;
+}
+
+/* =========================================================
+   AJUSTE 5 — RESUMO LOCAL
+   ========================================================= */
+
+.finantec-section-heading {
+    margin: 1.5rem 0 0.85rem;
+}
+
+.finantec-section-heading h3 {
+    margin: 0;
+
+    color: #fafafa;
+
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.finantec-section-heading p {
+    margin: 0.35rem 0 0;
+
+    color: #a1a1aa;
+
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+
+.finantec-data-summary-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(190px, 1fr)
+    );
+
+    gap: 1rem;
+
+    margin-bottom: 1.25rem;
+}
+
+
+.finantec-data-summary-card {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 132px;
+    padding: 1.1rem 1.2rem;
+
+    background: #18181b;
+
+    border: 1px solid #27272a;
+    border-top: 3px solid #3f3f46;
+    border-radius: 16px;
+}
+
+
+.finantec-data-summary-label {
+    color: #a1a1aa;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+
+.finantec-data-summary-value {
+    margin: 0.7rem 0 0.45rem;
+
+    color: #fafafa;
+
+    font-size: 1.65rem;
+    line-height: 1.1;
+    font-weight: 800;
+}
+
+
+.finantec-data-summary-value.available {
+    color: #22c55e;
+}
+
+
+.finantec-data-summary-value.unavailable {
+    color: #a1a1aa;
+}
+
+
+.finantec-data-summary-description {
+    margin-top: auto;
+
+    color: #a1a1aa;
+
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+
+@media (max-width: 560px) {
+    .finantec-data-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-data-summary-card {
+        min-height: auto;
+    }
+}
+

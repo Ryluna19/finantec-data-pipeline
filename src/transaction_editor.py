@@ -554,7 +554,7 @@ def render_manual_transaction_form(
             "manual_transaction_form_"
             f"{form_version}"
         ),
-        border=True,
+        border=False,
     ):
         transaction_date = st.date_input(
             "Data",

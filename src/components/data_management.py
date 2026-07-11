@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+
 from scripts.etl_transacoes import (
     run_etl_with_summary,
 )
@@ -116,38 +117,87 @@ def _render_current_mode() -> None:
 
 
 def _render_data_summary() -> dict[str, int | bool]:
-    """Exibe um resumo dos dados locais encontrados."""
-    summary = (
-        summarize_user_transaction_data()
+    """Exibe um resumo visual dos dados locais encontrados."""
+    summary = summarize_user_transaction_data()
+
+    database_available = bool(
+        summary["database_exists"]
     )
 
-    st.markdown(
-        "#### Resumo local"
-    )
-
-    st.write(
-        "Arquivos de origem do usuário: "
-        f"**{summary['source_files']}**"
-    )
-
-    st.write(
-        "Arquivos processados: "
-        f"**{summary['processed_files']}**"
-    )
-
-    database_status = (
+    database_label = (
         "Disponível"
-        if summary["database_exists"]
+        if database_available
         else "Não criado"
     )
 
-    st.write(
-        "Banco SQLite: "
-        f"**{database_status}**"
+    database_value_class = (
+        "finantec-data-summary-value available"
+        if database_available
+        else "finantec-data-summary-value unavailable"
+    )
+
+    heading_html = (
+        '<div class="finantec-section-heading">'
+        "<h3>Resumo local</h3>"
+        "<p>"
+        "Situação dos arquivos e do banco usados pelo dashboard."
+        "</p>"
+        "</div>"
+    )
+
+    summary_html = (
+        '<div class="finantec-data-summary-grid">'
+
+        '<div class="finantec-data-summary-card">'
+        '<span class="finantec-data-summary-label">'
+        "Fontes do usuário"
+        "</span>"
+        '<strong class="finantec-data-summary-value">'
+        f'{summary["source_files"]}'
+        "</strong>"
+        '<span class="finantec-data-summary-description">'
+        "Arquivos encontrados em data/raw."
+        "</span>"
+        "</div>"
+
+        '<div class="finantec-data-summary-card">'
+        '<span class="finantec-data-summary-label">'
+        "Arquivos processados"
+        "</span>"
+        '<strong class="finantec-data-summary-value">'
+        f'{summary["processed_files"]}'
+        "</strong>"
+        '<span class="finantec-data-summary-description">'
+        "Saídas geradas pelo pipeline ETL."
+        "</span>"
+        "</div>"
+
+        '<div class="finantec-data-summary-card">'
+        '<span class="finantec-data-summary-label">'
+        "Banco SQLite"
+        "</span>"
+        f'<strong class="{database_value_class}">'
+        f"{database_label}"
+        "</strong>"
+        '<span class="finantec-data-summary-description">'
+        "Base atualmente usada pelo dashboard."
+        "</span>"
+        "</div>"
+
+        "</div>"
+    )
+
+    st.markdown(
+        heading_html,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        summary_html,
+        unsafe_allow_html=True,
     )
 
     return summary
-
 
 def _render_user_data_action(
     summary: dict[str, int | bool],
