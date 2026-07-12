@@ -1948,6 +1948,62 @@ button:not(:disabled):hover {
     border-color: var(--danger) !important;
 }
 
+/* =========================================================
+   GERENCIAMENTO DE TRANSAÇÕES PERSISTIDAS
+   ========================================================= */
+
+.st-key-persisted-transaction-management {
+    margin-top: 1rem;
+}
+
+.st-key-persisted-transaction-management
+[data-testid="stExpander"] {
+    border-color:
+        var(--border-light) !important;
+}
+
+.st-key-persisted-transaction-management
+[data-testid="stExpander"]
+[data-testid="stAlert"] {
+    margin-top: 0.75rem;
+}
+
+
+/* Ação destrutiva habilitada */
+
+[class*="st-key-delete-persisted-transaction-"]
+button:not(:disabled) {
+    min-width: 180px;
+
+    background: #b91c1c !important;
+    color: #ffffff !important;
+
+    border-color:
+        var(--danger) !important;
+}
+
+[class*="st-key-delete-persisted-transaction-"]
+button:not(:disabled):hover {
+    background: #dc2626 !important;
+
+    border-color:
+        #f87171 !important;
+}
+
+
+/* Ação destrutiva bloqueada */
+
+[class*="st-key-delete-persisted-transaction-"]
+button:disabled {
+    background:
+        rgba(127, 29, 29, 0.10) !important;
+
+    color: #86585d !important;
+
+    border-color:
+        rgba(127, 29, 29, 0.50) !important;
+}
+
 
 /* =========================================================
    ZONA DE RISCO
@@ -2251,6 +2307,11 @@ hr {
 
 
 @media (max-width: 560px) {
+  [class*="st-key-delete-persisted-transaction-"]
+    button {
+        width: 100% !important;
+        min-width: 0;
+    }
     [data-testid="stMainBlockContainer"] {
         padding: 4rem 0.8rem 2.5rem;
     }

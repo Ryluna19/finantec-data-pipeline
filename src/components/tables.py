@@ -484,8 +484,8 @@ def filter_transactions_table(
 
 def render_period_transactions(
     transactions: pd.DataFrame,
-) -> None:
-    """Exibe as transações e os totais dos filtros aplicados."""
+) -> pd.DataFrame:
+    """Exibe as transações e retorna as linhas filtradas."""
     with st.container(
         border=True,
         key="period-transactions-card",
@@ -504,7 +504,12 @@ def render_period_transactions(
                 "Nenhuma transação encontrada "
                 "para o período selecionado."
             )
-            return
+
+            return (
+                transactions.iloc[
+                    0:0
+                ].copy()
+            )
 
         filtered_transactions = (
             filter_transactions_table(
@@ -539,7 +544,9 @@ def render_period_transactions(
             ):
                 st.metric(
                     "Transações",
-                    len(filtered_transactions),
+                    len(
+                        filtered_transactions
+                    ),
                 )
 
         with income_column:
@@ -569,14 +576,23 @@ def render_period_transactions(
                 "Nenhuma transação corresponde "
                 "aos filtros selecionados."
             )
-            return
+
+            return (
+                filtered_transactions.copy()
+            )
+
+        sorted_transactions = (
+            filtered_transactions
+            .sort_values(
+                by="data",
+                ascending=False,
+            )
+            .copy()
+        )
 
         table = (
             prepare_transactions_for_display(
-                filtered_transactions.sort_values(
-                    by="data",
-                    ascending=False,
-                )
+                sorted_transactions
             )
         )
 
@@ -587,9 +603,18 @@ def render_period_transactions(
             use_container_width=True,
             hide_index=True,
             height=calculate_table_height(
-                len(table),
+                len(
+                    table
+                )
             ),
             column_config=(
                 transaction_column_config()
             ),
+        )
+
+        return (
+            sorted_transactions
+            .reset_index(
+                drop=True
+            )
         )

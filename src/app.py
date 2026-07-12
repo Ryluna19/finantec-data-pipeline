@@ -57,6 +57,9 @@ from ui_components import (
     apply_visual_styles,
 )
 
+from components.transaction_management import (
+    render_persisted_transaction_management,
+)
 
 st.set_page_config(
     page_title="FinanTec",
@@ -366,8 +369,14 @@ def render_transactions_tab(
     with st.container(
         key="transactions-period-section",
     ):
-        render_period_transactions(
-            period_transactions
+        visible_transactions = (
+            render_period_transactions(
+                period_transactions
+            )
+        )
+
+        render_persisted_transaction_management(
+            visible_transactions
         )
 
 
