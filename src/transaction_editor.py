@@ -1,10 +1,8 @@
 """Entrada manual de transações financeiras.
 
-O módulo mantém um rascunho na sessão do Streamlit para oferecer uma
-experiência adequada tanto no celular quanto no desktop.
-
-As transações continuam sendo salvas em data/raw/transacoes_manuais.csv
-e processadas pelo pipeline ETL antes de entrarem no SQLite.
+O módulo mantém o estado e a interface do editor manual no Streamlit.
+As regras de persistência, normalização e manipulação do rascunho ficam
+centralizadas em ``src.manual_transaction_service``.
 """
 
 from __future__ import annotations
@@ -16,40 +14,52 @@ import pandas as pd
 import streamlit as st
 
 from scripts.etl_transacoes import run_etl_with_summary
-from src.transaction_identity import (
-    TRANSACTION_ID_COLUMN,
-    create_transaction_id,
-    ensure_transaction_ids,
-)
-from src.transaction_validation import (
-    split_transactions_by_validity,
+from src.manual_transaction_service import (
+    MANUAL_TRANSACTION_COLUMNS,
+    STORED_TRANSACTION_COLUMNS,
+    add_pending_transaction,
+    build_manual_transaction_source_key,
+    clear_manual_transactions,
+    create_empty_manual_transactions,
+    identify_manual_transactions,
+    load_manual_transactions,
+    prepare_manual_transactions_for_storage,
+    remove_pending_transaction,
+    save_manual_transactions,
+    update_pending_transaction,
+    validate_manual_transactions,
 )
 
+
+# -----------------------------------------------------------------------------
+# Caminhos e contratos públicos preservados
+# -----------------------------------------------------------------------------
 
 DATA_REFRESH_REQUESTED_KEY = (
     "app_data_refresh_requested"
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RAW_DIR = PROJECT_ROOT / "data" / "raw"
+PROJECT_ROOT = (
+    Path(__file__)
+    .resolve()
+    .parents[1]
+)
+
+RAW_DIR = (
+    PROJECT_ROOT
+    / "data"
+    / "raw"
+)
 
 ARQUIVO_TRANSACOES_MANUAIS = (
     RAW_DIR
     / "transacoes_manuais.csv"
 )
 
-COLUNAS_TRANSACOES = [
-    "data",
-    "tipo",
-    "descricao",
-    "categoria",
-    "valor",
-]
-
-STORED_TRANSACTION_COLUMNS = [
-    TRANSACTION_ID_COLUMN,
-    *COLUNAS_TRANSACOES,
-]
+# Alias temporário para preservar testes e imports existentes.
+COLUNAS_TRANSACOES = (
+    MANUAL_TRANSACTION_COLUMNS
+)
 
 CATEGORIAS_SUGERIDAS = [
     "Trabalho",
@@ -63,6 +73,11 @@ CATEGORIAS_SUGERIDAS = [
     "Compras",
     "Reserva",
 ]
+
+
+# -----------------------------------------------------------------------------
+# Chaves da sessão
+# -----------------------------------------------------------------------------
 
 MANUAL_DRAFT_KEY = (
     "manual_transactions_draft"
@@ -81,353 +96,91 @@ MANUAL_FEEDBACK_KEY = (
 )
 
 
-def get_manual_transaction_source_key() -> str:
-    """Cria uma identificação estável para o arquivo manual."""
-    try:
-        return (
-            ARQUIVO_TRANSACOES_MANUAIS
-            .resolve()
-            .relative_to(
-                PROJECT_ROOT.resolve()
-            )
-            .as_posix()
-        )
+# -----------------------------------------------------------------------------
+# Compatibilidade com a interface e os testes atuais
+# -----------------------------------------------------------------------------
 
-    except ValueError:
-        # Arquivos temporários usados nos testes podem
-        # estar fora do diretório principal do projeto.
-        return ARQUIVO_TRANSACOES_MANUAIS.name
+
+def get_manual_transaction_source_key() -> str:
+    """Retorna a chave estável da fonte manual atual."""
+    return (
+        build_manual_transaction_source_key(
+            source_file=(
+                ARQUIVO_TRANSACOES_MANUAIS
+            ),
+            project_root=PROJECT_ROOT,
+        )
+    )
 
 
 def criar_dataframe_vazio() -> pd.DataFrame:
-    """Cria uma tabela vazia com o contrato de armazenamento."""
-    return pd.DataFrame(
-        columns=(
-            STORED_TRANSACTION_COLUMNS
-        )
+    """Cria uma tabela manual vazia."""
+    return (
+        create_empty_manual_transactions()
     )
 
 
 def carregar_transacoes_manuais() -> pd.DataFrame:
-    """Carrega transações manuais preservando seus IDs."""
-    if not ARQUIVO_TRANSACOES_MANUAIS.exists():
-        return criar_dataframe_vazio()
-
-    transactions = pd.read_csv(
-        ARQUIVO_TRANSACOES_MANUAIS,
-        encoding="utf-8-sig",
-    )
-
-    for column in COLUNAS_TRANSACOES:
-        if column not in transactions.columns:
-            transactions[column] = ""
-
-    transactions = ensure_transaction_ids(
-        transactions=transactions,
-        source_key=(
-            get_manual_transaction_source_key()
+    """Carrega as transações da fonte manual atual."""
+    return load_manual_transactions(
+        source_file=(
+            ARQUIVO_TRANSACOES_MANUAIS
         ),
-        identity_columns=(
-            COLUNAS_TRANSACOES
-        ),
+        project_root=PROJECT_ROOT,
     )
-
-    transactions = transactions[
-        STORED_TRANSACTION_COLUMNS
-    ].copy()
-
-    transactions["data"] = pd.to_datetime(
-        transactions["data"],
-        errors="coerce",
-    )
-
-    return transactions
 
 
 def preparar_transacoes_para_salvar(
     transacoes: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Normaliza a tabela preservando a identidade das linhas."""
-    prepared_transactions = (
-        transacoes.copy()
-    )
-
-    for column in COLUNAS_TRANSACOES:
-        if column not in prepared_transactions.columns:
-            prepared_transactions[column] = ""
-
-    if (
-        TRANSACTION_ID_COLUMN
-        not in prepared_transactions.columns
-    ):
-        prepared_transactions[
-            TRANSACTION_ID_COLUMN
-        ] = ""
-
-    prepared_transactions = (
-        prepared_transactions[
-            STORED_TRANSACTION_COLUMNS
-        ].copy()
-    )
-
-    prepared_transactions[
-        TRANSACTION_ID_COLUMN
-    ] = (
-        prepared_transactions[
-            TRANSACTION_ID_COLUMN
-        ]
-        .astype("string")
-        .fillna("")
-        .str.strip()
-    )
-
-    prepared_transactions["data"] = (
-        pd.to_datetime(
-            prepared_transactions["data"],
-            errors="coerce",
-        )
-        .dt.strftime("%Y-%m-%d")
-        .fillna("")
-    )
-
-    prepared_transactions["tipo"] = (
-        prepared_transactions["tipo"]
-        .astype("string")
-        .fillna("")
-        .str.strip()
-        .str.lower()
-    )
-
-    prepared_transactions[
-        "descricao"
-    ] = (
-        prepared_transactions[
-            "descricao"
-        ]
-        .astype("string")
-        .fillna("")
-        .str.strip()
-    )
-
-    prepared_transactions[
-        "categoria"
-    ] = (
-        prepared_transactions[
-            "categoria"
-        ]
-        .astype("string")
-        .fillna("")
-        .str.strip()
-    )
-
-    prepared_transactions["valor"] = (
-        pd.to_numeric(
-            prepared_transactions["valor"],
-            errors="coerce",
+    """Normaliza as transações antes da validação ou gravação."""
+    return (
+        prepare_manual_transactions_for_storage(
+            transacoes
         )
     )
-
-    return prepared_transactions
 
 
 def validar_transacoes_editadas(
     transacoes: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Reutiliza as regras de validação do pipeline ETL."""
-    transacoes_preparadas = (
-        preparar_transacoes_para_salvar(
-            transacoes
-        )
-    )
-
-    transacoes_preparadas = (
-        transacoes_preparadas.dropna(
-            how="all",
-            subset=COLUNAS_TRANSACOES,
-        )
-    )
-
-    if transacoes_preparadas.empty:
-        return (
-            transacoes_preparadas,
-            pd.DataFrame(),
-        )
-
-    return split_transactions_by_validity(
-        transacoes_preparadas
+    """Valida as transações editadas usando as regras do ETL."""
+    return validate_manual_transactions(
+        transacoes
     )
 
 
 def salvar_transacoes_manuais(
     transacoes: pd.DataFrame,
 ) -> None:
-    """Salva as transações manuais com IDs persistentes."""
-    ARQUIVO_TRANSACOES_MANUAIS.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    transactions_to_save = (
-        preparar_transacoes_para_salvar(
-            transacoes
-        )
-    )
-
-    transactions_to_save = (
-        ensure_transaction_ids(
-            transactions=transactions_to_save,
-            source_key=(
-                get_manual_transaction_source_key()
-            ),
-            identity_columns=(
-                COLUNAS_TRANSACOES
-            ),
-        )
-    )
-
-    transactions_to_save = (
-        transactions_to_save[
-            STORED_TRANSACTION_COLUMNS
-        ].copy()
-    )
-
-    transactions_to_save.to_csv(
-        ARQUIVO_TRANSACOES_MANUAIS,
-        index=False,
-        encoding="utf-8-sig",
+    """Salva as transações na fonte manual atual."""
+    save_manual_transactions(
+        transactions=transacoes,
+        source_file=(
+            ARQUIVO_TRANSACOES_MANUAIS
+        ),
+        project_root=PROJECT_ROOT,
     )
 
 
 def limpar_transacoes_manuais() -> None:
-    """Remove o arquivo local de transações manuais."""
-    if ARQUIVO_TRANSACOES_MANUAIS.exists():
-        ARQUIVO_TRANSACOES_MANUAIS.unlink()
-
-
-def add_pending_transaction(
-    transactions: pd.DataFrame,
-    transaction: dict,
-) -> pd.DataFrame:
-    """Adiciona uma transação identificada ao rascunho."""
-    current_transactions = (
-        transactions.copy()
-    )
-
-    for column in STORED_TRANSACTION_COLUMNS:
-        if column not in current_transactions.columns:
-            current_transactions[column] = ""
-
-    current_transactions = (
-        current_transactions[
-            STORED_TRANSACTION_COLUMNS
-        ].copy()
-    )
-
-    new_transaction_data = {
-        column: transaction.get(
-            column,
-            "",
-        )
-        for column in (
-            STORED_TRANSACTION_COLUMNS
-        )
-    }
-
-    if not new_transaction_data[
-        TRANSACTION_ID_COLUMN
-    ]:
-        new_transaction_data[
-            TRANSACTION_ID_COLUMN
-        ] = create_transaction_id()
-
-    new_transaction = pd.DataFrame(
-        [
-            new_transaction_data
-        ],
-        columns=(
-            STORED_TRANSACTION_COLUMNS
-        ),
-    )
-
-    return pd.concat(
-        [
-            current_transactions,
-            new_transaction,
-        ],
-        ignore_index=True,
+    """Remove a fonte manual atual."""
+    clear_manual_transactions(
+        ARQUIVO_TRANSACOES_MANUAIS
     )
 
 
-def update_pending_transaction(
-    transactions: pd.DataFrame,
-    index: int,
-    transaction: dict,
-) -> pd.DataFrame:
-    """Atualiza os dados sem alterar o ID da transação."""
-    if (
-        index < 0
-        or index >= len(transactions)
-    ):
-        raise IndexError(
-            "Índice de transação inválido."
-        )
-
-    updated_transactions = (
-        transactions.copy()
-    )
-
-    for column in STORED_TRANSACTION_COLUMNS:
-        if column not in updated_transactions.columns:
-            updated_transactions[column] = ""
-
-    updated_transactions = (
-        updated_transactions[
-            STORED_TRANSACTION_COLUMNS
-        ].copy()
-    )
-
-    # O transaction_id não participa da edição.
-    for column in COLUNAS_TRANSACOES:
-        updated_transactions.loc[
-            index,
-            column,
-        ] = transaction[column]
-
-    return (
-        updated_transactions
-        .reset_index(
-            drop=True
-        )
-    )
-
-
-def remove_pending_transaction(
-    transactions: pd.DataFrame,
-    index: int,
-) -> pd.DataFrame:
-    """Remove uma transação do rascunho."""
-    if (
-        index < 0
-        or index >= len(transactions)
-    ):
-        raise IndexError(
-            "Índice de transação inválido."
-        )
-
-    return (
-        transactions
-        .drop(
-            index=index
-        )
-        .reset_index(
-            drop=True
-        )
-    )
+# -----------------------------------------------------------------------------
+# Estado do editor
+# -----------------------------------------------------------------------------
 
 
 def initialize_manual_transaction_state() -> None:
     """Inicializa o rascunho e os controles da interface."""
-    if MANUAL_DRAFT_KEY not in st.session_state:
+    if (
+        MANUAL_DRAFT_KEY
+        not in st.session_state
+    ):
         st.session_state[
             MANUAL_DRAFT_KEY
         ] = (
@@ -437,12 +190,18 @@ def initialize_manual_transaction_state() -> None:
             )
         )
 
-    if MANUAL_EDIT_INDEX_KEY not in st.session_state:
+    if (
+        MANUAL_EDIT_INDEX_KEY
+        not in st.session_state
+    ):
         st.session_state[
             MANUAL_EDIT_INDEX_KEY
         ] = None
 
-    if MANUAL_FORM_VERSION_KEY not in st.session_state:
+    if (
+        MANUAL_FORM_VERSION_KEY
+        not in st.session_state
+    ):
         st.session_state[
             MANUAL_FORM_VERSION_KEY
         ] = 0
@@ -460,23 +219,19 @@ def set_manual_draft(
 ) -> None:
     """Atualiza o rascunho preservando IDs estáveis."""
     identified_transactions = (
-        ensure_transaction_ids(
+        identify_manual_transactions(
             transactions=transactions,
-            source_key=(
-                get_manual_transaction_source_key()
+            source_file=(
+                ARQUIVO_TRANSACOES_MANUAIS
             ),
-            identity_columns=(
-                COLUNAS_TRANSACOES
-            ),
+            project_root=PROJECT_ROOT,
         )
     )
 
     st.session_state[
         MANUAL_DRAFT_KEY
     ] = (
-        identified_transactions[
-            STORED_TRANSACTION_COLUMNS
-        ]
+        identified_transactions
         .copy()
         .reset_index(
             drop=True
@@ -515,6 +270,11 @@ def show_manual_feedback() -> None:
         st.success(
             message
         )
+
+
+# -----------------------------------------------------------------------------
+# Callbacks de persistência e ETL
+# -----------------------------------------------------------------------------
 
 
 def _save_manual_draft_callback() -> None:
@@ -641,23 +401,38 @@ def exibir_resultado_etl_salvo() -> None:
     )
 
 
+# -----------------------------------------------------------------------------
+# Preparação dos controles do formulário
+# -----------------------------------------------------------------------------
+
+
 def _safe_text(
-    value,
+    value: object,
 ) -> str:
     """Converte valores vazios em texto seguro."""
-    if pd.isna(
-        value
-    ):
+    if value is None:
         return ""
+
+    try:
+        if pd.isna(
+            value
+        ):
+            return ""
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        pass
 
     return str(
         value
-    )
+    ).strip()
 
 
 def _get_form_defaults(
     transactions: pd.DataFrame,
-) -> dict:
+) -> dict[str, object]:
     """Retorna valores iniciais para inclusão ou edição."""
     edit_index = st.session_state[
         MANUAL_EDIT_INDEX_KEY
@@ -689,6 +464,7 @@ def _get_form_defaults(
         transaction_date
     ):
         date_value = date.today()
+
     else:
         date_value = (
             transaction_date.date()
@@ -774,6 +550,11 @@ def _get_validation_message(
     )
 
 
+# -----------------------------------------------------------------------------
+# Formulário e cartões do rascunho
+# -----------------------------------------------------------------------------
+
+
 def render_manual_transaction_form(
     transactions: pd.DataFrame,
 ) -> None:
@@ -807,9 +588,17 @@ def render_manual_transaction_form(
         transactions
     )
 
+    default_type = str(
+        defaults["tipo"]
+    )
+
+    default_category = str(
+        defaults["categoria"]
+    )
+
     category_options = (
         _get_category_options(
-            defaults["categoria"]
+            default_category
         )
     )
 
@@ -820,17 +609,17 @@ def render_manual_transaction_form(
 
     type_index = (
         type_options.index(
-            defaults["tipo"]
+            default_type
         )
-        if defaults["tipo"] in type_options
+        if default_type in type_options
         else 1
     )
 
     category_index = (
         category_options.index(
-            defaults["categoria"]
+            default_category
         )
-        if defaults["categoria"]
+        if default_category
         in category_options
         else 0
     )
@@ -867,7 +656,9 @@ def render_manual_transaction_form(
 
         description = st.text_input(
             "Descrição",
-            value=defaults["descricao"],
+            value=str(
+                defaults["descricao"]
+            ),
             placeholder="Ex.: Compra no mercado",
             help=(
                 "Descrição curta da transação."
@@ -887,7 +678,9 @@ def render_manual_transaction_form(
         amount = st.number_input(
             "Valor",
             min_value=0.01,
-            value=defaults["valor"],
+            value=float(
+                defaults["valor"]
+            ),
             step=1.00,
             format="%.2f",
             help=(
@@ -946,11 +739,6 @@ def render_manual_transaction_form(
         .to_dict()
     )
 
-    if not editing:
-        prepared_transaction[
-            TRANSACTION_ID_COLUMN
-        ] = create_transaction_id()
-
     if editing:
         updated_transactions = (
             update_pending_transaction(
@@ -989,7 +777,7 @@ def render_manual_transaction_form(
 
 
 def format_currency_brl(
-    value,
+    value: object,
 ) -> str:
     """Formata um número como moeda brasileira."""
     numeric_value = pd.to_numeric(
@@ -1017,7 +805,7 @@ def format_currency_brl(
 
 
 def format_date_brl(
-    value,
+    value: object,
 ) -> str:
     """Formata uma data no padrão brasileiro."""
     transaction_date = pd.to_datetime(
@@ -1033,6 +821,69 @@ def format_date_brl(
     return transaction_date.strftime(
         "%d/%m/%Y"
     )
+
+
+def _start_manual_edit(
+    index: int,
+) -> None:
+    """Ativa o modo de edição para uma linha do rascunho."""
+    st.session_state[
+        MANUAL_EDIT_INDEX_KEY
+    ] = index
+
+    st.session_state[
+        MANUAL_FORM_VERSION_KEY
+    ] += 1
+
+    st.rerun()
+
+
+def _remove_manual_draft_item(
+    transactions: pd.DataFrame,
+    index: int,
+) -> None:
+    """Remove uma linha e ajusta o estado atual de edição."""
+    updated_transactions = (
+        remove_pending_transaction(
+            transactions,
+            index,
+        )
+    )
+
+    current_edit_index = (
+        st.session_state[
+            MANUAL_EDIT_INDEX_KEY
+        ]
+    )
+
+    if current_edit_index == index:
+        st.session_state[
+            MANUAL_EDIT_INDEX_KEY
+        ] = None
+
+    elif (
+        current_edit_index is not None
+        and current_edit_index > index
+    ):
+        st.session_state[
+            MANUAL_EDIT_INDEX_KEY
+        ] = (
+            current_edit_index - 1
+        )
+
+    set_manual_draft(
+        updated_transactions
+    )
+
+    st.session_state[
+        MANUAL_FORM_VERSION_KEY
+    ] += 1
+
+    set_manual_feedback(
+        "Transação removida do rascunho."
+    )
+
+    st.rerun()
 
 
 def render_pending_transactions(
@@ -1140,15 +991,9 @@ def render_pending_transactions(
                         ),
                         use_container_width=True,
                     ):
-                        st.session_state[
-                            MANUAL_EDIT_INDEX_KEY
-                        ] = index
-
-                        st.session_state[
-                            MANUAL_FORM_VERSION_KEY
-                        ] += 1
-
-                        st.rerun()
+                        _start_manual_edit(
+                            index
+                        )
 
                 with delete_column:
                     if st.button(
@@ -1159,51 +1004,15 @@ def render_pending_transactions(
                         ),
                         use_container_width=True,
                     ):
-                        updated_transactions = (
-                            remove_pending_transaction(
-                                transactions,
-                                index,
-                            )
+                        _remove_manual_draft_item(
+                            transactions=transactions,
+                            index=index,
                         )
 
-                        current_edit_index = (
-                            st.session_state[
-                                MANUAL_EDIT_INDEX_KEY
-                            ]
-                        )
 
-                        if (
-                            current_edit_index
-                            == index
-                        ):
-                            st.session_state[
-                                MANUAL_EDIT_INDEX_KEY
-                            ] = None
-
-                        elif (
-                            current_edit_index is not None
-                            and current_edit_index > index
-                        ):
-                            st.session_state[
-                                MANUAL_EDIT_INDEX_KEY
-                            ] = (
-                                current_edit_index
-                                - 1
-                            )
-
-                        set_manual_draft(
-                            updated_transactions
-                        )
-
-                        st.session_state[
-                            MANUAL_FORM_VERSION_KEY
-                        ] += 1
-
-                        set_manual_feedback(
-                            "Transação removida do rascunho."
-                        )
-
-                        st.rerun()
+# -----------------------------------------------------------------------------
+# Composição do editor
+# -----------------------------------------------------------------------------
 
 
 def exibir_editor_transacoes_manuais() -> bool:
@@ -1240,10 +1049,11 @@ def exibir_editor_transacoes_manuais() -> bool:
         transactions
     )
 
-    valid_transactions, rejected_transactions = (
-        validar_transacoes_editadas(
-            transactions
-        )
+    (
+        valid_transactions,
+        rejected_transactions,
+    ) = validar_transacoes_editadas(
+        transactions
     )
 
     st.caption(
@@ -1288,11 +1098,12 @@ def exibir_editor_transacoes_manuais() -> bool:
     with st.container(
         key="manual-actions",
     ):
-        save_column, process_column = (
-            st.columns(
-                2,
-                gap="small",
-            )
+        (
+            save_column,
+            process_column,
+        ) = st.columns(
+            2,
+            gap="small",
         )
 
         with save_column:
