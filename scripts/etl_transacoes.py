@@ -35,6 +35,9 @@ from src.transaction_repository import (
     replace_transactions,
 )
 
+from src.transaction_sources import (
+    build_transaction_source_key,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -65,23 +68,6 @@ COLUNAS_OBRIGATORIAS = REQUIRED_TRANSACTION_COLUMNS
 TIPOS_VALIDOS = VALID_TRANSACTION_TYPES
 
 
-def build_transaction_source_key(
-    source_file: Path,
-) -> str:
-    """Cria uma identificação estável para o arquivo de origem."""
-    try:
-        return (
-            source_file.resolve()
-            .relative_to(
-                PROJECT_ROOT.resolve()
-            )
-            .as_posix()
-        )
-
-    except ValueError:
-        # Arquivos temporários usados nos testes ficam
-        # fora do diretório principal do projeto.
-        return source_file.name
 
 def configure_logging() -> None:
     """Configura os logs do ETL no terminal e em arquivo."""
