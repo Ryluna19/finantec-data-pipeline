@@ -527,6 +527,10 @@ def main() -> None:
         render_chat(
             messages=messages,
             context=context,
+            summary=summary,
+            expenses_by_category=(
+                expenses_by_category
+            ),
         )
 
     with data_tab:

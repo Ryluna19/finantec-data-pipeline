@@ -33,6 +33,17 @@ Essa classificação está em:
 src/financial_intents.py
 ```
 
+## Respostas Determinísticas
+
+As intenções financeiras mais simples não precisam consultar o modelo
+generativo.
+
+O módulo:
+
+```text
+src/financial_responses.py
+```
+
 ## Papel da IA
 
 A IA é usada para:
