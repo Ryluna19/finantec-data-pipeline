@@ -74,18 +74,30 @@ def render_chat(
     messages: list[dict[str, str]],
     context: str,
 ) -> None:
-    """Exibe o histórico da conversa e processa novas perguntas."""
-    st.subheader("Converse com o FinanTec")
+    """Exibe o histórico e processa novas perguntas."""
+    st.subheader(
+        "Converse com o FinanTec"
+    )
 
     st.caption(
-        "Exemplos: “Em qual categoria eu mais gastei?”, "
-        "“Qual é meu saldo?” ou "
+        "Você pode perguntar de forma direta ou informal. "
+        "Exemplos: “Quanto ainda tenho?”, "
+        "“Onde estou gastando mais?” ou "
         "“Quanto preciso guardar para o notebook?”"
     )
 
-    for message in messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    chat_history = st.container(
+        key="finantec-chat-history",
+    )
+
+    with chat_history:
+        for message in messages:
+            with st.chat_message(
+                message["role"]
+            ):
+                st.markdown(
+                    message["content"]
+                )
 
     user_question = st.chat_input(
         "Digite sua pergunta sobre organização financeira",
@@ -102,22 +114,42 @@ def render_chat(
         }
     )
 
-    with st.chat_message("user"):
-        st.markdown(user_question)
+    with chat_history:
+        with st.chat_message(
+            "user"
+        ):
+            st.markdown(
+                user_question
+            )
 
-    with st.chat_message("assistant"):
-        with st.spinner("Analisando os dados disponíveis..."):
-            try:
-                response = generate_finantec_response(
-                    pergunta_usuario=user_question,
-                    contexto=context,
-                )
+        with st.chat_message(
+            "assistant"
+        ):
+            with st.spinner(
+                "Analisando os dados disponíveis..."
+            ):
+                try:
+                    response = (
+                        generate_finantec_response(
+                            pergunta_usuario=(
+                                user_question
+                            ),
+                            contexto=context,
+                        )
+                    )
 
-                st.markdown(response)
+                    st.markdown(
+                        response
+                    )
 
-            except RuntimeError as error:
-                response = str(error)
-                st.error(response)
+                except RuntimeError as error:
+                    response = str(
+                        error
+                    )
+
+                    st.error(
+                        response
+                    )
 
     messages.append(
         {

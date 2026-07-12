@@ -22,6 +22,17 @@ Essa separação reduz o risco de respostas incorretas, números inventados ou r
 
 ---
 
+## Classificação Local de Intenção
+
+Antes de enviar uma pergunta para a IA, o FinanTec executa uma
+classificação local e determinística.
+
+Essa classificação está em:
+
+```text
+src/financial_intents.py
+```
+
 ## Papel da IA
 
 A IA é usada para:

@@ -241,6 +241,10 @@ def test_update_transaction_preserves_id(
         updated_transaction["descricao"]
         == "Mercado"
     )
+    assert (
+        updated_transaction["data"]
+        == "2026-07-12"
+    )
 
     assert (
         updated_transaction["categoria"]

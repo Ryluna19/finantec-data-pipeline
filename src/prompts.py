@@ -1,9 +1,8 @@
-﻿"""
-Montagem de prompts e contexto para o assistente FinanTec.
+﻿"""Montagem de prompts e contexto para o assistente FinanTec.
 
-Este módulo separa as regras de comportamento da IA e o contexto enviado para o
-modelo generativo. A aplicação calcula os valores financeiros em Python e envia
-esses resultados prontos para a IA apenas explicar.
+A aplicação calcula os indicadores financeiros em Python. O modelo
+generativo recebe os resultados prontos e é responsável apenas por
+explicá-los de forma clara e contextualizada.
 """
 
 from __future__ import annotations
@@ -15,6 +14,7 @@ import pandas as pd
 
 
 LIMITE_HISTORICO_ATENDIMENTO = 8
+
 
 SYSTEM_PROMPT = """
 Você é o FinanTec, um assistente de organização financeira voltado para
@@ -42,6 +42,9 @@ Regras obrigatórias:
 16. Para perguntas sobre produtos financeiros, use apenas os produtos informativos fornecidos no contexto.
 17. Se a pergunta depender de dados atuais, taxas em tempo real ou comparação de mercado, informe que o contexto não possui dados suficientes.
 18. Não diga que um banco, CDB, cartão ou produto é "o melhor" se essa conclusão não estiver explicitamente nos dados fornecidos.
+19. A seção "INTENÇÃO IDENTIFICADA PELA APLICAÇÃO" é uma classificação heurística. Use-a como orientação, mas priorize a pergunta literal da pessoa usuária.
+20. Para identificar a categoria de maior gasto, use somente a seção "RESUMO DE CATEGORIAS CALCULADO PELO PYTHON". Não compare ou recalcule os valores.
+21. Quando a intenção estiver como "desconhecida", não force uma resposta financeira. Informe a limitação quando a pergunta não puder ser respondida pelo contexto.
 
 Estrutura esperada da resposta:
 - Responda diretamente à pergunta.
@@ -52,13 +55,10 @@ Estrutura esperada da resposta:
 """.strip()
 
 
-def formatar_json(dado: Any) -> str:
-    """
-    Converte dados Python para JSON legível dentro do prompt.
-
-    O parâmetro default=str evita erro com tipos específicos do pandas,
-    como Timestamp e valores numéricos próprios da biblioteca.
-    """
+def formatar_json(
+    dado: Any,
+) -> str:
+    """Converte dados Python para JSON legível."""
     return json.dumps(
         dado,
         ensure_ascii=False,
@@ -67,40 +67,118 @@ def formatar_json(dado: Any) -> str:
     )
 
 
-def converter_gastos_para_dict(gastos_por_categoria: pd.Series) -> dict[str, float]:
-    """
-    Converte a série de gastos por categoria para um dicionário simples.
-    """
+def converter_gastos_para_dict(
+    gastos_por_categoria: pd.Series,
+) -> dict[str, float]:
+    """Converte gastos válidos para um dicionário simples."""
+    gastos: dict[
+        str,
+        float,
+    ] = {}
+
+    for categoria, valor in (
+        gastos_por_categoria.items()
+    ):
+        valor_numerico = pd.to_numeric(
+            valor,
+            errors="coerce",
+        )
+
+        if pd.isna(
+            valor_numerico
+        ):
+            continue
+
+        gastos[
+            str(
+                categoria
+            )
+        ] = float(
+            valor_numerico
+        )
+
+    return gastos
+
+
+def resumir_gastos_por_categoria(
+    gastos: dict[str, float],
+) -> dict[str, Any]:
+    """Calcula previamente as categorias de maior gasto."""
+    if not gastos:
+        return {
+            "categorias_com_maior_gasto": [],
+            "maior_valor": None,
+            "ha_empate": False,
+            "quantidade_categorias": 0,
+            "total_categorizado": 0.0,
+        }
+
+    maior_valor = max(
+        gastos.values()
+    )
+
+    categorias_com_maior_gasto = [
+        categoria
+        for categoria, valor in gastos.items()
+        if valor == maior_valor
+    ]
+
     return {
-        str(categoria): float(valor)
-        for categoria, valor in gastos_por_categoria.items()
+        "categorias_com_maior_gasto": (
+            categorias_com_maior_gasto
+        ),
+        "maior_valor": float(
+            maior_valor
+        ),
+        "ha_empate": (
+            len(
+                categorias_com_maior_gasto
+            )
+            > 1
+        ),
+        "quantidade_categorias": len(
+            gastos
+        ),
+        "total_categorizado": float(
+            sum(
+                gastos.values()
+            )
+        ),
     }
 
 
 def resumir_historico_atendimento(
     historico_atendimento: pd.DataFrame,
 ) -> list[dict[str, Any]]:
-    """
-    Seleciona apenas as colunas úteis do histórico de dúvidas.
-
-    O limite evita enviar contexto desnecessariamente grande para a IA.
-    """
-    colunas_esperadas = ["categoria", "pergunta", "resumo_resposta"]
+    """Seleciona apenas as colunas úteis do histórico."""
+    colunas_esperadas = [
+        "categoria",
+        "pergunta",
+        "resumo_resposta",
+    ]
 
     colunas_disponiveis = [
         coluna
         for coluna in colunas_esperadas
-        if coluna in historico_atendimento.columns
+        if coluna
+        in historico_atendimento.columns
     ]
 
     if not colunas_disponiveis:
         return []
 
-    historico = historico_atendimento[colunas_disponiveis].tail(
-        LIMITE_HISTORICO_ATENDIMENTO
+    historico = (
+        historico_atendimento[
+            colunas_disponiveis
+        ]
+        .tail(
+            LIMITE_HISTORICO_ATENDIMENTO
+        )
     )
 
-    return historico.to_dict(orient="records")
+    return historico.to_dict(
+        orient="records"
+    )
 
 
 def montar_contexto(
@@ -112,14 +190,22 @@ def montar_contexto(
     conceitos_financeiros: dict,
     produtos_financeiros: dict,
 ) -> str:
-    """
-    Monta o contexto enviado ao modelo generativo.
+    """Monta o contexto enviado ao modelo generativo."""
+    gastos = converter_gastos_para_dict(
+        gastos_por_categoria
+    )
 
-    Os cálculos financeiros já chegam prontos nesta função. O papel da IA é
-    explicar os indicadores, não recalcular ou inventar valores.
-    """
-    gastos = converter_gastos_para_dict(gastos_por_categoria)
-    historico = resumir_historico_atendimento(historico_atendimento)
+    resumo_categorias = (
+        resumir_gastos_por_categoria(
+            gastos
+        )
+    )
+
+    historico = (
+        resumir_historico_atendimento(
+            historico_atendimento
+        )
+    )
 
     return f"""
 PERFIL DA PESSOA USUÁRIA:
@@ -130,6 +216,9 @@ RESUMO FINANCEIRO CALCULADO PELO PYTHON:
 
 GASTOS POR CATEGORIA CALCULADOS PELO PYTHON:
 {formatar_json(gastos)}
+
+RESUMO DE CATEGORIAS CALCULADO PELO PYTHON:
+{formatar_json(resumo_categorias)}
 
 SIMULAÇÕES DE METAS CALCULADAS PELO PYTHON:
 {formatar_json(simulacoes_metas)}
@@ -152,13 +241,31 @@ LIMITAÇÕES IMPORTANTES:
 """.strip()
 
 
-def montar_mensagem_usuario(pergunta_usuario: str, contexto: str) -> str:
-    """
-    Junta o contexto da aplicação com a pergunta feita pela pessoa usuária.
-    """
-    return f"""
-{contexto}
+def montar_mensagem_usuario(
+    pergunta_usuario: str,
+    contexto: str,
+    contexto_intencao: str | None = None,
+) -> str:
+    """Junta contexto, intenção e pergunta da pessoa usuária."""
+    secoes = [
+        contexto.strip(),
+    ]
 
-PERGUNTA DA PESSOA USUÁRIA:
-{pergunta_usuario}
-""".strip()
+    if (
+        contexto_intencao
+        and contexto_intencao.strip()
+    ):
+        secoes.append(
+            contexto_intencao.strip()
+        )
+
+    secoes.append(
+        (
+            "PERGUNTA DA PESSOA USUÁRIA:\n"
+            f"{pergunta_usuario.strip()}"
+        )
+    )
+
+    return "\n\n".join(
+        secoes
+    )
