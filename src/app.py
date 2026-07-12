@@ -60,7 +60,7 @@ from ui_components import (
 
 st.set_page_config(
     page_title="FinanTec",
-    page_icon="💰",
+    page_icon=":material/account_balance_wallet:",
     layout="wide",
 )
 

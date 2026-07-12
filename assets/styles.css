@@ -205,6 +205,113 @@ a:hover {
     color: var(--accent-hover);
 }
 
+/* =========================================================
+   CABEÇALHO DA MARCA
+   ========================================================= */
+
+.finantec-brand-header {
+    margin-bottom: 1rem;
+}
+
+.finantec-brand-title-row {
+    display: flex;
+    align-items: center;
+
+    gap: 0.9rem;
+}
+
+.finantec-brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 48px;
+    height: 48px;
+
+    color: var(--accent);
+
+    background:
+        rgba(249, 115, 22, 0.08);
+
+    border:
+        1px solid
+        rgba(249, 115, 22, 0.28);
+
+    border-radius: 14px;
+}
+
+.finantec-brand-icon svg {
+    width: 27px;
+    height: 27px;
+
+    stroke: currentColor;
+    stroke-width: 1.7;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.finantec-brand-copy {
+    min-width: 0;
+}
+
+.finantec-brand-eyebrow {
+    margin-bottom: 0.25rem;
+
+    color: var(--text-muted);
+
+    font-size: 0.72rem;
+    line-height: 1.2;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.finantec-brand-title-row h1 {
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size:
+        clamp(
+            1.9rem,
+            3vw,
+            2.5rem
+        );
+
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+}
+
+.finantec-brand-description {
+    max-width: 680px;
+
+    margin: 0.85rem 0 0;
+
+    color: var(--text-muted) !important;
+
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
+}
+
+.finantec-brand-header::after {
+    content: "";
+
+    display: block;
+
+    width: 44px;
+    height: 3px;
+
+    margin-top: 0.9rem;
+
+    background: var(--accent);
+
+    border-radius: 999px;
+}
 
 /* =========================================================
    ABAS
@@ -1714,7 +1821,7 @@ hr {
 
 @media (max-width: 560px) {
     [data-testid="stMainBlockContainer"] {
-        padding: 1rem 0.8rem 2.5rem;
+        padding: 4rem 0.8rem 2.5rem;
     }
 
     h1 {
@@ -1754,6 +1861,35 @@ hr {
 
     .finantec-table-panel {
         overflow-x: auto;
+    }
+      .finantec-brand-title-row {
+        gap: 0.75rem;
+    }
+
+    .finantec-brand-icon {
+        width: 42px;
+        height: 42px;
+
+        border-radius: 12px;
+    }
+
+    .finantec-brand-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .finantec-brand-eyebrow {
+        font-size: 0.66rem;
+    }
+
+    .finantec-brand-title-row h1 {
+        font-size: 1.85rem;
+    }
+
+    .finantec-brand-description {
+        margin-top: 0.7rem;
+
+        font-size: 0.86rem !important;
     }
 }
 
