@@ -6,9 +6,14 @@ from html import escape
 
 import pandas as pd
 import streamlit as st
+from pandas.io.formats.style import Styler
 
 from analytics import formatar_moeda as format_currency
-from ui_components import TRANSACTION_TYPE_LABELS
+from ui_components import (
+    EXPENSE_COLOR,
+    INCOME_COLOR,
+    TRANSACTION_TYPE_LABELS,
+)
 
 
 def calculate_table_height(
@@ -49,6 +54,7 @@ def transaction_column_config() -> dict:
         "Valor": st.column_config.TextColumn(
             "Valor",
             width="small",
+            alignment="right",
         ),
     }
 
@@ -115,6 +121,45 @@ def prepare_transactions_for_display(
         ]
     ]
 
+def style_transactions_table(
+    table: pd.DataFrame,
+) -> Styler:
+    """Aplica cores semânticas somente aos valores monetários."""
+
+    def style_transaction_row(
+        row: pd.Series,
+    ) -> pd.Series:
+        """Define o estilo do valor conforme o tipo da transação."""
+        styles = pd.Series(
+            "",
+            index=row.index,
+        )
+
+        transaction_type = str(
+            row.get(
+                "Tipo",
+                "",
+            )
+        ).strip()
+
+        if transaction_type == "Receita":
+            styles["Valor"] = (
+                f"color: {INCOME_COLOR}; "
+                "font-weight: 700;"
+            )
+
+        elif transaction_type == "Despesa":
+            styles["Valor"] = (
+                f"color: {EXPENSE_COLOR}; "
+                "font-weight: 700;"
+            )
+
+        return styles
+
+    return table.style.apply(
+        style_transaction_row,
+        axis=1,
+    )
 
 def render_category_ranking(
     expenses_by_category: pd.Series,
@@ -245,7 +290,9 @@ def render_latest_transactions(
         )
 
         st.dataframe(
-            table,
+            style_transactions_table(
+              table
+            ),
             use_container_width=True,
             hide_index=True,
             height=calculate_table_height(
@@ -276,6 +323,16 @@ def render_data_validation(
             "pelo pipeline ETL."
         )
 
+        rejected_count = len(
+            rejections
+        )
+
+        rejected_metric_key = (
+            "validation-rejected-metric-error"
+            if rejected_count > 0
+            else "validation-rejected-metric-neutral"
+        )
+
         valid_column, rejected_column = (
             st.columns(
                 2,
@@ -283,15 +340,23 @@ def render_data_validation(
             )
         )
 
-        valid_column.metric(
-            "Válidas no período",
-            valid_count,
-        )
+        with valid_column:
+            with st.container(
+                key="validation-valid-metric",
+            ):
+                st.metric(
+                    "Válidas no período",
+                    valid_count,
+                )
 
-        rejected_column.metric(
-            "Rejeitadas no último ETL",
-            len(rejections),
-        )
+        with rejected_column:
+            with st.container(
+                key=rejected_metric_key,
+            ):
+                st.metric(
+                    "Rejeitadas no último ETL",
+                    rejected_count,
+                )
 
         if rejections.empty:
             st.success(
@@ -468,20 +533,36 @@ def render_period_transactions(
             gap="small",
         )
 
-        total_column.metric(
-            "Transações",
-            len(filtered_transactions),
-        )
+        with total_column:
+            with st.container(
+                key="period-total-metric",
+            ):
+                st.metric(
+                    "Transações",
+                    len(filtered_transactions),
+                )
 
-        income_column.metric(
-            "Receitas",
-            format_currency(income),
-        )
+        with income_column:
+            with st.container(
+                key="period-income-metric",
+            ):
+                st.metric(
+                    "Receitas",
+                    format_currency(
+                        income
+                    ),
+                )
 
-        expense_column.metric(
-            "Despesas",
-            format_currency(expenses),
-        )
+        with expense_column:
+            with st.container(
+                key="period-expense-metric",
+            ):
+                st.metric(
+                    "Despesas",
+                    format_currency(
+                        expenses
+                    ),
+                )
 
         if filtered_transactions.empty:
             st.info(
@@ -500,7 +581,9 @@ def render_period_transactions(
         )
 
         st.dataframe(
-            table,
+            style_transactions_table(
+                table
+            ),
             use_container_width=True,
             hide_index=True,
             height=calculate_table_height(

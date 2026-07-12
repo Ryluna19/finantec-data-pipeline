@@ -1139,6 +1139,272 @@ summary {
     font-weight: 600 !important;
 }
 
+/* =========================================================
+   MÉTRICAS SEMÂNTICAS
+   ========================================================= */
+
+.st-key-validation-valid-metric
+[data-testid="stMetric"],
+.st-key-validation-rejected-metric-neutral
+[data-testid="stMetric"],
+.st-key-validation-rejected-metric-error
+[data-testid="stMetric"],
+.st-key-period-total-metric
+[data-testid="stMetric"],
+.st-key-period-income-metric
+[data-testid="stMetric"],
+.st-key-period-expense-metric
+[data-testid="stMetric"] {
+    border-top-width: 3px !important;
+}
+
+
+/* Valores positivos */
+
+.st-key-validation-valid-metric
+[data-testid="stMetric"],
+.st-key-period-income-metric
+[data-testid="stMetric"] {
+    border-top-color:
+        var(--success) !important;
+}
+
+.st-key-validation-valid-metric
+[data-testid="stMetricValue"],
+.st-key-period-income-metric
+[data-testid="stMetricValue"] {
+    color: var(--success) !important;
+}
+
+
+/* Valores negativos */
+
+.st-key-validation-rejected-metric-error
+[data-testid="stMetric"],
+.st-key-period-expense-metric
+[data-testid="stMetric"] {
+    border-top-color:
+        var(--danger) !important;
+}
+
+.st-key-validation-rejected-metric-error
+[data-testid="stMetricValue"],
+.st-key-period-expense-metric
+[data-testid="stMetricValue"] {
+    color: var(--danger) !important;
+}
+
+
+/* Valores neutros */
+
+.st-key-validation-rejected-metric-neutral
+[data-testid="stMetric"],
+.st-key-period-total-metric
+[data-testid="stMetric"] {
+    border-top-color:
+        var(--border-light) !important;
+}
+
+.st-key-validation-rejected-metric-neutral
+[data-testid="stMetricValue"],
+.st-key-period-total-metric
+[data-testid="stMetricValue"] {
+    color: var(--text-main) !important;
+}
+
+/* =========================================================
+   SIMULADOR DE METAS
+   ========================================================= */
+
+.finantec-goal-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.finantec-goal-card {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+    min-height: 132px;
+    padding: 1.15rem 1.2rem;
+
+    background: var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-top:
+        3px solid
+        var(--border-light);
+
+    border-radius: var(--radius);
+
+    box-shadow: none;
+}
+
+.finantec-goal-card.current {
+    border-top-color: var(--success);
+}
+
+.finantec-goal-card.remaining {
+    border-top-color: var(--warning);
+}
+
+.finantec-goal-card.monthly {
+    border-top-color: var(--info);
+}
+
+.finantec-goal-label {
+    color: var(--text-muted);
+
+    font-size: 0.72rem;
+    line-height: 1.3;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.finantec-goal-value {
+    margin: 0.7rem 0 0.5rem;
+
+    color: var(--text-main);
+
+    font-size:
+        clamp(
+            1.35rem,
+            2vw,
+            1.9rem
+        );
+
+    line-height: 1.12;
+    font-weight: 800;
+
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.finantec-goal-card.current
+.finantec-goal-value {
+    color: var(--success);
+}
+
+.finantec-goal-card.remaining
+.finantec-goal-value {
+    color: var(--warning);
+}
+
+.finantec-goal-description {
+    margin-top: auto;
+
+    color: var(--text-muted);
+
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+
+/* Barra de progresso */
+
+.finantec-goal-progress-panel {
+    margin-bottom: 1rem;
+    padding: 1.15rem 1.2rem;
+
+    background: var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius: var(--radius);
+}
+
+.finantec-goal-progress-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.finantec-goal-progress-title {
+    color: var(--text-main);
+
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.finantec-goal-progress-name {
+    margin-top: 0.2rem;
+
+    color: var(--text-muted);
+
+    font-size: 0.82rem;
+}
+
+.finantec-goal-progress-header strong {
+    color: var(--success);
+
+    font-size: 0.85rem;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+.finantec-goal-progress-track {
+    width: 100%;
+    height: 11px;
+
+    background: var(--bg-elevated);
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius: 999px;
+
+    overflow: hidden;
+}
+
+.finantec-goal-progress-fill {
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(34, 197, 94, 0.78),
+            #22c55e
+        );
+
+    border-radius: 999px;
+
+    transition: width 180ms ease;
+}
+
+.finantec-goal-progress-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 1rem;
+    margin-top: 0.6rem;
+
+    color: var(--text-muted);
+
+    font-size: 0.8rem;
+}
+
 
 /* =========================================================
    TABELAS E DATAFRAMES
@@ -1737,6 +2003,13 @@ hr {
     .stTabs [data-baseweb="tab"] {
         flex-shrink: 0;
     }
+  .finantec-goal-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
 }
 
 
@@ -1890,6 +2163,38 @@ hr {
         margin-top: 0.7rem;
 
         font-size: 0.86rem !important;
+    }
+      .finantec-goal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-goal-card {
+        min-height: auto;
+        padding: 1rem;
+    }
+
+    .finantec-goal-value {
+        font-size: 1.55rem;
+    }
+
+    .finantec-goal-progress-panel {
+        padding: 1rem;
+    }
+
+    .finantec-goal-progress-header {
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .finantec-goal-progress-header strong {
+        white-space: normal;
+    }
+
+    .finantec-goal-progress-footer {
+        align-items: flex-start;
+        flex-direction: column;
+
+        gap: 0.25rem;
     }
 }
 
