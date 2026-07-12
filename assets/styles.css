@@ -1,14 +1,15 @@
 :root {
     color-scheme: dark;
 
-    /* Fundo e superfícies */
+    /* Fundos e superfícies */
     --bg-main: #09090b;
     --bg-sidebar: #09090b;
-
     --bg-panel: #18181b;
     --bg-panel-2: #18181b;
     --bg-panel-soft: #202024;
     --bg-elevated: #27272a;
+    --bg-hover: #292b31;
+    --bg-deep: #111113;
 
     /* Tabelas */
     --bg-table-head: #18181b;
@@ -20,7 +21,6 @@
     --border: #27272a;
     --border-light: #3f3f46;
     --border-strong: #52525b;
-
     --accent-line: rgba(249, 115, 22, 0.30);
 
     /* Texto */
@@ -28,13 +28,13 @@
     --text-main: #fafafa;
     --text-soft: #d4d4d8;
     --text-muted: #a1a1aa;
-    --text-disabled: #71717a;
+    --text-disabled: #707078;
 
     /* Destaque */
     --orange: #f97316;
     --accent: #f97316;
     --accent-hover: #fb923c;
-    --accent-active: #c2410c;
+    --accent-active: #d94f08;
     --accent-soft: rgba(249, 115, 22, 0.10);
 
     /* Estados */
@@ -42,14 +42,19 @@
     --success: #22c55e;
     --success-soft: rgba(34, 197, 94, 0.10);
 
-    --danger: #ef4444;
-    --danger-soft: rgba(239, 68, 68, 0.10);
+    --blue: #3b82f6;
+    --info: #71717a;
+    --info-soft: rgba(113, 113, 122, 0.10);
 
     --warning: #f59e0b;
     --warning-soft: rgba(245, 158, 11, 0.10);
 
-    --info: #a1a1aa;
-    --info-soft: rgba(161, 161, 170, 0.08);
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.10);
+    --danger-bg: #100b0c;
+    --danger-surface: rgba(127, 29, 29, 0.18);
+    --danger-surface-strong: rgba(127, 29, 29, 0.24);
+    --danger-border: rgba(239, 68, 68, 0.55);
 
     /* Formatos */
     --radius-sm: 10px;
@@ -60,6 +65,7 @@
     --shadow: none;
     --shadow-soft: none;
 }
+
 
 /* =========================================================
    ESTRUTURA PRINCIPAL
@@ -93,7 +99,7 @@ body {
 }
 
 [data-testid="stHeader"] {
-    background: rgba(15, 17, 21, 0.94) !important;
+    background: rgba(9, 9, 11, 0.94) !important;
     border-bottom: 1px solid var(--border);
     backdrop-filter: blur(12px);
 }
@@ -184,6 +190,7 @@ small {
 .stCaption {
     color: var(--text-muted) !important;
     font-size: 0.8125rem !important;
+    line-height: 1.55 !important;
 }
 
 [data-testid="stMarkdownContainer"] p {
@@ -197,6 +204,36 @@ a {
 a:hover {
     color: var(--accent-hover);
 }
+
+
+/* =========================================================
+   ABAS
+   ========================================================= */
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.stTabs [data-baseweb="tab"] {
+    padding: 0.55rem 0 0.65rem;
+    color: var(--text-muted) !important;
+    background: transparent;
+    font-weight: 650;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--text-soft) !important;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    color: var(--text-main) !important;
+}
+
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: var(--accent) !important;
+}
+
 
 /* =========================================================
    INPUTS E CAMPOS
@@ -260,9 +297,11 @@ a:hover {
 [data-baseweb="select"] > div:focus-within {
     border-color: var(--accent) !important;
 
-    outline: 2px solid rgba(249, 115, 22, 0.22) !important;
-    outline-offset: 1px;
+    outline:
+        2px solid
+        rgba(249, 115, 22, 0.22) !important;
 
+    outline-offset: 1px;
     box-shadow: none !important;
 }
 
@@ -304,26 +343,25 @@ a:hover {
     border-color: var(--accent) !important;
 }
 
+
 /* =========================================================
    BOTÕES
    ========================================================= */
 
 .stButton > button,
 .stDownloadButton > button,
-[data-testid="stFormSubmitButton"] > button {
-    min-height: 42px;
-    padding: 0.625rem 1rem;
+[data-testid="stFormSubmitButton"] > button,
+[data-testid="stFileUploader"] button {
+    min-height: 44px !important;
+    padding: 0.72rem 1rem !important;
 
-    background: transparent;
-    color: var(--text-soft);
+    border-radius: var(--radius-sm) !important;
 
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
+    font-size: 0.94rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
 
-    font-size: 0.875rem;
-    font-weight: 600;
-
-    box-shadow: none;
+    box-shadow: none !important;
 
     transition:
         background-color 140ms ease,
@@ -332,46 +370,54 @@ a:hover {
         transform 140ms ease;
 }
 
-.stButton > button:hover,
-.stDownloadButton > button:hover,
-[data-testid="stFormSubmitButton"] > button:hover {
-    background: var(--bg-elevated);
-    color: var(--text-main);
 
-    border-color: var(--accent);
+/* Botões secundários ativos */
+
+.stButton > button:not([kind="primary"]):not(:disabled),
+.stDownloadButton > button:not(:disabled),
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled),
+[data-testid="stFileUploader"] button:not(:disabled) {
+    background: #202226 !important;
+    color: #f4f4f5 !important;
+
+    border: 1px solid var(--border-strong) !important;
+
+    opacity: 1 !important;
 }
 
-.stButton > button:focus-visible,
-.stDownloadButton > button:focus-visible,
-[data-testid="stFormSubmitButton"] > button:focus-visible {
-    outline: 2px solid rgba(249, 115, 22, 0.40);
-    outline-offset: 2px;
-}
-
-.stButton > button:active,
-.stDownloadButton > button:active,
-[data-testid="stFormSubmitButton"] > button:active {
-    transform: translateY(1px);
-}
-
-
-/* Ação principal */
-button[kind="primary"],
-[data-testid="baseButton-primary"],
-.stButton > button[kind="primary"],
-[data-testid="stFormSubmitButton"] button[kind="primary"] {
-    background: var(--accent-active) !important;
+.stButton > button:not([kind="primary"]):not(:disabled):hover,
+.stDownloadButton > button:not(:disabled):hover,
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled):hover,
+[data-testid="stFileUploader"] button:not(:disabled):hover {
+    background: var(--bg-hover) !important;
     color: #ffffff !important;
 
     border-color: var(--accent) !important;
+}
+
+
+/* Botões primários */
+
+button[kind="primary"]:not(:disabled),
+button[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="stFormSubmitButton"] button:not(:disabled) {
+    background: var(--accent-active) !important;
+    color: #ffffff !important;
+
+    border:
+        1px solid
+        var(--accent) !important;
 
     box-shadow: none !important;
 }
 
-button[kind="primary"]:hover,
-[data-testid="baseButton-primary"]:hover,
-.stButton > button[kind="primary"]:hover,
-[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+button[kind="primary"]:not(:disabled):hover,
+button[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="stFormSubmitButton"] button:not(:disabled):hover {
     background: var(--accent) !important;
     color: #ffffff !important;
 
@@ -379,47 +425,93 @@ button[kind="primary"]:hover,
 }
 
 
-/* Estado desabilitado */
+/* Estados de interação */
+
+.stButton > button:focus-visible,
+.stDownloadButton > button:focus-visible,
+[data-testid="stFormSubmitButton"] > button:focus-visible,
+[data-testid="stFileUploader"] button:focus-visible {
+    outline:
+        2px solid
+        rgba(249, 115, 22, 0.42) !important;
+
+    outline-offset: 2px !important;
+}
+
+.stButton > button:active,
+.stDownloadButton > button:active,
+[data-testid="stFormSubmitButton"] > button:active,
+[data-testid="stFileUploader"] button:active {
+    transform: translateY(1px);
+}
+
+
+/* Botões desabilitados */
+
 .stButton > button:disabled,
 .stDownloadButton > button:disabled,
-[data-testid="stFormSubmitButton"] > button:disabled {
-    background: transparent !important;
+[data-testid="stFormSubmitButton"] > button:disabled,
+[data-testid="stFileUploader"] button:disabled {
+    background: #121317 !important;
     color: var(--text-disabled) !important;
 
-    border-color: var(--border) !important;
+    border:
+        1px solid
+        #292a30 !important;
 
-    opacity: 0.72 !important;
-    cursor: not-allowed;
+    font-weight: 600 !important;
+
+    opacity: 1 !important;
+    cursor: not-allowed !important;
 }
+
+
+/* Texto e ícones internos */
+
+.stButton > button p,
+.stDownloadButton > button p,
+[data-testid="stFormSubmitButton"] > button p,
+[data-testid="stFileUploader"] button p,
+.stButton > button span,
+.stDownloadButton > button span,
+[data-testid="stFormSubmitButton"] > button span,
+[data-testid="stFileUploader"] button span,
+.stButton > button svg,
+.stDownloadButton > button svg,
+[data-testid="stFormSubmitButton"] > button svg,
+[data-testid="stFileUploader"] button svg {
+    color: inherit !important;
+    fill: currentColor !important;
+
+    font-size: inherit !important;
+    font-weight: inherit !important;
+
+    opacity: 1 !important;
+}
+
 
 /* =========================================================
-   ABAS
+   UPLOAD DE ARQUIVOS
    ========================================================= */
 
-.stTabs [data-baseweb="tab-list"] {
-    gap: 1.25rem;
-    border-bottom: 1px solid var(--border);
+[data-testid="stFileUploader"] section {
+    background: #1a1d24 !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius: 12px !important;
 }
 
-.stTabs [data-baseweb="tab"] {
-    padding: 0.55rem 0 0.65rem;
-
-    color: var(--text-muted) !important;
-    background: transparent;
-
-    font-weight: 650;
+[data-testid="stFileUploader"] button {
+    background: #13161c !important;
 }
 
-.stTabs [data-baseweb="tab"]:hover {
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] label {
     color: var(--text-soft) !important;
-}
-
-.stTabs [data-baseweb="tab"][aria-selected="true"] {
-    color: var(--text-main) !important;
-}
-
-.stTabs [data-baseweb="tab-highlight"] {
-    background-color: var(--accent) !important;
 }
 
 
@@ -428,14 +520,19 @@ button[kind="primary"]:hover,
    ========================================================= */
 
 [data-testid="stForm"] {
-    padding: 1.1rem;
+    padding: 0.35rem 0 0.5rem !important;
 
-    background: var(--bg-panel);
+    background: transparent !important;
 
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius);
+    border: 0 !important;
+    border-radius: 0 !important;
 
-    box-shadow: var(--shadow-soft);
+    box-shadow: none !important;
+}
+
+[data-testid="stForm"]
+[data-testid="stVerticalBlock"] {
+    gap: 0.8rem;
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] {
@@ -446,39 +543,156 @@ button[kind="primary"]:hover,
 }
 
 [data-testid="stExpander"] {
-    background: var(--bg-panel);
+    background: var(--bg-deep) !important;
 
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius);
+    border:
+        1px solid
+        var(--border-light) !important;
 
+    border-radius: 14px !important;
+
+    box-shadow: none !important;
     overflow: hidden;
 }
 
 [data-testid="stExpander"] summary {
-    min-height: 3rem;
+    min-height: 48px !important;
+    padding: 0 1rem !important;
 
-    background: var(--bg-panel-2);
-    color: var(--text-main);
+    background: var(--bg-panel) !important;
+    color: var(--text-main) !important;
 
-    border-bottom: 1px solid transparent;
+    border-bottom:
+        1px solid
+        transparent !important;
+
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
 }
 
 [data-testid="stExpander"] summary:hover {
-    background: var(--bg-panel-soft);
+    background: var(--bg-panel-soft) !important;
 }
 
-[data-testid="stExpander"] details[open] summary {
-    border-bottom-color: var(--border);
+[data-testid="stExpander"]
+details[open]
+summary {
+    border-bottom-color:
+        var(--border-light) !important;
 }
 
-.streamlit-expanderHeader {
-    background: var(--bg-panel-2);
-    color: var(--text-main);
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary svg {
+    color: var(--text-main) !important;
+    fill: currentColor !important;
 }
 
 
 /* =========================================================
-   PAINÉIS PERSONALIZADOS
+   ALERTAS
+   ========================================================= */
+
+[data-testid="stAlert"],
+[data-baseweb="notification"] {
+    min-height: auto !important;
+    padding: 0.85rem 1rem !important;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-soft) !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--border-light) !important;
+
+    border-radius: 12px !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stAlert"] > div,
+[data-baseweb="notification"] > div {
+    background: transparent !important;
+}
+
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] span,
+[data-baseweb="notification"] p,
+[data-baseweb="notification"] span {
+    color: var(--text-soft) !important;
+
+    font-size: 0.92rem !important;
+    line-height: 1.5 !important;
+}
+
+[data-testid="stAlert"][kind="info"],
+[data-baseweb="notification"][kind="info"] {
+    border-left-color: var(--info) !important;
+}
+
+[data-testid="stAlert"][kind="success"],
+[data-baseweb="notification"][kind="success"] {
+    border-left-color: var(--success) !important;
+}
+
+[data-testid="stAlert"][kind="warning"],
+[data-baseweb="notification"][kind="warning"] {
+    border-left-color: var(--warning) !important;
+}
+
+[data-testid="stAlert"][kind="error"],
+[data-baseweb="notification"][kind="error"] {
+    border-left-color: var(--danger) !important;
+}
+
+
+/* Alertas HTML personalizados */
+
+.finantec-alert {
+    margin: 0.75rem 0;
+    padding: 0.9rem 1rem;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-soft) !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--border-light) !important;
+
+    border-radius: 12px !important;
+
+    line-height: 1.5;
+
+    box-shadow: none !important;
+}
+
+.finantec-alert.info {
+    border-left-color: var(--info) !important;
+}
+
+.finantec-alert.success {
+    border-left-color: var(--success) !important;
+}
+
+.finantec-alert.warning {
+    border-left-color: var(--warning) !important;
+}
+
+.finantec-alert.error {
+    border-left-color: var(--danger) !important;
+}
+
+
+/* =========================================================
+   PAINÉIS FINANCEIROS
    ========================================================= */
 
 .finantec-panel,
@@ -505,6 +719,7 @@ button[kind="primary"]:hover,
 .finantec-overview-grid {
     display: grid;
     gap: 1rem;
+
     width: 100%;
 }
 
@@ -520,13 +735,11 @@ button[kind="primary"]:hover,
 }
 
 
-/* =========================================================
-   SALDO PRINCIPAL
-   ========================================================= */
+/* Saldo principal */
 
 .finantec-balance-panel {
-    padding: 1.5rem;
     min-height: 190px;
+    padding: 1.5rem;
 
     border-color: var(--accent-line);
 
@@ -545,10 +758,11 @@ button[kind="primary"]:hover,
 }
 
 .finantec-balance-label,
-.finantec-mini-title {
-    color: #b5c0d1;
+.finantec-mini-title,
+.finantec-stat-title {
+    color: #c4c7d1 !important;
 
-    font-size: 0.78rem;
+    font-size: 0.82rem !important;
     font-weight: 750;
 
     text-transform: uppercase;
@@ -571,19 +785,20 @@ button[kind="primary"]:hover,
 }
 
 .finantec-balance-desc,
-.finantec-mini-desc {
+.finantec-mini-desc,
+.finantec-diagnosis-text {
     color: var(--text-soft);
-    font-size: 0.95rem;
+
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
 }
 
 
-/* =========================================================
-   MINI CARDS
-   ========================================================= */
+/* Mini cards */
 
 .finantec-mini-card {
-    padding: 1.2rem;
     min-height: 130px;
+    padding: 1.2rem;
 }
 
 .finantec-mini-card:hover {
@@ -593,28 +808,33 @@ button[kind="primary"]:hover,
 .finantec-mini-value {
     margin: 0.75rem 0 0.55rem;
 
-    color: #ffffff;
+    color: #ffffff !important;
 
-    font-size: 1.15rem;
-    font-weight: 800;
+    font-size: 1.45rem !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
 }
 
 .finantec-mini-card.receita {
-    border-top: 3px solid var(--success);
+    border-top:
+        3px solid
+        var(--success);
 }
 
 .finantec-mini-card.consumo {
-    border-top: 3px solid var(--accent);
+    border-top:
+        3px solid
+        var(--accent);
 }
 
 .finantec-mini-card.reserva {
-    border-top: 3px solid var(--blue);
+    border-top:
+        3px solid
+        var(--blue);
 }
 
 
-/* =========================================================
-   DIAGNÓSTICO
-   ========================================================= */
+/* Diagnóstico */
 
 .finantec-diagnosis-panel {
     padding: 1.3rem;
@@ -631,17 +851,10 @@ button[kind="primary"]:hover,
 .finantec-diagnosis-title {
     margin-bottom: 0.75rem;
 
-    color: #ffffff;
+    color: #ffffff !important;
 
-    font-size: 1.1rem;
-    font-weight: 800;
-}
-
-.finantec-diagnosis-text {
-    margin-bottom: 1rem;
-
-    color: var(--text-soft);
-    line-height: 1.6;
+    font-size: 1.28rem !important;
+    font-weight: 800 !important;
 }
 
 .finantec-diagnosis-grid {
@@ -656,9 +869,7 @@ button[kind="primary"]:hover,
 }
 
 
-/* =========================================================
-   BARRAS
-   ========================================================= */
+/* Barras */
 
 .finantec-bar-label {
     display: flex;
@@ -667,9 +878,9 @@ button[kind="primary"]:hover,
     gap: 1rem;
     margin-bottom: 0.45rem;
 
-    color: var(--text-soft);
+    color: #e4e4e7 !important;
 
-    font-size: 0.85rem;
+    font-size: 0.9rem !important;
     font-weight: 650;
 }
 
@@ -709,32 +920,21 @@ button[kind="primary"]:hover,
 }
 
 
-/* =========================================================
-   MÉTRICAS PERSONALIZADAS
-   ========================================================= */
+/* Métricas personalizadas */
 
 .finantec-stat-card {
-    padding: 1rem 1.2rem;
     min-height: 120px;
-}
-
-.finantec-stat-title {
-    color: #b5c0d1;
-
-    font-size: 0.8rem;
-    font-weight: 750;
-
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    padding: 1rem 1.2rem;
 }
 
 .finantec-stat-value {
     margin-top: 0.7rem;
 
-    color: #ffffff;
+    color: #ffffff !important;
 
-    font-size: 2rem;
-    font-weight: 800;
+    font-size: 2.15rem !important;
+    line-height: 1.08 !important;
+    font-weight: 800 !important;
 }
 
 
@@ -743,93 +943,55 @@ button[kind="primary"]:hover,
    ========================================================= */
 
 [data-testid="stMetric"] {
-    min-height: 108px;
-    padding: 1rem 1.1rem;
+    min-height: 122px !important;
+    padding: 1rem 1.15rem !important;
 
-    background: var(--bg-panel);
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.01),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel) !important;
 
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-radius: var(--radius) !important;
+
+    box-shadow: none !important;
 }
 
 [data-testid="stMetricLabel"] {
-    color: var(--text-muted) !important;
+    color: var(--text-soft) !important;
+
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
 }
 
 [data-testid="stMetricValue"] {
-    color: var(--text-main) !important;
-    font-weight: 750;
+    color: #ffffff !important;
+
+    font-size: clamp(
+        2rem,
+        2.4vw,
+        2.4rem
+    ) !important;
+
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
 }
 
 
 /* =========================================================
-   ALERTAS
-   ========================================================= */
-
-[data-testid="stAlert"] {
-    background: var(--bg-panel-2) !important;
-    color: var(--text-main);
-
-    border: 1px solid var(--border) !important;
-    border-left-width: 4px !important;
-    border-radius: var(--radius);
-
-    box-shadow: none;
-}
-
-[data-testid="stAlert"] p {
-    color: var(--text-soft) !important;
-}
-
-[data-testid="stAlert"][kind="info"] {
-    border-left-color: var(--info) !important;
-}
-
-[data-testid="stAlert"][kind="success"] {
-    border-left-color: var(--success) !important;
-}
-
-[data-testid="stAlert"][kind="warning"] {
-    border-left-color: var(--warning) !important;
-}
-
-[data-testid="stAlert"][kind="error"] {
-    border-left-color: var(--danger) !important;
-}
-
-.finantec-alert {
-    margin: 0.75rem 0;
-    padding: 0.9rem 1rem;
-
-    background: var(--bg-panel-2);
-    color: var(--text-soft);
-
-    border: 1px solid var(--border);
-    border-left-width: 4px;
-    border-radius: var(--radius-sm);
-
-    line-height: 1.5;
-}
-
-.finantec-alert.info {
-    border-left-color: var(--info);
-}
-
-.finantec-alert.success {
-    border-left-color: var(--success);
-}
-
-.finantec-alert.warning {
-    border-left-color: var(--warning);
-}
-
-.finantec-alert.error {
-    border-left-color: var(--danger);
-}
-
-
-/* =========================================================
-   TABELAS PERSONALIZADAS
+   TABELAS E DATAFRAMES
    ========================================================= */
 
 .finantec-table-panel {
@@ -846,21 +1008,27 @@ button[kind="primary"]:hover,
     padding: 0.95rem 1rem;
 
     background: var(--bg-table-head);
-    color: var(--text-soft);
+    color: var(--text-soft) !important;
 
-    border-bottom: 1px solid var(--border-light);
+    border-bottom:
+        1px solid
+        var(--border-light);
 
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
     text-align: left;
 }
 
 .finantec-table tbody td {
     padding: 0.95rem 1rem;
 
-    color: var(--text-main);
+    color: #f4f4f5 !important;
 
-    border-bottom: 1px solid var(--border);
+    border-bottom:
+        1px solid
+        var(--border);
+
+    font-size: 0.92rem !important;
 }
 
 .finantec-table tbody tr:nth-child(odd) {
@@ -875,11 +1043,6 @@ button[kind="primary"]:hover,
     background: var(--bg-table-hover);
 }
 
-
-/* =========================================================
-   DATAFRAME E DATA EDITOR
-   ========================================================= */
-
 [data-testid="stDataFrame"],
 [data-testid="stDataEditor"] {
     background: var(--bg-panel);
@@ -888,6 +1051,315 @@ button[kind="primary"]:hover,
     border-radius: var(--radius);
 
     overflow: hidden;
+}
+
+[data-testid="stDataFrame"] * {
+    font-size: 0.92rem !important;
+}
+
+
+/* =========================================================
+   RESUMO LOCAL
+   ========================================================= */
+
+.finantec-section-heading {
+    margin: 1.5rem 0 0.85rem;
+}
+
+.finantec-section-heading h3 {
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.finantec-section-heading p {
+    margin: 0.35rem 0 0;
+
+    color: var(--text-muted);
+
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.finantec-data-summary-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(190px, 1fr)
+    );
+
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.finantec-data-summary-card {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 132px;
+    padding: 1.1rem 1.2rem;
+
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-top:
+        3px solid
+        var(--border-light);
+
+    border-radius: var(--radius);
+}
+
+.finantec-data-summary-label {
+    color: var(--text-muted);
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.finantec-data-summary-value {
+    margin: 0.7rem 0 0.45rem;
+
+    color: var(--text-main);
+
+    font-size: 1.65rem;
+    line-height: 1.1;
+    font-weight: 800;
+}
+
+.finantec-data-summary-value.available {
+    color: var(--success);
+}
+
+.finantec-data-summary-value.unavailable {
+    color: var(--text-muted);
+}
+
+.finantec-data-summary-description {
+    margin-top: auto;
+
+    color: var(--text-muted);
+
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   AÇÕES DA ENTRADA MANUAL
+   ========================================================= */
+
+.st-key-manual-actions {
+    margin-top: 0.25rem;
+}
+
+.st-key-manual-actions
+[data-testid="stHorizontalBlock"] {
+    gap: 0.75rem;
+}
+
+.st-key-manual-actions
+.stButton > button {
+    width: 100% !important;
+}
+
+.st-key-manual-clear-all {
+    margin-top: 0.75rem;
+}
+
+.st-key-manual-clear-all
+button:not(:disabled) {
+    background: transparent !important;
+    color: #fca5a5 !important;
+
+    border-color: #7f1d1d !important;
+}
+
+.st-key-manual-clear-all
+button:not(:disabled):hover {
+    background:
+        rgba(239, 68, 68, 0.10) !important;
+
+    color: #fecaca !important;
+
+    border-color: var(--danger) !important;
+}
+
+
+/* Ações dos cartões */
+
+[class*="st-key-edit_manual_"]
+button:not(:disabled) {
+    background: #202226 !important;
+    color: var(--text-main) !important;
+
+    border-color: var(--border-strong) !important;
+}
+
+[class*="st-key-edit_manual_"]
+button:not(:disabled):hover {
+    background: var(--bg-hover) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent) !important;
+}
+
+[class*="st-key-delete_manual_"]
+button:not(:disabled) {
+    background:
+        rgba(239, 68, 68, 0.06) !important;
+
+    color: #fca5a5 !important;
+
+    border-color: #7f1d1d !important;
+}
+
+[class*="st-key-delete_manual_"]
+button:not(:disabled):hover {
+    background:
+        rgba(239, 68, 68, 0.14) !important;
+
+    color: #fecaca !important;
+
+    border-color: var(--danger) !important;
+}
+
+
+/* =========================================================
+   ZONA DE RISCO
+   ========================================================= */
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] {
+    background: var(--danger-bg) !important;
+
+    border:
+        1px solid
+        var(--danger-border) !important;
+
+    border-radius: var(--radius) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary {
+    background: var(--danger-surface) !important;
+    color: #fecaca !important;
+
+    border-bottom-color:
+        rgba(239, 68, 68, 0.30) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary:hover {
+    background:
+        rgba(127, 29, 29, 0.28) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary p,
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary span,
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary svg {
+    color: #fecaca !important;
+    fill: currentColor !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stAlert"] {
+    padding: 1rem 1.1rem !important;
+
+    background:
+        var(--danger-surface-strong) !important;
+
+    border:
+        1px solid
+        var(--danger-border) !important;
+
+    border-left:
+        5px solid
+        var(--danger) !important;
+
+    border-radius: 12px !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stAlert"] p,
+.st-key-danger-zone-wrapper
+[data-testid="stAlert"] span {
+    color: #fee2e2 !important;
+
+    font-size: 0.94rem !important;
+    font-weight: 600 !important;
+    line-height: 1.55 !important;
+}
+
+.st-key-danger-zone-wrapper
+.stTextInput input {
+    background: #160d0f !important;
+    color: #fee2e2 !important;
+
+    border-color: var(--danger-border) !important;
+}
+
+.st-key-danger-zone-wrapper
+.stTextInput input::placeholder {
+    color: #9f6a70 !important;
+}
+
+.st-key-danger-zone-wrapper
+.stTextInput input:focus {
+    border-color: var(--danger) !important;
+
+    outline:
+        2px solid
+        rgba(239, 68, 68, 0.28) !important;
+}
+
+
+/* Botão destrutivo habilitado */
+
+.st-key-danger-zone-wrapper
+.st-key-delete-all-user-data
+button:not(:disabled),
+.st-key-delete-all-user-data
+button:not(:disabled) {
+    background: #b91c1c !important;
+    color: #ffffff !important;
+
+    border-color: var(--danger) !important;
+}
+
+.st-key-danger-zone-wrapper
+.st-key-delete-all-user-data
+button:not(:disabled):hover,
+.st-key-delete-all-user-data
+button:not(:disabled):hover {
+    background: #dc2626 !important;
+    border-color: #f87171 !important;
+}
+
+
+/* Botão destrutivo bloqueado */
+
+.st-key-danger-zone-wrapper
+.st-key-delete-all-user-data
+button:disabled,
+.st-key-delete-all-user-data
+button:disabled {
+    background:
+        rgba(127, 29, 29, 0.10) !important;
+
+    color: #86585d !important;
+
+    border-color:
+        rgba(127, 29, 29, 0.50) !important;
 }
 
 
@@ -902,289 +1374,9 @@ hr {
     border-top: 1px solid var(--border);
 }
 
-/* =========================================================
-   AJUSTE 2 — LEGIBILIDADE E BOTÕES
-   ========================================================= */
-
-/* ---------- Tipos menores dos cards e painéis ---------- */
-
-.finantec-balance-desc,
-.finantec-mini-desc,
-.finantec-diagnosis-text,
-.finantec-alert,
-[data-testid="stCaptionContainer"],
-.stCaption {
-    font-size: 0.92rem !important;
-    line-height: 1.55 !important;
-}
-
-.finantec-balance-label,
-.finantec-mini-title,
-.finantec-stat-title {
-    font-size: 0.82rem !important;
-    letter-spacing: 0.08em;
-    color: #c4c7d1 !important;
-}
-
-.finantec-mini-value {
-    font-size: 1.45rem !important;
-    line-height: 1.15 !important;
-    font-weight: 800 !important;
-    color: #ffffff !important;
-}
-
-.finantec-stat-value {
-    font-size: 2.15rem !important;
-    line-height: 1.08 !important;
-    font-weight: 800 !important;
-    color: #ffffff !important;
-}
-
-.finantec-diagnosis-title {
-    font-size: 1.28rem !important;
-    font-weight: 800 !important;
-    color: #ffffff !important;
-}
-
-.finantec-bar-label {
-    font-size: 0.9rem !important;
-    color: #e4e4e7 !important;
-}
-
-
-/* ---------- Métricas nativas do Streamlit ---------- */
-
-[data-testid="stMetric"] {
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.01),
-            rgba(255, 255, 255, 0)
-        ),
-        var(--bg-panel) !important;
-
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius) !important;
-    padding: 1rem 1.15rem !important;
-    min-height: 122px !important;
-    box-shadow: none !important;
-}
-
-[data-testid="stMetricLabel"] {
-    color: #d4d4d8 !important;
-    font-size: 0.9rem !important;
-    font-weight: 600 !important;
-    line-height: 1.35 !important;
-}
-
-[data-testid="stMetricValue"] {
-    color: #ffffff !important;
-    font-size: clamp(2rem, 2.4vw, 2.4rem) !important;
-    font-weight: 800 !important;
-    line-height: 1.05 !important;
-}
-
-[data-testid="stMetricDelta"] {
-    font-size: 0.9rem !important;
-    font-weight: 600 !important;
-}
-
-
-/* ---------- Base de todos os botões ---------- */
-
-.stButton > button,
-.stDownloadButton > button,
-[data-testid="stFormSubmitButton"] > button,
-[data-testid="stFileUploader"] button {
-    min-height: 44px !important;
-    padding: 0.72rem 1rem !important;
-
-    border-radius: 10px !important;
-
-    font-size: 0.94rem !important;
-    font-weight: 700 !important;
-    line-height: 1.2 !important;
-
-    box-shadow: none !important;
-
-    transition:
-        background-color 140ms ease,
-        border-color 140ms ease,
-        color 140ms ease,
-        transform 140ms ease;
-}
-
-
-/* ---------- Botões secundários ativos ---------- */
-
-.stButton > button:not([kind="primary"]):not(:disabled),
-.stDownloadButton > button:not(:disabled),
-[data-testid="stFormSubmitButton"]
-    > button:not([kind="primary"]):not(:disabled),
-[data-testid="stFileUploader"] button:not(:disabled) {
-    background: #202226 !important;
-    color: #f4f4f5 !important;
-
-    border: 1px solid #52525b !important;
-
-    opacity: 1 !important;
-}
-
-.stButton > button:not([kind="primary"]):not(:disabled):hover,
-.stDownloadButton > button:not(:disabled):hover,
-[data-testid="stFormSubmitButton"]
-    > button:not([kind="primary"]):not(:disabled):hover,
-[data-testid="stFileUploader"] button:not(:disabled):hover {
-    background: #292b31 !important;
-    color: #ffffff !important;
-
-    border-color: #f97316 !important;
-}
-
-.stButton > button:focus-visible,
-.stDownloadButton > button:focus-visible,
-[data-testid="stFormSubmitButton"] > button:focus-visible,
-[data-testid="stFileUploader"] button:focus-visible {
-    outline: 2px solid rgba(249, 115, 22, 0.42) !important;
-    outline-offset: 2px !important;
-}
-
-.stButton > button:active,
-.stDownloadButton > button:active,
-[data-testid="stFormSubmitButton"] > button:active,
-[data-testid="stFileUploader"] button:active {
-    transform: translateY(1px);
-}
-
-
-/* Mantém texto e ícones claros dentro dos botões */
-.stButton > button p,
-.stDownloadButton > button p,
-[data-testid="stFormSubmitButton"] > button p,
-[data-testid="stFileUploader"] button p,
-.stButton > button span,
-.stDownloadButton > button span,
-[data-testid="stFormSubmitButton"] > button span,
-[data-testid="stFileUploader"] button span,
-.stButton > button svg,
-.stDownloadButton > button svg,
-[data-testid="stFormSubmitButton"] > button svg,
-[data-testid="stFileUploader"] button svg {
-    color: inherit !important;
-    fill: currentColor;
-    font-size: inherit !important;
-    font-weight: inherit !important;
-    opacity: 1 !important;
-}
-
-
-/* ---------- Botão principal ---------- */
-
-button[kind="primary"]:not(:disabled),
-[data-testid="baseButton-primary"]:not(:disabled),
-.stButton > button[kind="primary"]:not(:disabled),
-[data-testid="stFormSubmitButton"]
-    button[kind="primary"]:not(:disabled) {
-    background: #d94f08 !important;
-    color: #ffffff !important;
-
-    border: 1px solid #f97316 !important;
-
-    box-shadow: none !important;
-}
-
-button[kind="primary"]:not(:disabled):hover,
-[data-testid="baseButton-primary"]:not(:disabled):hover,
-.stButton > button[kind="primary"]:not(:disabled):hover,
-[data-testid="stFormSubmitButton"]
-    button[kind="primary"]:not(:disabled):hover {
-    background: #f97316 !important;
-    color: #ffffff !important;
-
-    border-color: #fb923c !important;
-}
-
-
-/* ---------- Botões desabilitados ---------- */
-
-.stButton > button:disabled,
-.stDownloadButton > button:disabled,
-[data-testid="stFormSubmitButton"] > button:disabled,
-[data-testid="stFileUploader"] button:disabled {
-    background: #121317 !important;
-    color: #707078 !important;
-
-    border: 1px solid #292a30 !important;
-
-    font-weight: 600 !important;
-
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-}
-
-.stButton > button:disabled p,
-.stDownloadButton > button:disabled p,
-[data-testid="stFormSubmitButton"] > button:disabled p,
-.stButton > button:disabled span,
-.stDownloadButton > button:disabled span,
-[data-testid="stFormSubmitButton"] > button:disabled span,
-.stButton > button:disabled svg,
-.stDownloadButton > button:disabled svg,
-[data-testid="stFormSubmitButton"] > button:disabled svg {
-    color: #707078 !important;
-    fill: currentColor;
-    opacity: 1 !important;
-}
-
-
-/* ---------- Upload / file uploader ---------- */
-
-[data-testid="stFileUploader"] section {
-    background: #1a1d24 !important;
-    border: 1px solid #3f3f46 !important;
-    border-radius: 12px !important;
-}
-
-[data-testid="stFileUploader"] button {
-    background: #13161c !important;
-    color: #fafafa !important;
-    border: 1px solid #3f3f46 !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-}
-
-[data-testid="stFileUploader"] button:hover {
-    background: #232833 !important;
-    border-color: #f97316 !important;
-}
-
-[data-testid="stFileUploader"] small,
-[data-testid="stFileUploader"] span,
-[data-testid="stFileUploader"] label {
-    color: #d4d4d8 !important;
-}
-
-
-/* ---------- Tabela mais legível ---------- */
-
-.finantec-table thead th {
-    font-size: 0.9rem !important;
-    font-weight: 700 !important;
-    color: #d4d4d8 !important;
-}
-
-.finantec-table tbody td {
-    font-size: 0.92rem !important;
-    color: #f4f4f5 !important;
-}
-
-[data-testid="stDataFrame"] * {
-    font-size: 0.92rem !important;
-}
-
 
 /* =========================================================
-   MOBILE
+   RESPONSIVIDADE
    ========================================================= */
 
 @media (max-width: 900px) {
@@ -1192,20 +1384,14 @@ button[kind="primary"]:not(:disabled):hover,
         padding: 1.5rem 1.25rem 3rem;
     }
 
-    .finantec-mini-grid {
+    .finantec-mini-grid,
+    .finantec-diagnosis-grid {
         grid-template-columns: 1fr;
     }
 
-    .finantec-balance-panel {
-        min-height: auto;
-    }
-
+    .finantec-balance-panel,
     .finantec-mini-card {
         min-height: auto;
-    }
-
-    [data-testid="stMetricValue"] {
-        font-size: 1.85rem !important;
     }
 
     .finantec-mini-value,
@@ -1217,6 +1403,55 @@ button[kind="primary"]:not(:disabled):hover,
     .stDownloadButton > button,
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .stTabs
+    [data-baseweb="tab-list"]::-webkit-scrollbar {
+        display: none;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        flex-shrink: 0;
+    }
+}
+
+
+@media (max-width: 700px) {
+    [data-testid="stMetric"] {
+        min-height: 96px !important;
+        padding: 0.8rem 0.9rem !important;
+
+        border-radius: 14px !important;
+    }
+
+    [data-testid="stMetricLabel"] {
+        font-size: 0.82rem !important;
+        line-height: 1.3 !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 1.7rem !important;
+        line-height: 1.05 !important;
+    }
+
+    [data-testid="stMetricDelta"] {
+        font-size: 0.8rem !important;
+    }
+
+    .st-key-manual-actions
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+
+    .st-key-manual-actions
+    [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
     }
 }
 
@@ -1249,380 +1484,6 @@ button[kind="primary"]:not(:disabled):hover,
         font-size: 2.35rem;
     }
 
-    .finantec-table {
-        min-width: 620px;
-    }
-
-    .finantec-table-panel {
-        overflow-x: auto;
-    }
-
-    [data-testid="stMetric"] {
-        min-height: auto;
-    }
-}
-
-/* =========================================================
-   AJUSTE 3 — ALERTAS E EXPANDERS
-   ========================================================= */
-
-/* Garante texto branco dentro do botão principal. */
-button[kind="primary"] p,
-button[kind="primary"] span,
-[data-testid="baseButton-primary"] p,
-[data-testid="baseButton-primary"] span,
-.stButton > button[kind="primary"] p,
-.stButton > button[kind="primary"] span,
-[data-testid="stFormSubmitButton"] button[kind="primary"] p,
-[data-testid="stFormSubmitButton"] button[kind="primary"] span {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    opacity: 1 !important;
-}
-
-
-/* Alertas nativos passam a usar uma superfície neutra. */
-[data-testid="stAlert"],
-[data-baseweb="notification"] {
-    min-height: auto !important;
-    padding: 0.85rem 1rem !important;
-
-    background: #18181b !important;
-    color: #d4d4d8 !important;
-
-    border: 1px solid #27272a !important;
-    border-left: 4px solid #3f3f46 !important;
-    border-radius: 12px !important;
-
-    box-shadow: none !important;
-}
-
-[data-testid="stAlert"] > div,
-[data-baseweb="notification"] > div {
-    background: transparent !important;
-}
-
-[data-testid="stAlert"] p,
-[data-testid="stAlert"] span,
-[data-baseweb="notification"] p,
-[data-baseweb="notification"] span {
-    color: #d4d4d8 !important;
-    font-size: 0.92rem !important;
-    line-height: 1.5 !important;
-}
-
-
-/* Informação: cinza, sem bloco azul. */
-[data-testid="stAlert"][kind="info"],
-[data-baseweb="notification"][kind="info"] {
-    border-left-color: #71717a !important;
-}
-
-
-/* Sucesso: superfície neutra com detalhe verde. */
-[data-testid="stAlert"][kind="success"],
-[data-baseweb="notification"][kind="success"] {
-    border-left-color: #22c55e !important;
-}
-
-
-/* Aviso: superfície neutra com detalhe âmbar. */
-[data-testid="stAlert"][kind="warning"],
-[data-baseweb="notification"][kind="warning"] {
-    border-left-color: #f59e0b !important;
-}
-
-
-/* Erro: superfície neutra com detalhe vermelho. */
-[data-testid="stAlert"][kind="error"],
-[data-baseweb="notification"][kind="error"] {
-    border-left-color: #ef4444 !important;
-}
-
-
-/* Alertas HTML personalizados seguem a mesma regra. */
-.finantec-alert {
-    background: #18181b !important;
-    color: #d4d4d8 !important;
-
-    border: 1px solid #27272a !important;
-    border-left: 4px solid #3f3f46 !important;
-    border-radius: 12px !important;
-
-    box-shadow: none !important;
-}
-
-.finantec-alert.info {
-    border-left-color: #71717a !important;
-}
-
-.finantec-alert.success {
-    border-left-color: #22c55e !important;
-}
-
-.finantec-alert.warning {
-    border-left-color: #f59e0b !important;
-}
-
-.finantec-alert.error {
-    border-left-color: #ef4444 !important;
-}
-
-
-/* Expander mais claramente separado do conteúdo. */
-[data-testid="stExpander"] {
-    background: #111113 !important;
-
-    border: 1px solid #3f3f46 !important;
-    border-radius: 14px !important;
-
-    box-shadow: none !important;
-    overflow: hidden;
-}
-
-[data-testid="stExpander"] summary {
-    min-height: 48px !important;
-    padding: 0 1rem !important;
-
-    background: #18181b !important;
-    color: #fafafa !important;
-
-    border-bottom: 1px solid transparent !important;
-
-    font-size: 0.9rem !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stExpander"] summary:hover {
-    background: #202024 !important;
-}
-
-[data-testid="stExpander"] details[open] summary {
-    border-bottom-color: #3f3f46 !important;
-}
-
-[data-testid="stExpander"] summary p,
-[data-testid="stExpander"] summary span,
-[data-testid="stExpander"] summary svg {
-    color: #fafafa !important;
-    fill: currentColor;
-}
-
-/* =========================================================
-   CORREÇÃO — BOTÃO PRIMÁRIO DESABILITADO
-   ========================================================= */
-
-button[kind="primary"]:disabled,
-[data-testid="baseButton-primary"]:disabled,
-.stButton > button[kind="primary"]:disabled,
-[data-testid="stFormSubmitButton"] button[kind="primary"]:disabled {
-    background: #121317 !important;
-    color: #707078 !important;
-
-    border: 1px solid #292a30 !important;
-
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-}
-
-button[kind="primary"]:disabled p,
-button[kind="primary"]:disabled span,
-button[kind="primary"]:disabled svg,
-[data-testid="baseButton-primary"]:disabled p,
-[data-testid="baseButton-primary"]:disabled span,
-[data-testid="baseButton-primary"]:disabled svg,
-.stButton > button[kind="primary"]:disabled p,
-.stButton > button[kind="primary"]:disabled span,
-.stButton > button[kind="primary"]:disabled svg,
-[data-testid="stFormSubmitButton"]
-    button[kind="primary"]:disabled p,
-[data-testid="stFormSubmitButton"]
-    button[kind="primary"]:disabled span,
-[data-testid="stFormSubmitButton"]
-    button[kind="primary"]:disabled svg {
-    color: #707078 !important;
-    fill: currentColor !important;
-
-    font-weight: 600 !important;
-    opacity: 1 !important;
-}
-
-/* =========================================================
-   AJUSTE 4 — HIERARQUIA DA AÇÃO PRINCIPAL
-   ========================================================= */
-
-/* Botão primário ativo do Streamlit e dos formulários. */
-button[data-testid="baseButton-primary"]:not(:disabled),
-[data-testid="stFormSubmitButton"] button:not(:disabled) {
-    background: #e85d04 !important;
-    color: #ffffff !important;
-
-    border: 1px solid #f97316 !important;
-    border-radius: 10px !important;
-
-    font-weight: 700 !important;
-
-    box-shadow: none !important;
-}
-
-button[data-testid="baseButton-primary"]:not(:disabled):hover,
-[data-testid="stFormSubmitButton"] button:not(:disabled):hover {
-    background: #f97316 !important;
-    color: #ffffff !important;
-
-    border-color: #fb923c !important;
-}
-
-button[data-testid="baseButton-primary"]:not(:disabled) p,
-button[data-testid="baseButton-primary"]:not(:disabled) span,
-[data-testid="stFormSubmitButton"] button:not(:disabled) p,
-[data-testid="stFormSubmitButton"] button:not(:disabled) span {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    opacity: 1 !important;
-}
-
-
-/* Primário desabilitado deve parecer realmente indisponível. */
-button[data-testid="baseButton-primary"]:disabled,
-[data-testid="stFormSubmitButton"] button:disabled {
-    background: #111216 !important;
-    color: #6f6f78 !important;
-
-    border: 1px solid #292a30 !important;
-
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-}
-
-button[data-testid="baseButton-primary"]:disabled p,
-button[data-testid="baseButton-primary"]:disabled span,
-button[data-testid="baseButton-primary"]:disabled svg,
-[data-testid="stFormSubmitButton"] button:disabled p,
-[data-testid="stFormSubmitButton"] button:disabled span,
-[data-testid="stFormSubmitButton"] button:disabled svg {
-    color: #6f6f78 !important;
-    fill: currentColor !important;
-
-    font-weight: 600 !important;
-    opacity: 1 !important;
-}
-
-/* Formulário sem borda, mas com espaçamento organizado. */
-[data-testid="stForm"] {
-    padding: 0.35rem 0 0.5rem !important;
-
-    background: transparent !important;
-
-    border: 0 !important;
-    border-radius: 0 !important;
-
-    box-shadow: none !important;
-}
-
-[data-testid="stForm"] [data-testid="stVerticalBlock"] {
-    gap: 0.8rem;
-}
-
-/* =========================================================
-   AJUSTE 5 — RESUMO LOCAL
-   ========================================================= */
-
-.finantec-section-heading {
-    margin: 1.5rem 0 0.85rem;
-}
-
-.finantec-section-heading h3 {
-    margin: 0;
-
-    color: #fafafa;
-
-    font-size: 1.25rem;
-    font-weight: 700;
-}
-
-.finantec-section-heading p {
-    margin: 0.35rem 0 0;
-
-    color: #a1a1aa;
-
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-
-.finantec-data-summary-grid {
-    display: grid;
-
-    grid-template-columns: repeat(
-        auto-fit,
-        minmax(190px, 1fr)
-    );
-
-    gap: 1rem;
-
-    margin-bottom: 1.25rem;
-}
-
-
-.finantec-data-summary-card {
-    display: flex;
-    flex-direction: column;
-
-    min-height: 132px;
-    padding: 1.1rem 1.2rem;
-
-    background: #18181b;
-
-    border: 1px solid #27272a;
-    border-top: 3px solid #3f3f46;
-    border-radius: 16px;
-}
-
-
-.finantec-data-summary-label {
-    color: #a1a1aa;
-
-    font-size: 0.75rem;
-    font-weight: 700;
-
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-}
-
-
-.finantec-data-summary-value {
-    margin: 0.7rem 0 0.45rem;
-
-    color: #fafafa;
-
-    font-size: 1.65rem;
-    line-height: 1.1;
-    font-weight: 800;
-}
-
-
-.finantec-data-summary-value.available {
-    color: #22c55e;
-}
-
-
-.finantec-data-summary-value.unavailable {
-    color: #a1a1aa;
-}
-
-
-.finantec-data-summary-description {
-    margin-top: auto;
-
-    color: #a1a1aa;
-
-    font-size: 0.85rem;
-    line-height: 1.45;
-}
-
-
-@media (max-width: 560px) {
     .finantec-data-summary-grid {
         grid-template-columns: 1fr;
     }
@@ -1630,5 +1491,12 @@ button[data-testid="baseButton-primary"]:disabled svg,
     .finantec-data-summary-card {
         min-height: auto;
     }
-}
 
+    .finantec-table {
+        min-width: 620px;
+    }
+
+    .finantec-table-panel {
+        overflow-x: auto;
+    }
+}

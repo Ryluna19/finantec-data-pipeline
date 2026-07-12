@@ -781,77 +781,80 @@ def render_pending_transactions(
                 f"### {amount_label}"
             )
 
-            button_columns = st.columns(
-                2
-            )
+            edit_column, delete_column = st.columns(
+    2,
+    gap="small",
+)
 
-            with button_columns[0]:
-                if st.button(
-                    "Editar",
-                    key=(
-                        "edit_manual_"
-                        f"{index}"
-                    ),
+    with edit_column:
+        if st.button(
+            "Editar",
+            key=(
+                "edit_manual_"
+                f"{index}"
+            ),
+            use_container_width=True,
+        ):
+            st.session_state[
+                MANUAL_EDIT_INDEX_KEY
+            ] = index
+
+            st.session_state[
+                MANUAL_FORM_VERSION_KEY
+            ] += 1
+
+            st.rerun()
+
+        with delete_column:
+            if st.button(
+                "Excluir",
+                key=(
+                    "delete_manual_"
+                    f"{index}"
+                ),
+                use_container_width=True,
+            ):
+                updated_transactions = (
+                    remove_pending_transaction(
+                        transactions,
+                        index,
+                    )
+                )
+
+                current_edit_index = (
+                    st.session_state[
+                        MANUAL_EDIT_INDEX_KEY
+                    ]
+                )
+
+                if current_edit_index == index:
+                    st.session_state[
+                        MANUAL_EDIT_INDEX_KEY
+                    ] = None
+
+                elif (
+                    current_edit_index is not None
+                    and current_edit_index > index
                 ):
                     st.session_state[
                         MANUAL_EDIT_INDEX_KEY
-                    ] = index
-
-                    st.session_state[
-                        MANUAL_FORM_VERSION_KEY
-                    ] += 1
-
-                    st.rerun()
-
-            with button_columns[1]:
-                if st.button(
-                    "Excluir",
-                    key=(
-                        "delete_manual_"
-                        f"{index}"
-                    ),
-                ):
-                    updated_transactions = (
-                        remove_pending_transaction(
-                            transactions,
-                            index,
-                        )
+                    ] = (
+                        current_edit_index - 1
                     )
 
-                    current_edit_index = (
-                        st.session_state[
-                            MANUAL_EDIT_INDEX_KEY
-                        ]
-                    )
+                set_manual_draft(
+                    updated_transactions
+                )
 
-                    if current_edit_index == index:
-                        st.session_state[
-                            MANUAL_EDIT_INDEX_KEY
-                        ] = None
+                st.session_state[
+                    MANUAL_FORM_VERSION_KEY
+                ] += 1
 
-                    elif (
-                        current_edit_index is not None
-                        and current_edit_index > index
-                    ):
-                        st.session_state[
-                            MANUAL_EDIT_INDEX_KEY
-                        ] = (
-                            current_edit_index - 1
-                        )
+                set_manual_feedback(
+                    "Transação removida do rascunho."
+                )
 
-                    set_manual_draft(
-                        updated_transactions
-                    )
-
-                    st.session_state[
-                        MANUAL_FORM_VERSION_KEY
-                    ] += 1
-
-                    set_manual_feedback(
-                        "Transação removida do rascunho."
-                    )
-
-                    st.rerun()
+                st.rerun()
 
 
 def exibir_editor_transacoes_manuais() -> bool:
@@ -915,109 +918,135 @@ def exibir_editor_transacoes_manuais() -> bool:
     has_transactions = not transactions.empty
     has_rejections = not rejected_transactions.empty
 
+    # Evita retornar no meio da renderização e deixar
+    # elementos antigos acumulados na interface.
+    should_refresh_app = False
+
     st.markdown(
         "### Ações"
     )
 
-    if st.button(
-        "Salvar sem processar",
-        disabled=(
-            not has_transactions
-            or has_rejections
-        ),
+    with st.container(
+        key="manual-actions",
     ):
-        salvar_transacoes_manuais(
-            transactions
+        save_column, process_column = st.columns(
+            2,
+            gap="small",
         )
 
-        st.success(
-            "Rascunho salvo em "
-            "data/raw/transacoes_manuais.csv."
-        )
-
-    if st.button(
-        "Salvar e processar ETL",
-        type="primary",
-        disabled=(
-            not has_transactions
-            or has_rejections
-        ),
-    ):
-        salvar_transacoes_manuais(
-            transactions
-        )
-
-        try:
-            resultado = (
-                run_etl_with_summary()
+        with save_column:
+            save_clicked = st.button(
+                "Salvar sem processar",
+                key="manual-save-draft",
+                disabled=(
+                    not has_transactions
+                    or has_rejections
+                ),
+                use_container_width=True,
             )
 
-            st.session_state[
-                "resultado_etl"
-            ] = {
-                **resultado,
-                "mensagem": (
-                    "Transações salvas e ETL "
-                    "executado com sucesso."
+            if save_clicked:
+                salvar_transacoes_manuais(
+                    transactions
+                )
+
+                st.success(
+                    "Rascunho salvo em "
+                    "data/raw/transacoes_manuais.csv."
+                )
+
+        with process_column:
+            process_clicked = st.button(
+                "Salvar e processar ETL",
+                key="manual-process-etl",
+                type="primary",
+                disabled=(
+                    not has_transactions
+                    or has_rejections
                 ),
-            }
-
-        except Exception as erro:
-            st.session_state[
-                "resultado_etl"
-            ] = {
-                "sucesso": False,
-                "mensagem": (
-                    "Erro ao executar ETL: "
-                    f"{erro}"
-                ),
-            }
-
-        return True
-
-    if st.button(
-        "Limpar transações manuais",
-        disabled=not has_transactions,
-    ):
-        limpar_transacoes_manuais()
-
-        set_manual_draft(
-            criar_dataframe_vazio()
-        )
-
-        reset_manual_form()
-
-        try:
-            resultado = (
-                run_etl_with_summary()
+                use_container_width=True,
             )
 
-            st.session_state[
-                "resultado_etl"
-            ] = {
-                **resultado,
-                "mensagem": (
-                    "Transações manuais removidas "
-                    "e ETL executado novamente."
-                ),
-            }
+            if process_clicked:
+                salvar_transacoes_manuais(
+                    transactions
+                )
 
-        except Exception as erro:
-            st.session_state[
-                "resultado_etl"
-            ] = {
-                "sucesso": False,
-                "mensagem": (
-                    "Erro ao executar ETL: "
-                    f"{erro}"
-                ),
-            }
+                try:
+                    resultado = (
+                        run_etl_with_summary()
+                    )
 
-        return True
+                    st.session_state[
+                        "resultado_etl"
+                    ] = {
+                        **resultado,
+                        "mensagem": (
+                            "Transações salvas e ETL "
+                            "executado com sucesso."
+                        ),
+                    }
+
+                except Exception as erro:
+                    st.session_state[
+                        "resultado_etl"
+                    ] = {
+                        "sucesso": False,
+                        "mensagem": (
+                            "Erro ao executar ETL: "
+                            f"{erro}"
+                        ),
+                    }
+
+                should_refresh_app = True
+
+        clear_clicked = st.button(
+            "Limpar transações manuais",
+            key="manual-clear-all",
+            disabled=not has_transactions,
+            use_container_width=True,
+        )
+
+        if clear_clicked:
+            limpar_transacoes_manuais()
+
+            set_manual_draft(
+                criar_dataframe_vazio()
+            )
+
+            reset_manual_form()
+
+            try:
+                resultado = (
+                    run_etl_with_summary()
+                )
+
+                st.session_state[
+                    "resultado_etl"
+                ] = {
+                    **resultado,
+                    "mensagem": (
+                        "Transações manuais removidas "
+                        "e ETL executado novamente."
+                    ),
+                }
+
+            except Exception as erro:
+                st.session_state[
+                    "resultado_etl"
+                ] = {
+                    "sucesso": False,
+                    "mensagem": (
+                        "Erro ao executar ETL: "
+                        f"{erro}"
+                    ),
+                }
+
+            should_refresh_app = True
 
     st.info(
         "As transações entram no SQLite somente "
         "depois que o pipeline ETL é executado."
     )
 
-    return False
+    return should_refresh_app

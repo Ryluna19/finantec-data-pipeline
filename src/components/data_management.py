@@ -338,73 +338,83 @@ def _render_reset_action(
         ]
     )
 
-    with st.expander(
-        "Zona de risco",
-        expanded=False,
+    with st.container(
+        key="danger-zone-wrapper",
     ):
-        st.warning(
-            "Esta ação remove transações manuais, "
-            "lotes importados, arquivos processados "
-            "e o banco local. Os dados de demonstração "
-            "permanecem disponíveis."
-        )
-
-        confirmation = st.text_input(
-            (
-                "Digite APAGAR para confirmar"
-            ),
-            key="reset_data_confirmation",
-            placeholder="APAGAR",
-        )
-
-        confirmed = (
-            confirmation.strip().upper()
-            == RESET_CONFIRMATION_TEXT
-        )
-
-        if st.button(
-            "Apagar dados do usuário",
-            disabled=(
-                not has_local_data
-                or not confirmed
-            ),
-            use_container_width=True,
+        with st.expander(
+            "Zona de risco",
+            expanded=False,
         ):
-            try:
-                result = (
-                    reset_user_transaction_data()
-                )
+            st.error(
+                "Exclusão permanente: esta ação remove "
+                "transações manuais, lotes importados, "
+                "arquivos processados e o banco local. "
+                "Essa operação não pode ser desfeita. "
+                "Os dados de demonstração serão preservados."
+            )
 
-                _clear_manual_session_state()
+            confirmation = st.text_input(
+                "Digite APAGAR para confirmar",
+                key="reset_data_confirmation",
+                placeholder="APAGAR",
+                help=(
+                    "A exclusão só será liberada quando "
+                    "o texto APAGAR for confirmado."
+                ),
+            )
 
-                st.session_state[
-                    DATA_MODE_KEY
-                ] = "empty"
+            confirmed = (
+                confirmation.strip().upper()
+                == RESET_CONFIRMATION_TEXT
+            )
 
-                _set_feedback(
-                    "success",
-                    (
-                        "Dados locais apagados. "
-                        f"Fontes removidas: "
-                        f"{result['source_files_removed']} | "
-                        "Arquivos processados removidos: "
-                        f"{result['processed_files_removed']}."
-                    ),
-                )
+            delete_enabled = (
+                has_local_data
+                and confirmed
+            )
 
-                _refresh_application_data()
-                st.rerun()
+            if st.button(
+                "Apagar todos os dados do usuário",
+                key="delete-all-user-data",
+                type="primary",
+                disabled=not delete_enabled,
+                use_container_width=True,
+            ):
+                try:
+                    result = (
+                        reset_user_transaction_data()
+                    )
 
-            except Exception as error:
-                _set_feedback(
-                    "error",
-                    (
-                        "Não foi possível apagar "
-                        f"os dados locais: {error}"
-                    ),
-                )
+                    _clear_manual_session_state()
 
-                st.rerun()
+                    st.session_state[
+                        DATA_MODE_KEY
+                    ] = "empty"
+
+                    _set_feedback(
+                        "success",
+                        (
+                            "Dados locais apagados. "
+                            "Fontes removidas: "
+                            f"{result['source_files_removed']} | "
+                            "Arquivos processados removidos: "
+                            f"{result['processed_files_removed']}."
+                        ),
+                    )
+
+                    _refresh_application_data()
+                    st.rerun()
+
+                except Exception as error:
+                    _set_feedback(
+                        "error",
+                        (
+                            "Não foi possível apagar "
+                            f"os dados locais: {error}"
+                        ),
+                    )
+
+                    st.rerun()
 
 
 def render_data_management() -> None:
