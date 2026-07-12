@@ -26,6 +26,11 @@ from src.transaction_validation import (
     validate_required_columns,
 )
 
+from src.transaction_identity import (
+    TRANSACTION_ID_COLUMN,
+    ensure_transaction_ids,
+)
+
 from src.transaction_repository import (
     replace_transactions,
 )
@@ -38,6 +43,7 @@ DEMO_DIR = PROJECT_ROOT / "data" / "demo"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 DATABASE_DIR = PROJECT_ROOT / "database"
 LOGS_DIR = PROJECT_ROOT / "logs"
+TABELA_TRANSACOES = "transacoes_processadas"
 
 ARQUIVO_SAIDA = (
     PROCESSED_DIR
@@ -58,6 +64,24 @@ TABELA_TRANSACOES = "transacoes_processadas"
 COLUNAS_OBRIGATORIAS = REQUIRED_TRANSACTION_COLUMNS
 TIPOS_VALIDOS = VALID_TRANSACTION_TYPES
 
+
+def build_transaction_source_key(
+    source_file: Path,
+) -> str:
+    """Cria uma identificação estável para o arquivo de origem."""
+    try:
+        return (
+            source_file.resolve()
+            .relative_to(
+                PROJECT_ROOT.resolve()
+            )
+            .as_posix()
+        )
+
+    except ValueError:
+        # Arquivos temporários usados nos testes ficam
+        # fora do diretório principal do projeto.
+        return source_file.name
 
 def configure_logging() -> None:
     """Configura os logs do ETL no terminal e em arquivo."""
@@ -87,7 +111,7 @@ def configure_logging() -> None:
 def read_raw_transactions(
     source_file: Path,
 ) -> pd.DataFrame:
-    """Lê e identifica a origem de um arquivo CSV bruto."""
+    """Lê, identifica e registra a origem de um arquivo CSV bruto."""
     logging.info(
         "Lendo arquivo: %s",
         source_file.name,
@@ -103,13 +127,37 @@ def read_raw_transactions(
         source_file,
     )
 
+    selected_columns = [
+        *REQUIRED_TRANSACTION_COLUMNS,
+    ]
+
+    if (
+        TRANSACTION_ID_COLUMN
+        in transactions.columns
+    ):
+        selected_columns.append(
+            TRANSACTION_ID_COLUMN
+        )
+
     transactions = transactions[
-        REQUIRED_TRANSACTION_COLUMNS
+        selected_columns
     ].copy()
 
-    transactions["arquivo_origem"] = (
-        source_file.name
+    transactions = ensure_transaction_ids(
+        transactions=transactions,
+        source_key=(
+            build_transaction_source_key(
+                source_file
+            )
+        ),
+        identity_columns=(
+            REQUIRED_TRANSACTION_COLUMNS
+        ),
     )
+
+    transactions[
+        "arquivo_origem"
+    ] = source_file.name
 
     return transactions
 
