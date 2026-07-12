@@ -738,15 +738,22 @@ summary {
 /* Saldo principal */
 
 .finantec-balance-panel {
+    --balance-glow:
+        rgba(161, 161, 170, 0.05);
+
+    --balance-border:
+        var(--border-light);
+
     min-height: 190px;
     padding: 1.5rem;
 
-    border-color: var(--accent-line);
+    border-color:
+        var(--balance-border);
 
     background:
         radial-gradient(
             circle at top right,
-            rgba(249, 115, 22, 0.12),
+            var(--balance-glow),
             transparent 38%
         ),
         linear-gradient(
@@ -755,6 +762,30 @@ summary {
             rgba(255, 255, 255, 0)
         ),
         var(--bg-panel);
+}
+
+.finantec-balance-panel.positive {
+    --balance-glow:
+        rgba(34, 197, 94, 0.11);
+
+    --balance-border:
+        rgba(34, 197, 94, 0.32);
+}
+
+.finantec-balance-panel.negative {
+    --balance-glow:
+        rgba(239, 68, 68, 0.12);
+
+    --balance-border:
+        rgba(239, 68, 68, 0.38);
+}
+
+.finantec-balance-panel.neutral {
+    --balance-glow:
+        rgba(161, 161, 170, 0.05);
+
+    --balance-border:
+        var(--border-light);
 }
 
 .finantec-balance-label,
@@ -772,7 +803,7 @@ summary {
 .finantec-balance-value {
     margin: 1rem 0 0.9rem;
 
-    color: #ffffff;
+    color: var(--text-main);
 
     font-size: clamp(
         2.5rem,
@@ -782,6 +813,18 @@ summary {
 
     line-height: 1;
     font-weight: 800;
+}
+
+.finantec-balance-value.positive {
+    color: var(--success);
+}
+
+.finantec-balance-value.negative {
+    color: var(--danger);
+}
+
+.finantec-balance-value.neutral {
+    color: var(--text-main);
 }
 
 .finantec-balance-desc,
@@ -824,13 +867,13 @@ summary {
 .finantec-mini-card.consumo {
     border-top:
         3px solid
-        var(--accent);
+        var(--danger);
 }
 
 .finantec-mini-card.reserva {
     border-top:
         3px solid
-        var(--blue);
+        var(--info);
 }
 
 
@@ -840,10 +883,10 @@ summary {
     padding: 1.3rem;
 
     background:
-        radial-gradient(
-            circle at top left,
-            rgba(249, 115, 22, 0.08),
-            transparent 32%
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018),
+            rgba(255, 255, 255, 0)
         ),
         var(--bg-panel);
 }
@@ -901,12 +944,12 @@ summary {
     border-radius: 999px;
 }
 
-.finantec-bar-fill.orange {
+.finantec-bar-fill.expense {
     background:
         linear-gradient(
             90deg,
-            var(--accent),
-            var(--accent-hover)
+            rgba(239, 68, 68, 0.78),
+            rgba(248, 113, 113, 0.92)
         );
 }
 
@@ -1057,6 +1100,173 @@ summary {
     font-size: 0.92rem !important;
 }
 
+/* =========================================================
+   PAINÉIS ANALÍTICOS
+   ========================================================= */
+
+.st-key-expenses-category-card,
+.st-key-category-ranking-card,
+.st-key-monthly-evolution-card,
+.st-key-latest-transactions-card,
+.st-key-data-validation-card,
+.st-key-period-transactions-card {
+    width: 100%;
+    height: 100%;
+}
+
+.st-key-expenses-category-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-category-ranking-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-monthly-evolution-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-latest-transactions-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-data-validation-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-period-transactions-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    height: 100%;
+    padding: 1.1rem 1.2rem !important;
+
+    background: var(--bg-panel);
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius: var(--radius);
+}
+
+.st-key-expenses-category-card h3,
+.st-key-category-ranking-card h3,
+.st-key-monthly-evolution-card h3,
+.st-key-latest-transactions-card h3,
+.st-key-data-validation-card h3,
+.st-key-period-transactions-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.15rem;
+
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.st-key-expenses-category-card
+[data-testid="stCaptionContainer"],
+.st-key-category-ranking-card
+[data-testid="stCaptionContainer"],
+.st-key-monthly-evolution-card
+[data-testid="stCaptionContainer"],
+.st-key-latest-transactions-card
+[data-testid="stCaptionContainer"],
+.st-key-data-validation-card
+[data-testid="stCaptionContainer"],
+.st-key-period-transactions-card
+[data-testid="stCaptionContainer"] {
+    margin-bottom: 0.45rem;
+}
+
+
+/* Gráficos Altair */
+
+.st-key-expenses-category-card
+[data-testid="stVegaLiteChart"],
+.st-key-monthly-evolution-card
+[data-testid="stVegaLiteChart"] {
+    margin-top: 0.25rem;
+}
+
+.st-key-expenses-category-card
+.vega-embed,
+.st-key-monthly-evolution-card
+.vega-embed {
+    width: 100%;
+}
+
+
+/* Ranking */
+
+.finantec-ranking-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 0.55rem;
+    margin-top: 0.45rem;
+}
+
+.finantec-ranking-item {
+    display: grid;
+
+    grid-template-columns:
+        34px
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 0.7rem;
+    min-height: 48px;
+    padding: 0.65rem 0.75rem;
+
+    background: var(--bg-deep);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.finantec-ranking-item:hover {
+    background: var(--bg-panel-soft);
+    border-color: var(--border-light);
+}
+
+.finantec-ranking-position {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+
+    color: var(--text-muted);
+
+    background: var(--bg-elevated);
+
+    border-radius: 8px;
+
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.finantec-ranking-item.top-one {
+    border-color: var(--accent-line);
+}
+
+.finantec-ranking-item.top-one
+.finantec-ranking-position {
+    color: #ffffff;
+    background: var(--accent-active);
+}
+
+.finantec-ranking-category {
+    min-width: 0;
+
+    color: var(--text-soft);
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.finantec-ranking-value {
+    color: var(--text-main);
+
+    font-size: 0.9rem;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
 
 /* =========================================================
    RESUMO LOCAL
@@ -1453,6 +1663,50 @@ hr {
         width: 100% !important;
         flex: 1 1 100% !important;
     }
+
+      [class*="st-key-manual-transaction-card-"]
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.85rem !important;
+    }
+
+    [class*="st-key-manual-transaction-card-"]
+    h3 {
+        font-size: 1.3rem;
+    }
+        .st-key-expenses-category-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-category-ranking-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-monthly-evolution-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-latest-transactions-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-data-validation-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-period-transactions-card
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.9rem !important;
+    }
+
+    .finantec-ranking-item {
+        grid-template-columns:
+            30px
+            minmax(0, 1fr)
+            auto;
+
+        gap: 0.55rem;
+        padding: 0.6rem;
+    }
+
+    .finantec-ranking-position {
+        width: 26px;
+        height: 26px;
+    }
+
+    .finantec-ranking-category,
+    .finantec-ranking-value {
+        font-size: 0.84rem;
+    }
 }
 
 
@@ -1499,4 +1753,45 @@ hr {
     .finantec-table-panel {
         overflow-x: auto;
     }
+}
+
+
+/* =========================================================
+   CARTÕES DO RASCUNHO
+   ========================================================= */
+
+[class*="st-key-manual-transaction-card-"] {
+    margin-bottom: 0.75rem;
+}
+
+[class*="st-key-manual-transaction-card-"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--bg-deep);
+
+    border-color: var(--border-light) !important;
+    border-radius: 14px;
+}
+
+[class*="st-key-manual-transaction-card-"]
+[data-testid="stVerticalBlock"] {
+    gap: 0.35rem;
+}
+
+[class*="st-key-manual-transaction-card-"]
+h3 {
+    margin: 0.2rem 0 0;
+
+    font-size: 1.35rem;
+    line-height: 1.15;
+}
+
+[class*="st-key-manual-transaction-card-"]
+[data-testid="stCaptionContainer"] {
+    margin-bottom: 0.15rem;
+}
+
+[class*="st-key-manual-transaction-card-"]
+.stButton > button {
+    min-height: 40px !important;
+    padding: 0.55rem 0.7rem !important;
 }

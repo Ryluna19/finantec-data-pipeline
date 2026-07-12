@@ -726,7 +726,7 @@ def format_date_brl(value) -> str:
 def render_pending_transactions(
     transactions: pd.DataFrame,
 ) -> None:
-    """Exibe as transações como cartões adaptados ao celular."""
+    """Exibe as transações pendentes em cartões responsivos."""
     st.markdown(
         "### Transações no rascunho"
     )
@@ -765,96 +765,123 @@ def render_pending_transactions(
         )
 
         with st.container(
-            border=True
-        ):
-            st.markdown(
-                f"**{description or 'Sem descrição'}**"
-            )
-
-            st.caption(
-                f"{date_label} · "
-                f"{transaction_type} · "
-                f"{category or 'Sem categoria'}"
-            )
-
-            st.markdown(
-                f"### {amount_label}"
-            )
-
-            edit_column, delete_column = st.columns(
-    2,
-    gap="small",
-)
-
-    with edit_column:
-        if st.button(
-            "Editar",
+            border=True,
             key=(
-                "edit_manual_"
+                "manual-transaction-card-"
                 f"{index}"
             ),
-            use_container_width=True,
         ):
-            st.session_state[
-                MANUAL_EDIT_INDEX_KEY
-            ] = index
+            (
+                details_column,
+                amount_column,
+                actions_column,
+            ) = st.columns(
+                [3.2, 1.4, 2.4],
+                gap="medium",
+            )
 
-            st.session_state[
-                MANUAL_FORM_VERSION_KEY
-            ] += 1
-
-            st.rerun()
-
-        with delete_column:
-            if st.button(
-                "Excluir",
-                key=(
-                    "delete_manual_"
-                    f"{index}"
-                ),
-                use_container_width=True,
-            ):
-                updated_transactions = (
-                    remove_pending_transaction(
-                        transactions,
-                        index,
-                    )
+            with details_column:
+                st.markdown(
+                    f"**{description or 'Sem descrição'}**"
                 )
 
-                current_edit_index = (
-                    st.session_state[
-                        MANUAL_EDIT_INDEX_KEY
-                    ]
+                st.caption(
+                    f"{date_label} · "
+                    f"{transaction_type} · "
+                    f"{category or 'Sem categoria'}"
                 )
 
-                if current_edit_index == index:
-                    st.session_state[
-                        MANUAL_EDIT_INDEX_KEY
-                    ] = None
-
-                elif (
-                    current_edit_index is not None
-                    and current_edit_index > index
-                ):
-                    st.session_state[
-                        MANUAL_EDIT_INDEX_KEY
-                    ] = (
-                        current_edit_index - 1
-                    )
-
-                set_manual_draft(
-                    updated_transactions
+            with amount_column:
+                st.caption(
+                    "Valor"
                 )
 
-                st.session_state[
-                    MANUAL_FORM_VERSION_KEY
-                ] += 1
-
-                set_manual_feedback(
-                    "Transação removida do rascunho."
+                st.markdown(
+                    f"### {amount_label}"
                 )
 
-                st.rerun()
+            with actions_column:
+                st.caption(
+                    "Ações"
+                )
+
+                (
+                    edit_column,
+                    delete_column,
+                ) = st.columns(
+                    2,
+                    gap="small",
+                )
+
+                with edit_column:
+                    if st.button(
+                        "Editar",
+                        key=(
+                            "edit_manual_"
+                            f"{index}"
+                        ),
+                        use_container_width=True,
+                    ):
+                        st.session_state[
+                            MANUAL_EDIT_INDEX_KEY
+                        ] = index
+
+                        st.session_state[
+                            MANUAL_FORM_VERSION_KEY
+                        ] += 1
+
+                        st.rerun()
+
+                with delete_column:
+                    if st.button(
+                        "Excluir",
+                        key=(
+                            "delete_manual_"
+                            f"{index}"
+                        ),
+                        use_container_width=True,
+                    ):
+                        updated_transactions = (
+                            remove_pending_transaction(
+                                transactions,
+                                index,
+                            )
+                        )
+
+                        current_edit_index = (
+                            st.session_state[
+                                MANUAL_EDIT_INDEX_KEY
+                            ]
+                        )
+
+                        if current_edit_index == index:
+                            st.session_state[
+                                MANUAL_EDIT_INDEX_KEY
+                            ] = None
+
+                        elif (
+                            current_edit_index is not None
+                            and current_edit_index > index
+                        ):
+                            st.session_state[
+                                MANUAL_EDIT_INDEX_KEY
+                            ] = (
+                                current_edit_index - 1
+                            )
+
+                        set_manual_draft(
+                            updated_transactions
+                        )
+
+                        st.session_state[
+                            MANUAL_FORM_VERSION_KEY
+                        ] += 1
+
+                        set_manual_feedback(
+                            "Transação removida do rascunho."
+                        )
+
+                        st.rerun()
 
 
 def exibir_editor_transacoes_manuais() -> bool:
