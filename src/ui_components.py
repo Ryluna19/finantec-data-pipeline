@@ -13,7 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STYLES_FILE = PROJECT_ROOT / "assets" / "styles.css"
 
 INCOME_COLOR = "#22c55e"
-EXPENSE_COLOR = "#ff7a00"
+EXPENSE_COLOR = "#ef4444"
 
 MONTH_NAMES_PT_BR = {
     1: "Janeiro",

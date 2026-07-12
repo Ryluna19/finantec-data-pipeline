@@ -49,6 +49,7 @@ from data_loader import (
     carregar_transacoes as load_transactions,
 )
 from transaction_editor import (
+    DATA_REFRESH_REQUESTED_KEY,
     exibir_editor_transacoes_manuais as render_manual_transaction_editor,
 )
 from ui_components import (
@@ -319,13 +320,7 @@ def render_transactions_tab(
         "Entrada manual de transações",
         expanded=should_expand_editor,
     ):
-        manual_etl_executed = (
-            render_manual_transaction_editor()
-        )
-
-    if manual_etl_executed:
-        load_data.clear()
-        st.rerun()
+      render_manual_transaction_editor()
 
     should_expand_files = (
         "file_import_result"
@@ -369,6 +364,16 @@ def render_transactions_tab(
 def main() -> None:
     """Executa a interface principal."""
     apply_visual_styles()
+
+    refresh_requested = (
+        st.session_state.pop(
+            DATA_REFRESH_REQUESTED_KEY,
+            False,
+        )
+    )
+
+    if refresh_requested:
+        load_data.clear()
 
     (
         user_profile,

@@ -21,6 +21,11 @@ CHART_TEXT_COLOR = "#d4d4d8"
 CHART_MUTED_COLOR = "#a1a1aa"
 CHART_GRID_COLOR = "#27272a"
 
+MONTHLY_SERIES_ORDER = [
+    "Receitas",
+    "Despesas",
+]
+
 
 def apply_chart_theme(
     chart: alt.Chart,
@@ -95,6 +100,107 @@ def create_monthly_summary(
     )
 
     return summary
+
+
+def create_monthly_chart(
+    chart_data: pd.DataFrame,
+    month_order: list[str],
+) -> alt.Chart:
+    """Escolhe barras ou linhas conforme a quantidade de meses."""
+    color_encoding = alt.Color(
+        "Tipo:N",
+        scale=alt.Scale(
+            domain=MONTHLY_SERIES_ORDER,
+            range=[
+                INCOME_COLOR,
+                EXPENSE_COLOR,
+            ],
+        ),
+        legend=alt.Legend(
+            title=None,
+            orient="top",
+            direction="horizontal",
+        ),
+    )
+
+    tooltip_encoding = [
+        alt.Tooltip(
+            "Mês:N",
+            title="Mês",
+        ),
+        alt.Tooltip(
+            "Tipo:N",
+            title="Tipo",
+        ),
+        alt.Tooltip(
+            "Valor formatado:N",
+            title="Valor",
+        ),
+    ]
+
+    x_encoding = alt.X(
+        "Mês:N",
+        sort=month_order,
+        title=None,
+        axis=alt.Axis(
+            labelAngle=0,
+            labelPadding=8,
+        ),
+    )
+
+    y_encoding = alt.Y(
+        "Valor:Q",
+        title="Valor",
+        axis=alt.Axis(
+            format=",.0f",
+            tickCount=5,
+            titlePadding=12,
+        ),
+    )
+
+    base_chart = alt.Chart(
+        chart_data
+    )
+
+    if len(month_order) <= 2:
+        return (
+            base_chart
+            .mark_bar(
+                cornerRadiusTopLeft=5,
+                cornerRadiusTopRight=5,
+                size=42,
+            )
+            .encode(
+                x=x_encoding,
+                xOffset=alt.XOffset(
+                    "Tipo:N",
+                    sort=MONTHLY_SERIES_ORDER,
+                ),
+                y=y_encoding,
+                color=color_encoding,
+                tooltip=tooltip_encoding,
+            )
+            .properties(
+                height=300,
+            )
+        )
+
+    return (
+        base_chart
+        .mark_line(
+            point=True,
+            strokeWidth=3,
+        )
+        .encode(
+            x=x_encoding,
+            y=y_encoding,
+            color=color_encoding,
+            tooltip=tooltip_encoding,
+        )
+        .properties(
+            height=300,
+        )
+    )
 
 
 def render_expenses_by_category(
@@ -246,6 +352,11 @@ def render_monthly_evolution(
         .tolist()
     )
 
+    chart = create_monthly_chart(
+        chart_data=chart_data,
+        month_order=month_order,
+    )
+
     with st.container(
         border=True,
         key="monthly-evolution-card",
@@ -257,69 +368,6 @@ def render_monthly_evolution(
         st.caption(
             "Comparação entre receitas e despesas "
             "ao longo dos meses disponíveis."
-        )
-
-        chart = (
-            alt.Chart(chart_data)
-            .mark_line(
-                point=True,
-                strokeWidth=3,
-            )
-            .encode(
-                x=alt.X(
-                    "Mês:N",
-                    sort=month_order,
-                    title=None,
-                    axis=alt.Axis(
-                        labelAngle=0,
-                        labelPadding=8,
-                    ),
-                ),
-                y=alt.Y(
-                    "Valor:Q",
-                    title="Valor",
-                    axis=alt.Axis(
-                        format=",.0f",
-                        tickCount=5,
-                        titlePadding=12,
-                    ),
-                ),
-                color=alt.Color(
-                    "Tipo:N",
-                    scale=alt.Scale(
-                        domain=[
-                            "Receitas",
-                            "Despesas",
-                        ],
-                        range=[
-                            INCOME_COLOR,
-                            EXPENSE_COLOR,
-                        ],
-                    ),
-                    legend=alt.Legend(
-                        title=None,
-                        orient="top",
-                        direction="horizontal",
-                    ),
-                ),
-                tooltip=[
-                    alt.Tooltip(
-                        "Mês:N",
-                        title="Mês",
-                    ),
-                    alt.Tooltip(
-                        "Tipo:N",
-                        title="Tipo",
-                    ),
-                    alt.Tooltip(
-                        "Valor formatado:N",
-                        title="Valor",
-                    ),
-                ],
-            )
-            .properties(
-                height=300,
-            )
         )
 
         st.altair_chart(

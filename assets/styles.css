@@ -1190,7 +1190,9 @@ summary {
     flex-direction: column;
 
     gap: 0.55rem;
+
     margin-top: 0.45rem;
+    padding-bottom: 0.7rem;
 }
 
 .finantec-ranking-item {
