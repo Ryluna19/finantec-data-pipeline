@@ -1,8 +1,8 @@
 """Entrada manual de transações financeiras.
 
-O módulo mantém o estado e a interface do editor manual no Streamlit.
-As regras de persistência, normalização e manipulação do rascunho ficam
-centralizadas em ``src.manual_transaction_service``.
+O módulo mantém a interface do editor manual no Streamlit.
+Persistência, regras do rascunho e controle da sessão ficam
+centralizados em módulos especializados.
 """
 
 from __future__ import annotations
@@ -13,7 +13,9 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from scripts.etl_transacoes import run_etl_with_summary
+from scripts.etl_transacoes import (
+    run_etl_with_summary,
+)
 from src.manual_transaction_service import (
     MANUAL_TRANSACTION_COLUMNS,
     STORED_TRANSACTION_COLUMNS,
@@ -21,7 +23,6 @@ from src.manual_transaction_service import (
     build_manual_transaction_source_key,
     clear_manual_transactions,
     create_empty_manual_transactions,
-    identify_manual_transactions,
     load_manual_transactions,
     prepare_manual_transactions_for_storage,
     remove_pending_transaction,
@@ -29,11 +30,23 @@ from src.manual_transaction_service import (
     update_pending_transaction,
     validate_manual_transactions,
 )
+from src.manual_transaction_state import (
+    MANUAL_DRAFT_KEY,
+    MANUAL_EDIT_INDEX_KEY,
+    MANUAL_FEEDBACK_KEY,
+    MANUAL_FORM_VERSION_KEY,
+    adjust_edit_index_after_removal,
+    get_manual_draft,
+    get_manual_edit_index,
+    get_manual_form_version,
+    initialize_manual_transaction_state as initialize_manual_state,
+    pop_manual_feedback,
+    reset_manual_form,
+    set_manual_draft as set_manual_state_draft,
+    set_manual_feedback,
+    start_manual_edit,
+)
 
-
-# -----------------------------------------------------------------------------
-# Caminhos e contratos públicos preservados
-# -----------------------------------------------------------------------------
 
 DATA_REFRESH_REQUESTED_KEY = (
     "app_data_refresh_requested"
@@ -76,28 +89,7 @@ CATEGORIAS_SUGERIDAS = [
 
 
 # -----------------------------------------------------------------------------
-# Chaves da sessão
-# -----------------------------------------------------------------------------
-
-MANUAL_DRAFT_KEY = (
-    "manual_transactions_draft"
-)
-
-MANUAL_EDIT_INDEX_KEY = (
-    "manual_transaction_edit_index"
-)
-
-MANUAL_FORM_VERSION_KEY = (
-    "manual_transaction_form_version"
-)
-
-MANUAL_FEEDBACK_KEY = (
-    "manual_transaction_feedback"
-)
-
-
-# -----------------------------------------------------------------------------
-# Compatibilidade com a interface e os testes atuais
+# Compatibilidade com chamadas e testes existentes
 # -----------------------------------------------------------------------------
 
 
@@ -133,7 +125,7 @@ def carregar_transacoes_manuais() -> pd.DataFrame:
 def preparar_transacoes_para_salvar(
     transacoes: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Normaliza as transações antes da validação ou gravação."""
+    """Normaliza as transações antes da gravação."""
     return (
         prepare_manual_transactions_for_storage(
             transacoes
@@ -144,7 +136,7 @@ def preparar_transacoes_para_salvar(
 def validar_transacoes_editadas(
     transacoes: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Valida as transações editadas usando as regras do ETL."""
+    """Valida as transações usando as regras do ETL."""
     return validate_manual_transactions(
         transacoes
     )
@@ -170,101 +162,37 @@ def limpar_transacoes_manuais() -> None:
     )
 
 
-# -----------------------------------------------------------------------------
-# Estado do editor
-# -----------------------------------------------------------------------------
-
-
 def initialize_manual_transaction_state() -> None:
-    """Inicializa o rascunho e os controles da interface."""
-    if (
-        MANUAL_DRAFT_KEY
-        not in st.session_state
-    ):
-        st.session_state[
-            MANUAL_DRAFT_KEY
-        ] = (
-            carregar_transacoes_manuais()
-            .reset_index(
-                drop=True
-            )
-        )
-
-    if (
-        MANUAL_EDIT_INDEX_KEY
-        not in st.session_state
-    ):
-        st.session_state[
-            MANUAL_EDIT_INDEX_KEY
-        ] = None
-
-    if (
-        MANUAL_FORM_VERSION_KEY
-        not in st.session_state
-    ):
-        st.session_state[
-            MANUAL_FORM_VERSION_KEY
-        ] = 0
-
-
-def get_manual_draft() -> pd.DataFrame:
-    """Retorna uma cópia do rascunho atual."""
-    return st.session_state[
-        MANUAL_DRAFT_KEY
-    ].copy()
+    """Inicializa o estado usando a fonte manual atual."""
+    initialize_manual_state(
+        source_file=(
+            ARQUIVO_TRANSACOES_MANUAIS
+        ),
+        project_root=PROJECT_ROOT,
+    )
 
 
 def set_manual_draft(
     transactions: pd.DataFrame,
 ) -> None:
-    """Atualiza o rascunho preservando IDs estáveis."""
-    identified_transactions = (
-        identify_manual_transactions(
-            transactions=transactions,
-            source_file=(
-                ARQUIVO_TRANSACOES_MANUAIS
-            ),
-            project_root=PROJECT_ROOT,
-        )
-    )
-
-    st.session_state[
-        MANUAL_DRAFT_KEY
-    ] = (
-        identified_transactions
-        .copy()
-        .reset_index(
-            drop=True
-        )
+    """Atualiza o estado usando a fonte manual atual."""
+    set_manual_state_draft(
+        transactions=transactions,
+        source_file=(
+            ARQUIVO_TRANSACOES_MANUAIS
+        ),
+        project_root=PROJECT_ROOT,
     )
 
 
-def reset_manual_form() -> None:
-    """Retorna o formulário ao modo de inclusão."""
-    st.session_state[
-        MANUAL_EDIT_INDEX_KEY
-    ] = None
-
-    st.session_state[
-        MANUAL_FORM_VERSION_KEY
-    ] += 1
-
-
-def set_manual_feedback(
-    message: str,
-) -> None:
-    """Armazena uma mensagem para o próximo rerun."""
-    st.session_state[
-        MANUAL_FEEDBACK_KEY
-    ] = message
+# -----------------------------------------------------------------------------
+# Feedback e execução do ETL
+# -----------------------------------------------------------------------------
 
 
 def show_manual_feedback() -> None:
     """Exibe mensagens geradas antes de um rerun."""
-    message = st.session_state.pop(
-        MANUAL_FEEDBACK_KEY,
-        None,
-    )
+    message = pop_manual_feedback()
 
     if message:
         st.success(
@@ -272,13 +200,8 @@ def show_manual_feedback() -> None:
         )
 
 
-# -----------------------------------------------------------------------------
-# Callbacks de persistência e ETL
-# -----------------------------------------------------------------------------
-
-
 def _save_manual_draft_callback() -> None:
-    """Salva o rascunho sem executar o pipeline ETL."""
+    """Salva o rascunho sem executar o ETL."""
     transactions = get_manual_draft()
 
     salvar_transacoes_manuais(
@@ -402,7 +325,7 @@ def exibir_resultado_etl_salvo() -> None:
 
 
 # -----------------------------------------------------------------------------
-# Preparação dos controles do formulário
+# Valores e opções do formulário
 # -----------------------------------------------------------------------------
 
 
@@ -434,9 +357,9 @@ def _get_form_defaults(
     transactions: pd.DataFrame,
 ) -> dict[str, object]:
     """Retorna valores iniciais para inclusão ou edição."""
-    edit_index = st.session_state[
-        MANUAL_EDIT_INDEX_KEY
-    ]
+    edit_index = (
+        get_manual_edit_index()
+    )
 
     if (
         edit_index is None
@@ -501,7 +424,7 @@ def _get_form_defaults(
 def _get_category_options(
     current_category: str,
 ) -> list[str]:
-    """Inclui categorias existentes que não estejam nas sugestões."""
+    """Inclui categorias que não estejam nas sugestões."""
     options = (
         CATEGORIAS_SUGERIDAS.copy()
     )
@@ -521,7 +444,7 @@ def _get_category_options(
 def _get_validation_message(
     rejected_transactions: pd.DataFrame,
 ) -> str:
-    """Monta uma mensagem curta com os problemas encontrados."""
+    """Monta uma mensagem curta com os erros encontrados."""
     if (
         rejected_transactions.empty
         or "motivo_rejeicao"
@@ -551,17 +474,17 @@ def _get_validation_message(
 
 
 # -----------------------------------------------------------------------------
-# Formulário e cartões do rascunho
+# Formulário
 # -----------------------------------------------------------------------------
 
 
 def render_manual_transaction_form(
     transactions: pd.DataFrame,
 ) -> None:
-    """Exibe o formulário vertical de inclusão ou edição."""
-    edit_index = st.session_state[
-        MANUAL_EDIT_INDEX_KEY
-    ]
+    """Exibe o formulário de inclusão ou edição."""
+    edit_index = (
+        get_manual_edit_index()
+    )
 
     editing = (
         edit_index is not None
@@ -619,14 +542,13 @@ def render_manual_transaction_form(
         category_options.index(
             default_category
         )
-        if default_category
-        in category_options
+        if default_category in category_options
         else 0
     )
 
-    form_version = st.session_state[
-        MANUAL_FORM_VERSION_KEY
-    ]
+    form_version = (
+        get_manual_form_version()
+    )
 
     with st.form(
         key=(
@@ -694,11 +616,9 @@ def render_manual_transaction_form(
             else "Adicionar transação"
         )
 
-        submitted = (
-            st.form_submit_button(
-                submit_label,
-                type="primary",
-            )
+        submitted = st.form_submit_button(
+            submit_label,
+            type="primary",
         )
 
     if not submitted:
@@ -776,6 +696,11 @@ def render_manual_transaction_form(
     st.rerun()
 
 
+# -----------------------------------------------------------------------------
+# Formatação
+# -----------------------------------------------------------------------------
+
+
 def format_currency_brl(
     value: object,
 ) -> str:
@@ -823,17 +748,18 @@ def format_date_brl(
     )
 
 
+# -----------------------------------------------------------------------------
+# Ações do rascunho
+# -----------------------------------------------------------------------------
+
+
 def _start_manual_edit(
     index: int,
 ) -> None:
-    """Ativa o modo de edição para uma linha do rascunho."""
-    st.session_state[
-        MANUAL_EDIT_INDEX_KEY
-    ] = index
-
-    st.session_state[
-        MANUAL_FORM_VERSION_KEY
-    ] += 1
+    """Ativa a edição de uma linha do rascunho."""
+    start_manual_edit(
+        index
+    )
 
     st.rerun()
 
@@ -842,7 +768,7 @@ def _remove_manual_draft_item(
     transactions: pd.DataFrame,
     index: int,
 ) -> None:
-    """Remove uma linha e ajusta o estado atual de edição."""
+    """Remove uma linha e atualiza o estado do editor."""
     updated_transactions = (
         remove_pending_transaction(
             transactions,
@@ -850,34 +776,13 @@ def _remove_manual_draft_item(
         )
     )
 
-    current_edit_index = (
-        st.session_state[
-            MANUAL_EDIT_INDEX_KEY
-        ]
-    )
-
-    if current_edit_index == index:
-        st.session_state[
-            MANUAL_EDIT_INDEX_KEY
-        ] = None
-
-    elif (
-        current_edit_index is not None
-        and current_edit_index > index
-    ):
-        st.session_state[
-            MANUAL_EDIT_INDEX_KEY
-        ] = (
-            current_edit_index - 1
-        )
-
     set_manual_draft(
         updated_transactions
     )
 
-    st.session_state[
-        MANUAL_FORM_VERSION_KEY
-    ] += 1
+    adjust_edit_index_after_removal(
+        index
+    )
 
     set_manual_feedback(
         "Transação removida do rascunho."
@@ -889,7 +794,7 @@ def _remove_manual_draft_item(
 def render_pending_transactions(
     transactions: pd.DataFrame,
 ) -> None:
-    """Exibe as transações pendentes em cartões responsivos."""
+    """Exibe as transações pendentes em cartões."""
     st.markdown(
         "### Transações no rascunho"
     )
@@ -1011,7 +916,7 @@ def render_pending_transactions(
 
 
 # -----------------------------------------------------------------------------
-# Composição do editor
+# Composição
 # -----------------------------------------------------------------------------
 
 
@@ -1144,5 +1049,4 @@ def exibir_editor_transacoes_manuais() -> bool:
         "depois que o pipeline ETL é executado."
     )
 
-    # Mantido para preservar o contrato atual da função.
     return False

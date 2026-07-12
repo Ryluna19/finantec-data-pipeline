@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -19,10 +20,11 @@ from scripts.etl_transacoes import (
 )
 from src.transaction_editor import (
     ARQUIVO_TRANSACOES_MANUAIS,
+    CATEGORIAS_SUGERIDAS,
     DATA_REFRESH_REQUESTED_KEY,
-    MANUAL_DRAFT_KEY,
-    MANUAL_EDIT_INDEX_KEY,
-    MANUAL_FORM_VERSION_KEY,
+)
+from src.manual_transaction_state import (
+    invalidate_manual_draft,
 )
 from src.transaction_identity import (
     TRANSACTION_ID_COLUMN,
@@ -32,6 +34,7 @@ from src.transaction_sources import (
     DuplicateTransactionIdError,
     TransactionNotFoundError,
     delete_transaction_from_source,
+    update_transaction_in_source,
 )
 from ui_components import (
     TRANSACTION_TYPE_LABELS,
@@ -237,10 +240,7 @@ def _build_transaction_labels(
     transactions: pd.DataFrame,
 ) -> dict[str, str]:
     """Cria rótulos legíveis mantendo o ID como valor real."""
-    labels: dict[
-        str,
-        str,
-    ] = {}
+    labels: dict[str, str] = {}
 
     for _, transaction in (
         transactions.iterrows()
@@ -301,91 +301,138 @@ def _build_transaction_labels(
     return labels
 
 
-def _update_manual_draft_after_deletion(
-    transaction_id: str,
+def _invalidate_manual_draft(
     source_file: Path,
 ) -> None:
-    """Remove do rascunho uma transação manual já excluída."""
+    """Descarta o rascunho quando a fonte manual é alterada."""
     if (
         source_file.resolve()
         != ARQUIVO_TRANSACOES_MANUAIS.resolve()
     ):
         return
 
-    draft = st.session_state.get(
-        MANUAL_DRAFT_KEY
+    invalidate_manual_draft()
+
+
+def _complete_source_operation(
+    source_file: Path,
+) -> dict[str, int | bool]:
+    """Reexecuta o ETL e prepara a atualização da interface."""
+    _invalidate_manual_draft(
+        source_file
     )
 
-    if (
-        not isinstance(
-            draft,
-            pd.DataFrame,
-        )
-        or TRANSACTION_ID_COLUMN
-        not in draft.columns
-    ):
-        return
-
-    matching_indexes = (
-        draft.index[
-            draft[
-                TRANSACTION_ID_COLUMN
-            ]
-            .astype(str)
-            .str.strip()
-            == transaction_id
-        ]
-        .tolist()
-    )
-
-    if not matching_indexes:
-        return
-
-    deleted_index = int(
-        matching_indexes[0]
+    result = run_etl_with_summary(
+        use_demo_data=False
     )
 
     st.session_state[
-        MANUAL_DRAFT_KEY
-    ] = (
-        draft.drop(
-            index=matching_indexes
-        )
-        .reset_index(
-            drop=True
-        )
-    )
+        DATA_MODE_KEY
+    ] = "user"
 
-    current_edit_index = (
-        st.session_state.get(
-            MANUAL_EDIT_INDEX_KEY
-        )
-    )
+    st.session_state[
+        DATA_REFRESH_REQUESTED_KEY
+    ] = True
 
-    if current_edit_index == deleted_index:
-        st.session_state[
-            MANUAL_EDIT_INDEX_KEY
-        ] = None
+    return result
 
-        st.session_state[
-            MANUAL_FORM_VERSION_KEY
-        ] = (
-            st.session_state.get(
-                MANUAL_FORM_VERSION_KEY,
-                0,
+
+def _update_persisted_transaction(
+    transaction_id: str,
+    updates: dict[str, object],
+) -> None:
+    """Atualiza a fonte, executa o ETL e atualiza a sessão."""
+    source_file: Path | None = None
+
+    try:
+        source_file = (
+            update_transaction_in_source(
+                transaction_id=transaction_id,
+                updates=updates,
             )
-            + 1
         )
 
-    elif (
-        current_edit_index is not None
-        and current_edit_index > deleted_index
-    ):
-        st.session_state[
-            MANUAL_EDIT_INDEX_KEY
-        ] = (
-            current_edit_index - 1
+        result = _complete_source_operation(
+            source_file
         )
+
+        _set_management_feedback(
+            "success",
+            (
+                "Transação atualizada com sucesso. "
+                f"Fonte modificada: {source_file.name}. "
+                "Transações processadas após a edição: "
+                f"{result['transacoes_processadas']}."
+            ),
+        )
+
+    except TransactionNotFoundError:
+        _set_management_feedback(
+            "error",
+            (
+                "A transação não foi encontrada nos arquivos "
+                "do usuário. Ela pode já ter sido removida "
+                "ou pertencer aos dados de demonstração."
+            ),
+        )
+
+    except DuplicateTransactionIdError:
+        _set_management_feedback(
+            "error",
+            (
+                "A edição foi bloqueada porque o mesmo ID "
+                "aparece em mais de uma fonte."
+            ),
+        )
+
+    except ValueError as error:
+        _set_management_feedback(
+            "error",
+            (
+                "Os dados informados não são válidos: "
+                f"{error}"
+            ),
+        )
+
+    except OSError as error:
+        _set_management_feedback(
+            "error",
+            (
+                "Não foi possível salvar a alteração "
+                f"no arquivo de origem: {error}"
+            ),
+        )
+
+    except Exception as error:
+        logging.exception(
+            "Falha inesperada ao atualizar uma transação persistida."
+        )
+
+        if source_file is None:
+            message = (
+                "Não foi possível atualizar a transação: "
+                f"{error}"
+            )
+
+        else:
+            _invalidate_manual_draft(
+                source_file
+            )
+
+            message = (
+                "A fonte foi alterada, mas não foi possível "
+                "concluir o reprocessamento do ETL. "
+                "Execute o ETL novamente. "
+                f"Detalhes: {error}"
+            )
+
+        _set_management_feedback(
+            "error",
+            message,
+        )
+
+    _advance_management_version()
+    st.rerun()
 
 
 def _delete_persisted_transaction(
@@ -401,22 +448,9 @@ def _delete_persisted_transaction(
             )
         )
 
-        result = run_etl_with_summary(
-            use_demo_data=False
+        result = _complete_source_operation(
+            source_file
         )
-
-        _update_manual_draft_after_deletion(
-            transaction_id=transaction_id,
-            source_file=source_file,
-        )
-
-        st.session_state[
-            DATA_MODE_KEY
-        ] = "user"
-
-        st.session_state[
-            DATA_REFRESH_REQUESTED_KEY
-        ] = True
 
         _set_management_feedback(
             "success",
@@ -471,6 +505,10 @@ def _delete_persisted_transaction(
             )
 
         else:
+            _invalidate_manual_draft(
+                source_file
+            )
+
             message = (
                 "A fonte foi alterada, mas não foi possível "
                 "concluir o reprocessamento do ETL. "
@@ -487,16 +525,323 @@ def _delete_persisted_transaction(
     st.rerun()
 
 
+def _get_date_default(
+    transaction: pd.Series,
+) -> date:
+    """Retorna uma data segura para o formulário de edição."""
+    parsed_date = pd.to_datetime(
+        transaction.get(
+            "data"
+        ),
+        errors="coerce",
+    )
+
+    if pd.isna(
+        parsed_date
+    ):
+        return date.today()
+
+    return parsed_date.date()
+
+
+def _get_amount_default(
+    transaction: pd.Series,
+) -> float:
+    """Retorna um valor monetário válido para o formulário."""
+    amount = pd.to_numeric(
+        transaction.get(
+            "valor"
+        ),
+        errors="coerce",
+    )
+
+    if (
+        pd.isna(amount)
+        or amount <= 0
+    ):
+        return 0.01
+
+    return float(
+        amount
+    )
+
+
+def _get_type_options(
+    current_type: str,
+) -> list[str]:
+    """Monta as opções de tipo mantendo o valor atual."""
+    options = [
+        "receita",
+        "despesa",
+    ]
+
+    if (
+        current_type
+        and current_type not in options
+    ):
+        options.insert(
+            0,
+            current_type,
+        )
+
+    return options
+
+
+def _get_category_options(
+    transactions: pd.DataFrame,
+    current_category: str,
+) -> list[str]:
+    """Combina categorias sugeridas, existentes e a atual."""
+    options: list[str] = []
+
+    existing_categories = (
+        transactions[
+            "categoria"
+        ]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .tolist()
+    )
+
+    candidates = [
+        *CATEGORIAS_SUGERIDAS,
+        *existing_categories,
+        current_category,
+    ]
+
+    for category in candidates:
+        normalized_category = (
+            _safe_text(
+                category
+            )
+        )
+
+        if (
+            normalized_category
+            and normalized_category not in options
+        ):
+            options.append(
+                normalized_category
+            )
+
+    return options
+
+
+def _render_edit_form(
+    selected_transaction: pd.Series,
+    selected_id: str,
+    transactions: pd.DataFrame,
+    widget_version: int,
+) -> None:
+    """Exibe o formulário de edição da transação selecionada."""
+    current_type = (
+        _safe_text(
+            selected_transaction.get(
+                "tipo"
+            )
+        )
+        .lower()
+    )
+
+    current_description = (
+        _safe_text(
+            selected_transaction.get(
+                "descricao"
+            )
+        )
+    )
+
+    current_category = (
+        _safe_text(
+            selected_transaction.get(
+                "categoria"
+            )
+        )
+    )
+
+    type_options = (
+        _get_type_options(
+            current_type
+        )
+    )
+
+    category_options = (
+        _get_category_options(
+            transactions=transactions,
+            current_category=current_category,
+        )
+    )
+
+    type_index = (
+        type_options.index(
+            current_type
+        )
+        if current_type in type_options
+        else 0
+    )
+
+    category_index = (
+        category_options.index(
+            current_category
+        )
+        if current_category in category_options
+        else 0
+    )
+
+    widget_token = (
+        selected_id
+        .replace(
+            "-",
+            "",
+        )[
+            :12
+        ]
+    )
+
+    with st.form(
+        key=(
+            "persisted-transaction-edit-form-"
+            f"{widget_version}-"
+            f"{widget_token}"
+        ),
+        border=False,
+    ):
+        transaction_date = st.date_input(
+            "Data",
+            value=(
+                _get_date_default(
+                    selected_transaction
+                )
+            ),
+            format="DD/MM/YYYY",
+            key=(
+                "persisted-edit-date-"
+                f"{widget_version}-"
+                f"{widget_token}"
+            ),
+        )
+
+        transaction_type = st.selectbox(
+            "Tipo",
+            options=type_options,
+            index=type_index,
+            format_func=lambda value: (
+                TRANSACTION_TYPE_LABELS.get(
+                    value,
+                    value.title(),
+                )
+            ),
+            key=(
+                "persisted-edit-type-"
+                f"{widget_version}-"
+                f"{widget_token}"
+            ),
+        )
+
+        description = st.text_input(
+            "Descrição",
+            value=current_description,
+            key=(
+                "persisted-edit-description-"
+                f"{widget_version}-"
+                f"{widget_token}"
+            ),
+        )
+
+        category = st.selectbox(
+            "Categoria",
+            options=category_options,
+            index=category_index,
+            key=(
+                "persisted-edit-category-"
+                f"{widget_version}-"
+                f"{widget_token}"
+            ),
+        )
+
+        amount = st.number_input(
+            "Valor",
+            min_value=0.01,
+            value=(
+                _get_amount_default(
+                    selected_transaction
+                )
+            ),
+            step=1.00,
+            format="%.2f",
+            key=(
+                "persisted-edit-amount-"
+                f"{widget_version}-"
+                f"{widget_token}"
+            ),
+        )
+
+        submitted = st.form_submit_button(
+            "Salvar alterações",
+            type="primary",
+        )
+
+    if not submitted:
+        return
+
+    _update_persisted_transaction(
+        transaction_id=selected_id,
+        updates={
+            "data": transaction_date,
+            "tipo": transaction_type,
+            "descricao": description,
+            "categoria": category,
+            "valor": amount,
+        },
+    )
+
+
+def _render_delete_confirmation(
+    selected_id: str,
+    widget_version: int,
+) -> None:
+    """Exibe a confirmação da exclusão permanente."""
+    st.warning(
+        "A exclusão altera o arquivo de origem e não pode "
+        "ser desfeita pela interface."
+    )
+
+    confirmed = st.checkbox(
+        (
+            "Confirmo que desejo excluir permanentemente "
+            "a transação selecionada."
+        ),
+        key=(
+            "persisted-transaction-confirmation-"
+            f"{widget_version}"
+        ),
+    )
+
+    if st.button(
+        "Excluir transação",
+        key=(
+            "delete-persisted-transaction-"
+            f"{widget_version}"
+        ),
+        type="primary",
+        disabled=not confirmed,
+    ):
+        _delete_persisted_transaction(
+            selected_id
+        )
+
+
 def render_persisted_transaction_management(
     transactions: pd.DataFrame,
 ) -> None:
-    """Exibe seleção e confirmação de exclusão persistida."""
-    _show_management_feedback()
-
+    """Exibe edição e exclusão de transações persistidas."""
     should_expand = (
         TRANSACTION_MANAGEMENT_FEEDBACK_KEY
         in st.session_state
     )
+
+    _show_management_feedback()
 
     with st.container(
         key="persisted-transaction-management",
@@ -507,8 +852,8 @@ def render_persisted_transaction_management(
         ):
             st.caption(
                 "Selecione uma movimentação já processada. "
-                "A exclusão altera o arquivo de origem, "
-                "reexecuta o ETL e atualiza o SQLite."
+                "As alterações são aplicadas ao arquivo de origem, "
+                "seguidas por uma nova execução do ETL."
             )
 
             if (
@@ -561,7 +906,7 @@ def render_persisted_transaction_management(
             ):
                 st.error(
                     "Existem IDs duplicados no resultado atual. "
-                    "A exclusão foi bloqueada por segurança."
+                    "A edição e a exclusão foram bloqueadas."
                 )
                 return
 
@@ -631,26 +976,27 @@ def render_persisted_transaction_management(
                     f"Categoria: {category}"
                 )
 
-            confirmed = st.checkbox(
-                (
-                    "Confirmo que desejo excluir permanentemente "
-                    "a transação selecionada."
-                ),
-                key=(
-                    "persisted-transaction-confirmation-"
-                    f"{widget_version}"
-                ),
+            edit_tab, delete_tab = st.tabs(
+                [
+                    "Editar",
+                    "Excluir",
+                ]
             )
 
-            if st.button(
-                "Excluir transação",
-                key=(
-                    "delete-persisted-transaction-"
-                    f"{widget_version}"
-                ),
-                type="primary",
-                disabled=not confirmed,
-            ):
-                _delete_persisted_transaction(
-                    selected_id
+            with edit_tab:
+                _render_edit_form(
+                    selected_transaction=(
+                        selected_transaction
+                    ),
+                    selected_id=selected_id,
+                    transactions=(
+                        manageable_transactions
+                    ),
+                    widget_version=widget_version,
+                )
+
+            with delete_tab:
+                _render_delete_confirmation(
+                    selected_id=selected_id,
+                    widget_version=widget_version,
                 )
