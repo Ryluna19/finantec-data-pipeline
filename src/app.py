@@ -257,53 +257,61 @@ def render_dashboard_tab(
         "Visão geral"
     )
 
-    render_financial_summary(
-        summary
-    )
+    with st.container(
+        key="dashboard-summary-section",
+    ):
+        render_financial_summary(
+            summary
+        )
 
-    st.divider()
+    with st.container(
+        key="dashboard-diagnosis-section",
+    ):
+        render_financial_diagnosis(
+            summary
+        )
 
-    render_financial_diagnosis(
-        summary
-    )
-
-    st.divider()
-
-    render_additional_metrics(
-        transactions,
-        summary,
-    )
-
-    st.divider()
-
-    chart_column, ranking_column = st.columns(
-        [2, 1]
-    )
-
-    with chart_column:
-        render_expenses_by_category(
-            expenses_by_category,
+    with st.container(
+        key="dashboard-metrics-section",
+    ):
+        render_additional_metrics(
+            transactions,
             summary,
         )
 
-    with ranking_column:
-        render_category_ranking(
-            expenses_by_category
+    with st.container(
+        key="dashboard-categories-section",
+    ):
+        chart_column, ranking_column = st.columns(
+            [2, 1],
+            gap="medium",
         )
+
+        with chart_column:
+            render_expenses_by_category(
+                expenses_by_category,
+                summary,
+            )
+
+        with ranking_column:
+            render_category_ranking(
+                expenses_by_category
+            )
 
     if show_yearly_evolution:
-        st.divider()
+        with st.container(
+            key="dashboard-evolution-section",
+        ):
+            render_monthly_evolution(
+                transactions
+            )
 
-        render_monthly_evolution(
+    with st.container(
+        key="dashboard-latest-section",
+    ):
+        render_latest_transactions(
             transactions
         )
-
-    st.divider()
-
-    render_latest_transactions(
-        transactions
-    )
-
 
 def render_transactions_tab(
     period_transactions: pd.DataFrame,
@@ -320,7 +328,7 @@ def render_transactions_tab(
         "Entrada manual de transações",
         expanded=should_expand_editor,
     ):
-      render_manual_transaction_editor()
+        render_manual_transaction_editor()
 
     should_expand_files = (
         "file_import_result"
@@ -347,18 +355,20 @@ def render_transactions_tab(
         "nos indicadores após o processamento do ETL."
     )
 
-    st.divider()
+    with st.container(
+        key="transactions-validation-section",
+    ):
+        render_data_validation(
+            len(period_transactions),
+            rejections,
+        )
 
-    render_data_validation(
-        len(period_transactions),
-        rejections,
-    )
-
-    st.divider()
-
-    render_period_transactions(
-        period_transactions
-    )
+    with st.container(
+        key="transactions-period-section",
+    ):
+        render_period_transactions(
+            period_transactions
+        )
 
 
 def main() -> None:

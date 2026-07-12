@@ -95,47 +95,57 @@ def render_file_downloads(
     transactions: pd.DataFrame,
 ) -> None:
     """Exibe downloads do modelo e do período atual."""
-    template_column, export_column = st.columns(2)
-
-    with template_column:
-        st.download_button(
-            label="Baixar modelo Excel",
-            data=create_excel_template(),
-            file_name=(
-                "finantec_transacoes_template.xlsx"
-            ),
-            mime=EXCEL_MIME_TYPE,
-            use_container_width=True,
-        )
-
-        st.caption(
-            "Modelo vazio com as colunas "
-            "e instruções necessárias."
-        )
-
-    with export_column:
-        if transactions.empty:
-            st.info(
-                "Não há transações no período "
-                "atual para exportar."
+    with st.container(
+        key="file-downloads",
+    ):
+        template_column, export_column = (
+            st.columns(
+                2,
+                gap="small",
             )
-        else:
+        )
+
+        with template_column:
             st.download_button(
-                label="Exportar período atual",
-                data=export_transactions_to_excel(
-                    transactions
-                ),
+                label="Baixar modelo Excel",
+                data=create_excel_template(),
                 file_name=(
-                    "finantec_transacoes_periodo.xlsx"
+                    "finantec_transacoes_template.xlsx"
                 ),
                 mime=EXCEL_MIME_TYPE,
+                key="download-excel-template",
                 use_container_width=True,
             )
 
             st.caption(
-                "Exporta somente as transações "
-                "do período selecionado."
+                "Modelo vazio com as colunas "
+                "e instruções necessárias."
             )
+
+        with export_column:
+            if transactions.empty:
+                st.info(
+                    "Não há transações no período "
+                    "atual para exportar."
+                )
+            else:
+                st.download_button(
+                    label="Exportar período atual",
+                    data=export_transactions_to_excel(
+                        transactions
+                    ),
+                    file_name=(
+                        "finantec_transacoes_periodo.xlsx"
+                    ),
+                    mime=EXCEL_MIME_TYPE,
+                    key="export-current-period",
+                    use_container_width=True,
+                )
+
+                st.caption(
+                    "Exporta somente as transações "
+                    "do período selecionado."
+                )
 
 
 def render_validation_summary(
@@ -143,17 +153,44 @@ def render_validation_summary(
     rejected_transactions: pd.DataFrame,
 ) -> None:
     """Exibe a quantidade de linhas válidas e rejeitadas."""
-    valid_column, rejected_column = st.columns(2)
-
-    valid_column.metric(
-        "Linhas válidas",
-        len(valid_transactions),
+    valid_count = len(
+        valid_transactions
     )
 
-    rejected_column.metric(
-        "Linhas com erro",
-        len(rejected_transactions),
+    rejected_count = len(
+        rejected_transactions
     )
+
+    rejected_metric_key = (
+        "import-validation-rejected-error"
+        if rejected_count > 0
+        else "import-validation-rejected-neutral"
+    )
+
+    valid_column, rejected_column = (
+        st.columns(
+            2,
+            gap="small",
+        )
+    )
+
+    with valid_column:
+        with st.container(
+            key="import-validation-valid",
+        ):
+            st.metric(
+                "Linhas válidas",
+                valid_count,
+            )
+
+    with rejected_column:
+        with st.container(
+            key=rejected_metric_key,
+        ):
+            st.metric(
+                "Linhas com erro",
+                rejected_count,
+            )
 
     if rejected_transactions.empty:
         st.success(
@@ -164,7 +201,6 @@ def render_validation_summary(
             "O arquivo possui linhas que precisam "
             "ser corrigidas antes da importação."
         )
-
 
 def render_matching_transactions(
     matching_transactions: pd.DataFrame,
@@ -247,17 +283,31 @@ def render_import_confirmation(
             new_transactions.copy()
         )
 
-    total_column, import_column = st.columns(2)
-
-    total_column.metric(
-        "Linhas válidas no arquivo",
-        len(valid_transactions),
+    (
+        total_column,
+        import_column,
+    ) = st.columns(
+        2,
+        gap="small",
     )
 
-    import_column.metric(
-        "Linhas que serão importadas",
-        len(transactions_to_import),
-    )
+    with total_column:
+        with st.container(
+            key="import-file-valid-metric",
+        ):
+            st.metric(
+                "Linhas válidas no arquivo",
+                len(valid_transactions),
+            )
+
+    with import_column:
+        with st.container(
+            key="import-ready-metric",
+        ):
+            st.metric(
+                "Linhas que serão importadas",
+                len(transactions_to_import),
+            )
 
     if transactions_to_import.empty:
         st.info(
@@ -270,7 +320,9 @@ def render_import_confirmation(
         transactions_to_import
     )
 
-    batch_already_imported = import_path.exists()
+    batch_already_imported = (
+        import_path.exists()
+    )
 
     if batch_already_imported:
         st.warning(
@@ -283,22 +335,31 @@ def render_import_confirmation(
         "e o pipeline ETL será executado novamente."
     )
 
-    if not st.button(
+    import_confirmed = st.button(
         "Confirmar importação",
+        key="confirm-transaction-import",
         type="primary",
         disabled=batch_already_imported,
-        use_container_width=True,
-    ):
+        use_container_width=False,
+    )
+
+    if not import_confirmed:
         return False
 
     try:
-        saved_path = save_imported_transactions(
-            transactions_to_import
+        saved_path = (
+            save_imported_transactions(
+                transactions_to_import
+            )
         )
 
-        result = run_etl_with_summary()
+        result = (
+            run_etl_with_summary()
+        )
 
-        st.session_state["file_import_result"] = {
+        st.session_state[
+            "file_import_result"
+        ] = {
             "success": True,
             "message": (
                 "Lote importado e processado "
@@ -318,7 +379,9 @@ def render_import_confirmation(
         return True
 
     except Exception as error:
-        st.session_state["file_import_result"] = {
+        st.session_state[
+            "file_import_result"
+        ] = {
             "success": False,
             "message": (
                 "Não foi possível concluir "

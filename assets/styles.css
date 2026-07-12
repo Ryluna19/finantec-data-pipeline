@@ -1154,6 +1154,16 @@ summary {
 .st-key-period-income-metric
 [data-testid="stMetric"],
 .st-key-period-expense-metric
+[data-testid="stMetric"],
+.st-key-import-validation-valid
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-neutral
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-error
+[data-testid="stMetric"],
+.st-key-import-file-valid-metric
+[data-testid="stMetric"],
+.st-key-import-ready-metric
 [data-testid="stMetric"] {
     border-top-width: 3px !important;
 }
@@ -1164,6 +1174,10 @@ summary {
 .st-key-validation-valid-metric
 [data-testid="stMetric"],
 .st-key-period-income-metric
+[data-testid="stMetric"],
+.st-key-import-validation-valid
+[data-testid="stMetric"],
+.st-key-import-file-valid-metric
 [data-testid="stMetric"] {
     border-top-color:
         var(--success) !important;
@@ -1172,6 +1186,10 @@ summary {
 .st-key-validation-valid-metric
 [data-testid="stMetricValue"],
 .st-key-period-income-metric
+[data-testid="stMetricValue"],
+.st-key-import-validation-valid
+[data-testid="stMetricValue"],
+.st-key-import-file-valid-metric
 [data-testid="stMetricValue"] {
     color: var(--success) !important;
 }
@@ -1182,6 +1200,8 @@ summary {
 .st-key-validation-rejected-metric-error
 [data-testid="stMetric"],
 .st-key-period-expense-metric
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-error
 [data-testid="stMetric"] {
     border-top-color:
         var(--danger) !important;
@@ -1190,6 +1210,8 @@ summary {
 .st-key-validation-rejected-metric-error
 [data-testid="stMetricValue"],
 .st-key-period-expense-metric
+[data-testid="stMetricValue"],
+.st-key-import-validation-rejected-error
 [data-testid="stMetricValue"] {
     color: var(--danger) !important;
 }
@@ -1200,6 +1222,10 @@ summary {
 .st-key-validation-rejected-metric-neutral
 [data-testid="stMetric"],
 .st-key-period-total-metric
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-neutral
+[data-testid="stMetric"],
+.st-key-import-ready-metric
 [data-testid="stMetric"] {
     border-top-color:
         var(--border-light) !important;
@@ -1208,6 +1234,10 @@ summary {
 .st-key-validation-rejected-metric-neutral
 [data-testid="stMetricValue"],
 .st-key-period-total-metric
+[data-testid="stMetricValue"],
+.st-key-import-validation-rejected-neutral
+[data-testid="stMetricValue"],
+.st-key-import-ready-metric
 [data-testid="stMetricValue"] {
     color: var(--text-main) !important;
 }
@@ -1735,10 +1765,113 @@ summary {
     line-height: 1.45;
 }
 
+/* =========================================================
+   AÇÕES DE DADOS E ARQUIVOS
+   ========================================================= */
+
+.st-key-user-data-action-card,
+.st-key-demo-data-action-card {
+    margin-bottom: 1rem;
+}
+
+.st-key-user-data-action-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-demo-data-action-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 1.1rem 1.2rem !important;
+}
+
+.st-key-user-data-action-card h4,
+.st-key-demo-data-action-card h4 {
+    margin-top: 0;
+}
+
+.st-key-use-user-data
+button,
+.st-key-load-demo-data
+button,
+.st-key-confirm-transaction-import
+button {
+    width: auto !important;
+    min-width: 180px;
+}
+
+.st-key-file-downloads
+[data-testid="stHorizontalBlock"] {
+    gap: 0.75rem;
+}
 
 /* =========================================================
    AÇÕES DA ENTRADA MANUAL
    ========================================================= */
+
+/* Card do formulário manual */
+
+.st-key-manual-entry-card {
+    margin-bottom: 1.25rem;
+}
+
+.st-key-manual-entry-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 1.15rem 1.2rem !important;
+
+    background: var(--bg-panel);
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius: var(--radius);
+}
+
+.st-key-manual-entry-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.35rem;
+}
+
+.st-key-manual-entry-card
+[data-testid="stForm"] {
+    padding-bottom: 0 !important;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button {
+    width: auto !important;
+    min-width: 170px;
+}
+
+/* Ação principal do formulário manual */
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background: var(--accent-active) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent) !important;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent-hover) !important;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span,
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) svg {
+    color: #ffffff !important;
+    fill: currentColor !important;
+}
 
 .st-key-manual-actions {
     margin-top: 0.25rem;
@@ -1959,6 +2092,23 @@ hr {
     border-top: 1px solid var(--border);
 }
 
+/* =========================================================
+   ESPAÇAMENTO ENTRE SEÇÕES
+   ========================================================= */
+
+.st-key-dashboard-summary-section,
+.st-key-dashboard-diagnosis-section,
+.st-key-dashboard-metrics-section,
+.st-key-dashboard-categories-section,
+.st-key-dashboard-evolution-section,
+.st-key-transactions-validation-section {
+    margin-bottom: 2rem;
+}
+
+.st-key-dashboard-latest-section,
+.st-key-transactions-period-section {
+    margin-bottom: 0;
+}
 
 /* =========================================================
    RESPONSIVIDADE
@@ -2089,6 +2239,14 @@ hr {
     .finantec-ranking-value {
         font-size: 0.84rem;
     }
+      .st-key-dashboard-summary-section,
+    .st-key-dashboard-diagnosis-section,
+    .st-key-dashboard-metrics-section,
+    .st-key-dashboard-categories-section,
+    .st-key-dashboard-evolution-section,
+    .st-key-transactions-validation-section {
+        margin-bottom: 1.5rem;
+    }
 }
 
 
@@ -2195,6 +2353,18 @@ hr {
         flex-direction: column;
 
         gap: 0.25rem;
+    }
+
+        .st-key-manual-entry-card
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 1rem !important;
+    }
+
+    .st-key-manual-entry-card
+    [data-testid="stFormSubmitButton"]
+    button {
+        width: 100% !important;
+        min-width: 0;
     }
 }
 

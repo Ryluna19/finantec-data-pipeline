@@ -204,7 +204,8 @@ def _render_user_data_action(
 ) -> None:
     """Permite processar somente os dados reais do usuário."""
     with st.container(
-        border=True
+        border=True,
+        key="user-data-action-card",
     ):
         st.markdown(
             "#### Meus dados"
@@ -228,9 +229,9 @@ def _render_user_data_action(
 
         if st.button(
             "Usar meus dados",
-            type="primary",
+            key="use-user-data",
             disabled=not has_user_sources,
-            use_container_width=True,
+            use_container_width=False,
         ):
             try:
                 result = run_etl_with_summary(
@@ -268,7 +269,8 @@ def _render_user_data_action(
 def _render_demo_action() -> None:
     """Permite carregar explicitamente a demonstração."""
     with st.container(
-        border=True
+        border=True,
+        key="demo-data-action-card",
     ):
         st.markdown(
             "#### Dados de demonstração"
@@ -289,8 +291,9 @@ def _render_demo_action() -> None:
 
         if st.button(
             "Carregar demonstração",
+            key="load-demo-data",
             disabled=not demo_confirmation,
-            use_container_width=True,
+            use_container_width=False,
         ):
             try:
                 result = run_etl_with_summary(
