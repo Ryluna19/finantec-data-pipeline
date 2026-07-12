@@ -11,6 +11,11 @@ from typing import BinaryIO
 import pandas as pd
 import unicodedata
 
+from src.transaction_identity import (
+    TRANSACTION_ID_COLUMN,
+    ensure_transaction_ids,
+)
+
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
     prepare_transactions,
@@ -64,6 +69,11 @@ EXCEL_INSTRUCTION_COLUMN_WIDTHS = {
 }
 
 FileSource = str | Path | BinaryIO
+
+STORED_TRANSACTION_COLUMNS = [
+    TRANSACTION_ID_COLUMN,
+    *REQUIRED_TRANSACTION_COLUMNS,
+]
 
 
 def _rewind_file(source: FileSource) -> None:
@@ -608,12 +618,29 @@ def build_import_file_path(
 
     return import_dir / file_name
 
+def build_import_source_key(
+    import_path: Path,
+) -> str:
+    """Cria uma identificação estável para o arquivo importado."""
+    try:
+        return (
+            import_path.resolve()
+            .relative_to(
+                PROJECT_ROOT.resolve()
+            )
+            .as_posix()
+        )
+
+    except ValueError:
+        # Diretórios temporários usados nos testes
+        # ficam fora da pasta principal do projeto.
+        return import_path.name
 
 def save_imported_transactions(
     transactions: pd.DataFrame,
     import_dir: Path = IMPORTED_RAW_DIR,
 ) -> Path:
-    """Salva um lote validado sem substituir importações anteriores."""
+    """Salva um lote validado com IDs persistentes."""
     import_path = build_import_file_path(
         transactions,
         import_dir=import_dir,
@@ -621,7 +648,8 @@ def save_imported_transactions(
 
     if import_path.exists():
         raise FileExistsError(
-            "Este mesmo lote de transações " "já foi importado anteriormente."
+            "Este mesmo lote de transações "
+            "já foi importado anteriormente."
         )
 
     import_dir.mkdir(
@@ -629,7 +657,33 @@ def save_imported_transactions(
         exist_ok=True,
     )
 
-    transactions_to_save = prepare_transactions_for_export(transactions)
+    # A planilha enviada pelo usuário contém apenas
+    # as colunas financeiras públicas.
+    transactions_to_save = (
+        prepare_transactions_for_export(
+            transactions
+        )
+    )
+
+    # O ID técnico nasce depois do fingerprint do lote,
+    # portanto não altera a detecção de duplicatas.
+    transactions_to_save = (
+        ensure_transaction_ids(
+            transactions=transactions_to_save,
+            source_key=build_import_source_key(
+                import_path
+            ),
+            identity_columns=(
+                REQUIRED_TRANSACTION_COLUMNS
+            ),
+        )
+    )
+
+    transactions_to_save = (
+        transactions_to_save[
+            STORED_TRANSACTION_COLUMNS
+        ].copy()
+    )
 
     transactions_to_save.to_csv(
         import_path,

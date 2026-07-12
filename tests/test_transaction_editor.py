@@ -2,6 +2,7 @@ import pandas as pd
 
 from transaction_editor import (
     COLUNAS_TRANSACOES,
+    STORED_TRANSACTION_COLUMNS,
     add_pending_transaction,
     carregar_transacoes_manuais,
     criar_dataframe_vazio,
@@ -38,11 +39,14 @@ def test_validar_transacoes_editadas_reutiliza_regras_do_etl():
     assert "valor menor ou igual a zero" in motivo
 
 
-def test_criar_dataframe_vazio_usa_colunas_do_contrato():
+def test_criar_dataframe_vazio_usa_colunas_de_armazenamento():
     transacoes = criar_dataframe_vazio()
 
     assert transacoes.empty
-    assert transacoes.columns.tolist() == COLUNAS_TRANSACOES
+    assert (
+        transacoes.columns.tolist()
+        == STORED_TRANSACTION_COLUMNS
+    )
 
 
 def test_preparar_transacoes_para_salvar_padroniza_dados():
@@ -97,7 +101,10 @@ def test_carregar_transacoes_manuais_retorna_vazio_quando_arquivo_nao_existe(
     transacoes = carregar_transacoes_manuais()
 
     assert transacoes.empty
-    assert transacoes.columns.tolist() == COLUNAS_TRANSACOES
+    assert (
+        transacoes.columns.tolist()
+        == STORED_TRANSACTION_COLUMNS
+    )
 
 
 def test_salvar_e_carregar_transacoes_manuais(monkeypatch, tmp_path):
