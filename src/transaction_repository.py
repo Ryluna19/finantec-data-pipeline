@@ -5,9 +5,16 @@ from __future__ import annotations
 import re
 import sqlite3
 from pathlib import Path
+from typing import Any, Mapping
 
 import pandas as pd
 
+from src.transaction_identity import (
+    TRANSACTION_ID_COLUMN,
+)
+from src.transaction_validation import (
+    REQUIRED_TRANSACTION_COLUMNS,
+)
 from src.user_context import (
     LOCAL_USER_ID,
 )
@@ -16,14 +23,47 @@ from src.user_context import (
 USER_ID_COLUMN = "user_id"
 DATA_MODE_COLUMN = "data_mode"
 
+TRANSACTION_SOURCE_COLUMN = (
+    "arquivo_origem"
+)
+
+TRANSACTION_PERIOD_COLUMN = (
+    "ano_mes"
+)
+
 VALID_TRANSACTION_DATA_MODES = {
     "user",
     "demo",
 }
 
+PERSISTED_TRANSACTION_COLUMNS = [
+    TRANSACTION_ID_COLUMN,
+    *REQUIRED_TRANSACTION_COLUMNS,
+    TRANSACTION_SOURCE_COLUMN,
+    TRANSACTION_PERIOD_COLUMN,
+]
+
+MUTABLE_TRANSACTION_COLUMNS = {
+    *REQUIRED_TRANSACTION_COLUMNS,
+    TRANSACTION_SOURCE_COLUMN,
+    TRANSACTION_PERIOD_COLUMN,
+}
+
 _IDENTIFIER_PATTERN = re.compile(
     r"^[A-Za-z_][A-Za-z0-9_]*$"
 )
+
+
+class TransactionNotFoundError(
+    LookupError
+):
+    """Indica que uma transação não existe no contexto informado."""
+
+
+class DuplicateTransactionIdError(
+    ValueError
+):
+    """Indica uma tentativa de persistir IDs duplicados."""
 
 
 def _normalize_identifier(
@@ -81,6 +121,25 @@ def _normalize_transaction_context(
         normalized_user_id,
         normalized_data_mode,
     )
+
+
+def _normalize_transaction_id(
+    transaction_id: object,
+) -> str:
+    """Valida o identificador de uma transação."""
+    normalized_transaction_id = str(
+        transaction_id
+        if transaction_id is not None
+        else ""
+    ).strip()
+
+    if not normalized_transaction_id:
+        raise ValueError(
+            "O identificador da transação "
+            "não pode ser vazio."
+        )
+
+    return normalized_transaction_id
 
 
 def _connect(
@@ -183,8 +242,6 @@ def _ensure_transaction_context_columns(
             """
         )
 
-    # Dados antigos são tratados como dados reais do usuário local.
-    # A demonstração pode ser gerada novamente quando necessário.
     connection.execute(
         f"""
         UPDATE {table_name}
@@ -241,6 +298,140 @@ def _prepare_transactions_for_context(
     return prepared_transactions
 
 
+def _validate_columns_for_insert(
+    transactions: pd.DataFrame,
+) -> None:
+    """Valida o contrato necessário para inserção direta."""
+    missing_columns = [
+        column
+        for column
+        in PERSISTED_TRANSACTION_COLUMNS
+        if column not in transactions.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            "Não foi possível inserir as transações. "
+            "Colunas obrigatórias ausentes: "
+            + ", ".join(
+                missing_columns
+            )
+        )
+
+
+def _validate_transaction_ids(
+    transactions: pd.DataFrame,
+) -> list[str]:
+    """Valida os IDs presentes em um lote."""
+    transaction_ids = [
+        _normalize_transaction_id(
+            value
+        )
+        for value in transactions[
+            TRANSACTION_ID_COLUMN
+        ].tolist()
+    ]
+
+    if (
+        len(transaction_ids)
+        != len(set(transaction_ids))
+    ):
+        raise DuplicateTransactionIdError(
+            "O lote possui transaction_id duplicado."
+        )
+
+    return transaction_ids
+
+
+def _ensure_table_accepts_columns(
+    connection: sqlite3.Connection,
+    table_name: str,
+    columns: list[str],
+) -> None:
+    """Verifica se a tabela aceita as colunas informadas."""
+    existing_columns = (
+        _get_table_columns(
+            connection,
+            table_name,
+        )
+    )
+
+    missing_columns = [
+        column
+        for column in columns
+        if column not in existing_columns
+    ]
+
+    if missing_columns:
+        raise RuntimeError(
+            "A tabela de transações possui "
+            "uma estrutura incompatível. "
+            "Colunas ausentes: "
+            + ", ".join(
+                missing_columns
+            )
+        )
+
+
+def _find_existing_transaction_ids(
+    connection: sqlite3.Connection,
+    table_name: str,
+    user_id: str,
+    data_mode: str,
+    transaction_ids: list[str],
+) -> set[str]:
+    """Localiza IDs já usados no mesmo contexto."""
+    if not transaction_ids:
+        return set()
+
+    existing_ids: set[str] = set()
+
+    chunk_size = 500
+
+    for start in range(
+        0,
+        len(transaction_ids),
+        chunk_size,
+    ):
+        current_ids = (
+            transaction_ids[
+                start:
+                start + chunk_size
+            ]
+        )
+
+        placeholders = ", ".join(
+            "?"
+            for _ in current_ids
+        )
+
+        rows = connection.execute(
+            f"""
+            SELECT {TRANSACTION_ID_COLUMN}
+            FROM {table_name}
+            WHERE
+                {USER_ID_COLUMN} = ?
+                AND {DATA_MODE_COLUMN} = ?
+                AND {TRANSACTION_ID_COLUMN}
+                    IN ({placeholders})
+            """,
+            (
+                user_id,
+                data_mode,
+                *current_ids,
+            ),
+        ).fetchall()
+
+        existing_ids.update(
+            str(
+                row[TRANSACTION_ID_COLUMN]
+            )
+            for row in rows
+        )
+
+    return existing_ids
+
+
 def replace_transactions(
     transactions: pd.DataFrame,
     database_path: Path,
@@ -276,14 +467,10 @@ def replace_transactions(
         with _connect(
             database_path
         ) as connection:
-            table_already_exists = (
-                _table_exists(
-                    connection,
-                    normalized_table_name,
-                )
-            )
-
-            if not table_already_exists:
+            if not _table_exists(
+                connection,
+                normalized_table_name,
+            ):
                 prepared_transactions.to_sql(
                     normalized_table_name,
                     connection,
@@ -303,29 +490,15 @@ def replace_transactions(
                 normalized_table_name,
             )
 
-            existing_columns = (
-                _get_table_columns(
-                    connection,
-                    normalized_table_name,
-                )
+            _ensure_table_accepts_columns(
+                connection=connection,
+                table_name=normalized_table_name,
+                columns=(
+                    prepared_transactions
+                    .columns
+                    .tolist()
+                ),
             )
-
-            missing_columns = [
-                column
-                for column
-                in prepared_transactions.columns
-                if column not in existing_columns
-            ]
-
-            if missing_columns:
-                raise RuntimeError(
-                    "A tabela de transações possui "
-                    "uma estrutura antiga incompatível. "
-                    "Colunas ausentes: "
-                    + ", ".join(
-                        missing_columns
-                    )
-                )
 
             connection.execute(
                 f"""
@@ -355,6 +528,135 @@ def replace_transactions(
             "Não foi possível salvar "
             "as transações no SQLite."
         ) from error
+
+
+def insert_transactions(
+    transactions: pd.DataFrame,
+    database_path: Path,
+    table_name: str,
+    user_id: str = LOCAL_USER_ID,
+    data_mode: str = "user",
+) -> int:
+    """Insere novas transações sem substituir o contexto."""
+    normalized_table_name = (
+        _normalize_identifier(
+            table_name,
+            "O nome da tabela",
+        )
+    )
+
+    (
+        normalized_user_id,
+        normalized_data_mode,
+    ) = _normalize_transaction_context(
+        user_id=user_id,
+        data_mode=data_mode,
+    )
+
+    if transactions.empty:
+        return 0
+
+    _validate_columns_for_insert(
+        transactions
+    )
+
+    transaction_ids = (
+        _validate_transaction_ids(
+            transactions
+        )
+    )
+
+    prepared_transactions = (
+        _prepare_transactions_for_context(
+            transactions=transactions,
+            user_id=normalized_user_id,
+            data_mode=normalized_data_mode,
+        )
+    )
+
+    try:
+        with _connect(
+            database_path
+        ) as connection:
+            if not _table_exists(
+                connection,
+                normalized_table_name,
+            ):
+                prepared_transactions.to_sql(
+                    normalized_table_name,
+                    connection,
+                    if_exists="replace",
+                    index=False,
+                )
+
+                _ensure_transaction_context_columns(
+                    connection,
+                    normalized_table_name,
+                )
+
+                return int(
+                    len(
+                        prepared_transactions
+                    )
+                )
+
+            _ensure_transaction_context_columns(
+                connection,
+                normalized_table_name,
+            )
+
+            _ensure_table_accepts_columns(
+                connection=connection,
+                table_name=normalized_table_name,
+                columns=(
+                    prepared_transactions
+                    .columns
+                    .tolist()
+                ),
+            )
+
+            existing_ids = (
+                _find_existing_transaction_ids(
+                    connection=connection,
+                    table_name=normalized_table_name,
+                    user_id=normalized_user_id,
+                    data_mode=normalized_data_mode,
+                    transaction_ids=transaction_ids,
+                )
+            )
+
+            if existing_ids:
+                duplicate_id = sorted(
+                    existing_ids
+                )[0]
+
+                raise DuplicateTransactionIdError(
+                    "Já existe uma transação "
+                    "com o transaction_id "
+                    f"{duplicate_id} neste contexto."
+                )
+
+            prepared_transactions.to_sql(
+                normalized_table_name,
+                connection,
+                if_exists="append",
+                index=False,
+            )
+
+    except DuplicateTransactionIdError:
+        raise
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível inserir "
+            "as transações no SQLite."
+        ) from error
+
+    return int(
+        len(
+            prepared_transactions
+        )
+    )
 
 
 def load_transactions(
@@ -422,6 +724,331 @@ def load_transactions(
         raise RuntimeError(
             "Não foi possível carregar "
             "as transações do SQLite."
+        ) from error
+
+
+def load_transaction(
+    database_path: Path,
+    table_name: str,
+    transaction_id: str,
+    user_id: str = LOCAL_USER_ID,
+    data_mode: str = "user",
+) -> dict[str, Any] | None:
+    """Carrega uma transação específica do contexto."""
+    normalized_table_name = (
+        _normalize_identifier(
+            table_name,
+            "O nome da tabela",
+        )
+    )
+
+    normalized_transaction_id = (
+        _normalize_transaction_id(
+            transaction_id
+        )
+    )
+
+    (
+        normalized_user_id,
+        normalized_data_mode,
+    ) = _normalize_transaction_context(
+        user_id=user_id,
+        data_mode=data_mode,
+    )
+
+    database_path = Path(
+        database_path
+    )
+
+    if not database_path.exists():
+        return None
+
+    try:
+        with _connect(
+            database_path
+        ) as connection:
+            if not _table_exists(
+                connection,
+                normalized_table_name,
+            ):
+                return None
+
+            _ensure_transaction_context_columns(
+                connection,
+                normalized_table_name,
+            )
+
+            columns = _get_table_columns(
+                connection,
+                normalized_table_name,
+            )
+
+            if (
+                TRANSACTION_ID_COLUMN
+                not in columns
+            ):
+                return None
+
+            row = connection.execute(
+                f"""
+                SELECT *
+                FROM {normalized_table_name}
+                WHERE
+                    {USER_ID_COLUMN} = ?
+                    AND {DATA_MODE_COLUMN} = ?
+                    AND {TRANSACTION_ID_COLUMN} = ?
+                LIMIT 1
+                """,
+                (
+                    normalized_user_id,
+                    normalized_data_mode,
+                    normalized_transaction_id,
+                ),
+            ).fetchone()
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível carregar "
+            "a transação do SQLite."
+        ) from error
+
+    if row is None:
+        return None
+
+    return {
+        key: row[key]
+        for key in row.keys()
+    }
+
+
+def update_transaction(
+    database_path: Path,
+    table_name: str,
+    transaction_id: str,
+    updates: Mapping[str, object],
+    user_id: str = LOCAL_USER_ID,
+    data_mode: str = "user",
+) -> dict[str, Any]:
+    """Atualiza uma transação sem alterar seu contexto ou ID."""
+    normalized_table_name = (
+        _normalize_identifier(
+            table_name,
+            "O nome da tabela",
+        )
+    )
+
+    normalized_transaction_id = (
+        _normalize_transaction_id(
+            transaction_id
+        )
+    )
+
+    (
+        normalized_user_id,
+        normalized_data_mode,
+    ) = _normalize_transaction_context(
+        user_id=user_id,
+        data_mode=data_mode,
+    )
+
+    if not updates:
+        raise ValueError(
+            "Nenhum campo foi informado "
+            "para atualização."
+        )
+
+    invalid_columns = sorted(
+        set(
+            updates
+        )
+        - MUTABLE_TRANSACTION_COLUMNS
+    )
+
+    if invalid_columns:
+        raise ValueError(
+            "Campos não permitidos na atualização: "
+            + ", ".join(
+                invalid_columns
+            )
+        )
+
+    update_columns = list(
+        updates.keys()
+    )
+
+    assignments = ", ".join(
+        f"{column} = ?"
+        for column in update_columns
+    )
+
+    values = [
+        updates[column]
+        for column in update_columns
+    ]
+
+    try:
+        with _connect(
+            database_path
+        ) as connection:
+            if not _table_exists(
+                connection,
+                normalized_table_name,
+            ):
+                raise TransactionNotFoundError(
+                    "A transação informada "
+                    "não foi encontrada."
+                )
+
+            _ensure_transaction_context_columns(
+                connection,
+                normalized_table_name,
+            )
+
+            _ensure_table_accepts_columns(
+                connection=connection,
+                table_name=normalized_table_name,
+                columns=[
+                    TRANSACTION_ID_COLUMN,
+                    *update_columns,
+                ],
+            )
+
+            cursor = connection.execute(
+                f"""
+                UPDATE {normalized_table_name}
+                SET {assignments}
+                WHERE
+                    {USER_ID_COLUMN} = ?
+                    AND {DATA_MODE_COLUMN} = ?
+                    AND {TRANSACTION_ID_COLUMN} = ?
+                """,
+                (
+                    *values,
+                    normalized_user_id,
+                    normalized_data_mode,
+                    normalized_transaction_id,
+                ),
+            )
+
+            if cursor.rowcount == 0:
+                raise TransactionNotFoundError(
+                    "A transação informada "
+                    "não foi encontrada."
+                )
+
+    except TransactionNotFoundError:
+        raise
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível atualizar "
+            "a transação no SQLite."
+        ) from error
+
+    updated_transaction = (
+        load_transaction(
+            database_path=database_path,
+            table_name=normalized_table_name,
+            transaction_id=normalized_transaction_id,
+            user_id=normalized_user_id,
+            data_mode=normalized_data_mode,
+        )
+    )
+
+    if updated_transaction is None:
+        raise RuntimeError(
+            "A transação foi atualizada, "
+            "mas não pôde ser carregada novamente."
+        )
+
+    return updated_transaction
+
+
+def delete_transaction(
+    database_path: Path,
+    table_name: str,
+    transaction_id: str,
+    user_id: str = LOCAL_USER_ID,
+    data_mode: str = "user",
+) -> bool:
+    """Exclui uma transação específica do contexto."""
+    normalized_table_name = (
+        _normalize_identifier(
+            table_name,
+            "O nome da tabela",
+        )
+    )
+
+    normalized_transaction_id = (
+        _normalize_transaction_id(
+            transaction_id
+        )
+    )
+
+    (
+        normalized_user_id,
+        normalized_data_mode,
+    ) = _normalize_transaction_context(
+        user_id=user_id,
+        data_mode=data_mode,
+    )
+
+    database_path = Path(
+        database_path
+    )
+
+    if not database_path.exists():
+        return False
+
+    try:
+        with _connect(
+            database_path
+        ) as connection:
+            if not _table_exists(
+                connection,
+                normalized_table_name,
+            ):
+                return False
+
+            _ensure_transaction_context_columns(
+                connection,
+                normalized_table_name,
+            )
+
+            columns = _get_table_columns(
+                connection,
+                normalized_table_name,
+            )
+
+            if (
+                TRANSACTION_ID_COLUMN
+                not in columns
+            ):
+                return False
+
+            cursor = connection.execute(
+                f"""
+                DELETE FROM {normalized_table_name}
+                WHERE
+                    {USER_ID_COLUMN} = ?
+                    AND {DATA_MODE_COLUMN} = ?
+                    AND {TRANSACTION_ID_COLUMN} = ?
+                """,
+                (
+                    normalized_user_id,
+                    normalized_data_mode,
+                    normalized_transaction_id,
+                ),
+            )
+
+            return (
+                cursor.rowcount > 0
+            )
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível excluir "
+            "a transação do SQLite."
         ) from error
 
 
