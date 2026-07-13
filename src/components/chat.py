@@ -54,17 +54,20 @@ def create_initial_message(
 
 
 def _build_conversation_key(
+    user_id: str,
     period: str,
     data_mode: str,
 ) -> str:
-    """Cria uma chave isolada por modo e período."""
+    """Cria uma chave isolada por usuário, modo e período."""
     return (
-        f"{data_mode.strip().lower()}"
+        f"{user_id.strip()}"
+        f"::{data_mode.strip().lower()}"
         f"::{period.strip()}"
     )
 
 
 def get_period_messages(
+    user_id: str,
     period: str,
     data_mode: str,
     database_path: Path = ARQUIVO_BANCO,
@@ -79,6 +82,7 @@ def get_period_messages(
 
     conversation_key = (
         _build_conversation_key(
+            user_id=user_id,
             period=period,
             data_mode=data_mode,
         )
@@ -96,6 +100,7 @@ def get_period_messages(
         persisted_messages = (
             load_chat_messages(
                 database_path=database_path,
+                user_id=user_id,
                 period=period,
                 data_mode=data_mode,
             )
@@ -215,14 +220,16 @@ def _render_chat_message(
 
 def _clear_current_conversation(
     messages: list[dict[str, str]],
+    user_id: str,
     period: str,
     data_mode: str,
     database_path: Path,
 ) -> None:
-    """Limpa o SQLite e reinicia a conversa da sessão."""
+    """Limpa o histórico atual do usuário."""
     try:
         clear_chat_messages(
             database_path=database_path,
+            user_id=user_id,
             period=period,
             data_mode=data_mode,
         )
@@ -250,13 +257,14 @@ def _clear_current_conversation(
 def render_chat(
     messages: list[dict[str, str]],
     context: str,
+    user_id: str,
     period: str,
     data_mode: str,
     summary: dict[str, Any],
     expenses_by_category: pd.Series,
     database_path: Path = ARQUIVO_BANCO,
 ) -> None:
-    """Exibe, processa e persiste a conversa."""
+    """Exibe, processa e persiste a conversa do usuário."""
     (
         title_column,
         action_column,
@@ -279,6 +287,7 @@ def render_chat(
             "Limpar conversa",
             key=(
                 "clear-finantec-chat-"
+                f"{user_id}-"
                 f"{data_mode}-"
                 f"{period}"
             ),
@@ -289,6 +298,7 @@ def render_chat(
         ):
             _clear_current_conversation(
                 messages=messages,
+                user_id=user_id,
                 period=period,
                 data_mode=data_mode,
                 database_path=database_path,
@@ -313,7 +323,12 @@ def render_chat(
     )
 
     chat_history = st.container(
-        key="finantec-chat-history",
+        key=(
+            "finantec-chat-history-"
+            f"{user_id}-"
+            f"{data_mode}-"
+            f"{period}"
+        ),
     )
 
     with chat_history:
@@ -429,6 +444,7 @@ def render_chat(
     try:
         save_chat_exchange(
             database_path=database_path,
+            user_id=user_id,
             period=period,
             data_mode=data_mode,
             question=user_question,

@@ -261,15 +261,16 @@ def sqlite_table_exists(
 # -----------------------------------------------------------------------------
 
 
-def carregar_transacoes_sqlite() -> pd.DataFrame:
-    """Carrega as transações da base SQLite."""
+def carregar_transacoes_sqlite(
+    user_id: str = LOCAL_USER_ID,
+    data_mode: str = "user",
+) -> pd.DataFrame:
+    """Carrega a partição de transações do contexto atual."""
     return load_transactions(
-        database_path=(
-            ARQUIVO_BANCO
-        ),
-        table_name=(
-            TABELA_TRANSACOES
-        ),
+        database_path=ARQUIVO_BANCO,
+        table_name=TABELA_TRANSACOES,
+        user_id=user_id,
+        data_mode=data_mode,
     )
 
 
@@ -355,29 +356,62 @@ def preparar_transacoes(
     return transacoes
 
 
-def carregar_transacoes() -> pd.DataFrame:
-    """Carrega transações priorizando a tabela do SQLite."""
+def carregar_transacoes(
+    user_id: str = LOCAL_USER_ID,
+    data_mode: str = "user",
+) -> pd.DataFrame:
+    """Carrega transações do usuário e modo selecionados."""
+    normalized_data_mode = (
+        str(
+            data_mode
+        )
+        .strip()
+        .lower()
+    )
+
+    if normalized_data_mode == "empty":
+        return preparar_transacoes(
+            criar_dataframe_transacoes_vazio()
+        )
+
+    if normalized_data_mode not in {
+        "user",
+        "demo",
+    }:
+        raise ValueError(
+            "O modo dos dados deve ser "
+            "'user', 'demo' ou 'empty'."
+        )
+
     if sqlite_table_exists(
-        database_path=(
-            ARQUIVO_BANCO
-        ),
-        table_name=(
-            TABELA_TRANSACOES
-        ),
+        database_path=ARQUIVO_BANCO,
+        table_name=TABELA_TRANSACOES,
     ):
         transacoes = (
-            carregar_transacoes_sqlite()
+            carregar_transacoes_sqlite(
+                user_id=user_id,
+                data_mode=normalized_data_mode,
+            )
+        )
+
+    elif (
+        user_id == LOCAL_USER_ID
+        and normalized_data_mode == "user"
+    ):
+        # Compatibilidade com instalações antigas,
+        # antes da primeira carga particionada.
+        transacoes = (
+            carregar_transacoes_csv()
         )
 
     else:
         transacoes = (
-            carregar_transacoes_csv()
+            criar_dataframe_transacoes_vazio()
         )
 
     return preparar_transacoes(
         transacoes
     )
-
 
 # -----------------------------------------------------------------------------
 # Outros dados usados pelo dashboard

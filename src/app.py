@@ -66,6 +66,10 @@ from components.profile import (
     render_user_profile,
 )
 
+from src.user_context import (
+    get_current_user_id,
+)
+
 st.set_page_config(
     page_title="FinanTec",
     page_icon=":material/account_balance_wallet:",
@@ -74,7 +78,10 @@ st.set_page_config(
 
 
 @st.cache_data
-def load_data() -> tuple[
+def load_data(
+    user_id: str,
+    data_mode: str,
+) -> tuple[
     dict[str, Any],
     pd.DataFrame,
     pd.DataFrame,
@@ -85,7 +92,10 @@ def load_data() -> tuple[
     """Carrega e mantém em cache os dados utilizados pela interface."""
     return (
         load_user_profile(),
-        load_transactions(),
+        load_transactions(
+            user_id=user_id,
+            data_mode=data_mode,
+        ),
         load_service_history(),
         load_financial_concepts(),
         load_financial_products(),
@@ -389,6 +399,28 @@ def main() -> None:
     """Executa a interface principal."""
     apply_visual_styles()
 
+    current_user_id = (
+        get_current_user_id()
+    )
+
+    data_mode = (
+        st.session_state.get(
+            DATA_MODE_KEY,
+            "user",
+        )
+    )
+
+    if data_mode not in {
+        "user",
+        "demo",
+        "empty",
+    }:
+        data_mode = "user"
+
+        st.session_state[
+            DATA_MODE_KEY
+        ] = data_mode
+
     refresh_requested = (
         st.session_state.pop(
             DATA_REFRESH_REQUESTED_KEY,
@@ -406,7 +438,10 @@ def main() -> None:
         financial_concepts,
         financial_products,
         rejections,
-    ) = load_data()
+    ) = load_data(
+        current_user_id,
+        data_mode,
+    )
 
     (
         selected_month,
@@ -506,12 +541,8 @@ def main() -> None:
         financial_products=financial_products,
     )
 
-    data_mode = st.session_state.get(
-        DATA_MODE_KEY,
-        "user",
-    )
-
     messages = get_period_messages(
+        user_id=current_user_id,
         period=period,
         data_mode=data_mode,
     )
@@ -547,6 +578,7 @@ def main() -> None:
         render_chat(
             messages=messages,
             context=context,
+            user_id=current_user_id,
             period=period,
             data_mode=data_mode,
             summary=summary,

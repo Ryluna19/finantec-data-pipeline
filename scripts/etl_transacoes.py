@@ -39,6 +39,10 @@ from src.transaction_sources import (
     build_transaction_source_key,
 )
 
+from src.user_context import (
+    get_current_user_id,
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
@@ -239,18 +243,30 @@ def save_rejection_report(
 
 def save_to_sqlite(
     transactions: pd.DataFrame,
+    user_id: str | None = None,
+    data_mode: str = "user",
 ) -> None:
-    """Substitui a tabela SQLite pelas transações processadas."""
+    """Substitui somente a partição processada no SQLite."""
+    current_user_id = (
+        user_id
+        or get_current_user_id()
+    )
+
     replace_transactions(
         transactions=transactions,
         database_path=ARQUIVO_BANCO,
         table_name=TABELA_TRANSACOES,
+        user_id=current_user_id,
+        data_mode=data_mode,
     )
 
     logging.info(
-        "Dados carregados no SQLite: %s | tabela: %s",
+        "Dados carregados no SQLite: %s | "
+        "tabela: %s | usuário: %s | modo: %s",
         ARQUIVO_BANCO,
         TABELA_TRANSACOES,
+        current_user_id,
+        data_mode,
     )
 
 def find_transaction_files(
@@ -271,11 +287,23 @@ def find_transaction_files(
 
 def run_etl(
     use_demo_data: bool = False,
+    user_id: str | None = None,
 ) -> pd.DataFrame:
     """Executa todas as etapas do pipeline ETL."""
     configure_logging()
 
-    data_mode = (
+    current_user_id = (
+        user_id
+        or get_current_user_id()
+    )
+
+    transaction_data_mode = (
+        "demo"
+        if use_demo_data
+        else "user"
+    )
+
+    data_mode_label = (
         "demonstração"
         if use_demo_data
         else "usuário"
@@ -283,8 +311,9 @@ def run_etl(
 
     logging.info(
         "Iniciando pipeline ETL "
-        "com dados de %s.",
-        data_mode,
+        "com dados de %s para o usuário %s.",
+        data_mode_label,
+        current_user_id,
     )
 
     csv_files = find_transaction_files(
@@ -336,7 +365,9 @@ def run_etl(
     )
 
     save_to_sqlite(
-        processed_transactions
+        transactions=processed_transactions,
+        user_id=current_user_id,
+        data_mode=transaction_data_mode,
     )
 
     logging.info(
@@ -350,10 +381,12 @@ def run_etl(
 
 def run_etl_with_summary(
     use_demo_data: bool = False,
+    user_id: str | None = None,
 ) -> dict[str, int | bool]:
     """Executa o ETL e retorna um resumo para a interface."""
     processed_transactions = run_etl(
-        use_demo_data=use_demo_data
+        use_demo_data=use_demo_data,
+        user_id=user_id,
     )
 
     rejection_count = 0
@@ -377,7 +410,6 @@ def run_etl_with_summary(
             rejection_count
         ),
     }
-
 
 # Compatibilidade temporária com testes e módulos ainda não migrados.
 configurar_logs = configure_logging
