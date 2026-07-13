@@ -12,6 +12,9 @@ from src.data_reset import (
     reset_user_transaction_data,
     summarize_user_transaction_data,
 )
+from src.user_context import (
+    get_current_user_id,
+)
 from src.transaction_editor import (
     MANUAL_DRAFT_KEY,
     MANUAL_EDIT_INDEX_KEY,
@@ -118,22 +121,24 @@ def _render_current_mode() -> None:
 
 
 def _render_data_summary() -> dict[str, int | bool]:
-    """Exibe um resumo visual dos dados locais encontrados."""
-    summary = summarize_user_transaction_data()
-
-    database_available = bool(
-        summary["database_exists"]
+    """Exibe um resumo visual dos dados transacionais encontrados."""
+    current_user_id = (
+        get_current_user_id()
     )
 
-    database_label = (
-        "Disponível"
-        if database_available
-        else "Não criado"
+    summary = (
+        summarize_user_transaction_data(
+            user_id=current_user_id,
+        )
     )
 
-    database_value_class = (
+    transaction_rows = int(
+        summary["transaction_rows"]
+    )
+
+    transaction_value_class = (
         "finantec-data-summary-value available"
-        if database_available
+        if transaction_rows > 0
         else "finantec-data-summary-value unavailable"
     )
 
@@ -141,7 +146,7 @@ def _render_data_summary() -> dict[str, int | bool]:
         '<div class="finantec-section-heading">'
         "<h3>Resumo local</h3>"
         "<p>"
-        "Situação dos arquivos e do banco usados pelo dashboard."
+        "Situação dos arquivos e das transações usadas pelo dashboard."
         "</p>"
         "</div>"
     )
@@ -175,13 +180,13 @@ def _render_data_summary() -> dict[str, int | bool]:
 
         '<div class="finantec-data-summary-card">'
         '<span class="finantec-data-summary-label">'
-        "Banco SQLite"
+        "Transações no banco"
         "</span>"
-        f'<strong class="{database_value_class}">'
-        f"{database_label}"
+        f'<strong class="{transaction_value_class}">'
+        f"{transaction_rows}"
         "</strong>"
         '<span class="finantec-data-summary-description">'
-        "Base atualmente usada pelo dashboard."
+        "Registros reais do usuário atual."
         "</span>"
         "</div>"
 
@@ -332,12 +337,12 @@ def _render_demo_action() -> None:
 def _render_reset_action(
     summary: dict[str, int | bool],
 ) -> None:
-    """Exibe a ação destrutiva de limpeza dos dados."""
-    has_local_data = any(
+    """Exibe a limpeza das transações reais do usuário."""
+    has_transaction_data = any(
         [
             summary["source_files"] > 0,
             summary["processed_files"] > 0,
-            summary["database_exists"],
+            summary["transaction_rows"] > 0,
             summary["log_exists"],
         ]
     )
@@ -351,10 +356,10 @@ def _render_reset_action(
         ):
             st.error(
                 "Exclusão permanente: esta ação remove "
-                "transações manuais, lotes importados, "
-                "arquivos processados e o banco local. "
-                "Essa operação não pode ser desfeita. "
-                "Os dados de demonstração serão preservados."
+                "as transações reais, arquivos importados, "
+                "fontes manuais e saídas do ETL. "
+                "O perfil, as metas, o histórico do chat, "
+                "o banco SQLite e a demonstração serão preservados."
             )
 
             confirmation = st.text_input(
@@ -373,12 +378,12 @@ def _render_reset_action(
             )
 
             delete_enabled = (
-                has_local_data
+                has_transaction_data
                 and confirmed
             )
 
             if st.button(
-                "Apagar todos os dados do usuário",
+                "Apagar transações do usuário",
                 key="delete-all-user-data",
                 type="primary",
                 disabled=not delete_enabled,
@@ -386,7 +391,11 @@ def _render_reset_action(
             ):
                 try:
                     result = (
-                        reset_user_transaction_data()
+                        reset_user_transaction_data(
+                            user_id=(
+                                get_current_user_id()
+                            ),
+                        )
                     )
 
                     _clear_manual_session_state()
@@ -398,11 +407,14 @@ def _render_reset_action(
                     _set_feedback(
                         "success",
                         (
-                            "Dados locais apagados. "
+                            "Transações reais apagadas. "
+                            "Linhas removidas do banco: "
+                            f"{result['transaction_rows_removed']} | "
                             "Fontes removidas: "
                             f"{result['source_files_removed']} | "
                             "Arquivos processados removidos: "
-                            f"{result['processed_files_removed']}."
+                            f"{result['processed_files_removed']}. "
+                            "Perfil, metas e chat foram preservados."
                         ),
                     )
 
@@ -414,7 +426,7 @@ def _render_reset_action(
                         "error",
                         (
                             "Não foi possível apagar "
-                            f"os dados locais: {error}"
+                            f"as transações: {error}"
                         ),
                     )
 
