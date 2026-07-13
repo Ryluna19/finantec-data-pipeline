@@ -1,8 +1,9 @@
-"""Componente responsável pela simulação de metas financeiras."""
+"""Gerenciamento e simulação de metas financeiras."""
 
 from __future__ import annotations
 
 from html import escape
+from math import ceil
 from typing import Any
 
 import streamlit as st
@@ -11,7 +12,33 @@ from analytics import (
     calcular_meta_mensal as calculate_monthly_goal,
     formatar_moeda as format_currency,
 )
+from data_loader import ARQUIVO_BANCO
+from src.goal_repository import (
+    DuplicateFinancialGoalError,
+    FinancialGoalNotFoundError,
+    create_financial_goal,
+    delete_financial_goal,
+    update_financial_goal,
+)
+from src.user_context import LOCAL_USER_ID
 from ui_components import render_html
+
+
+GOAL_FORM_OPEN_KEY = "financial_goal_form_open"
+GOAL_EDIT_ID_KEY = "financial_goal_edit_id"
+GOAL_DELETE_ID_KEY = "financial_goal_delete_id"
+GOAL_FORM_VERSION_KEY = "financial_goal_form_version"
+GOAL_FEEDBACK_KEY = "financial_goal_feedback"
+SELECTED_GOAL_KEY = "selected_financial_goal"
+
+PRIORITY_OPTIONS = [
+    "baixa",
+    "média",
+    "alta",
+]
+
+SIMULATION_MODE_DEADLINE = "Prazo desejado"
+SIMULATION_MODE_MONTHLY = "Valor mensal disponível"
 
 
 def calculate_goal_progress(
@@ -30,87 +57,722 @@ def calculate_goal_progress(
 
     return max(
         0.0,
-        min(progress, 100.0),
+        min(
+            progress,
+            100.0,
+        ),
     )
 
 
-def render_goal_simulator(
-    user_profile: dict[str, Any],
-    summary: dict[str, Any],
+def calculate_estimated_months(
+    remaining_value: float,
+    monthly_amount: float,
+) -> int | None:
+    """Calcula quantos meses são necessários para concluir uma meta."""
+    if remaining_value <= 0:
+        return 0
+
+    if monthly_amount <= 0:
+        return None
+
+    return int(
+        ceil(
+            remaining_value
+            / monthly_amount
+        )
+    )
+
+
+def build_goal_payload(
+    *,
+    name: str,
+    target_amount: float,
+    current_amount: float,
+    deadline_months: int,
+    priority: str,
+) -> dict[str, Any]:
+    """Monta os dados enviados ao repositório de metas."""
+    return {
+        "nome": name,
+        "valor_meta": float(
+            target_amount
+        ),
+        "valor_atual": float(
+            current_amount
+        ),
+        "prazo_meses": int(
+            deadline_months
+        ),
+        "prioridade": priority,
+    }
+
+
+def _get_form_version() -> int:
+    """Retorna a versão atual do formulário."""
+    return int(
+        st.session_state.get(
+            GOAL_FORM_VERSION_KEY,
+            0,
+        )
+    )
+
+
+def _advance_form_version() -> None:
+    """Atualiza as chaves dos widgets do formulário."""
+    st.session_state[
+        GOAL_FORM_VERSION_KEY
+    ] = (
+        _get_form_version()
+        + 1
+    )
+
+
+def _open_goal_form(
+    goal_id: str | None = None,
 ) -> None:
-    """Exibe a simulação mensal de uma meta financeira."""
-    st.subheader(
-        "Simulador de metas"
+    """Abre o formulário para criação ou edição."""
+    st.session_state[
+        GOAL_FORM_OPEN_KEY
+    ] = True
+
+    st.session_state[
+        GOAL_EDIT_ID_KEY
+    ] = goal_id
+
+    _advance_form_version()
+
+
+def _close_goal_form() -> None:
+    """Fecha e reinicia o formulário de metas."""
+    st.session_state[
+        GOAL_FORM_OPEN_KEY
+    ] = False
+
+    st.session_state[
+        GOAL_EDIT_ID_KEY
+    ] = None
+
+    _advance_form_version()
+
+
+def _set_goal_feedback(
+    message_type: str,
+    message: str,
+) -> None:
+    """Guarda uma mensagem para o próximo rerun."""
+    st.session_state[
+        GOAL_FEEDBACK_KEY
+    ] = {
+        "type": message_type,
+        "message": message,
+    }
+
+
+def _show_goal_feedback() -> None:
+    """Exibe o resultado da operação anterior."""
+    feedback = st.session_state.pop(
+        GOAL_FEEDBACK_KEY,
+        None,
     )
 
-    st.caption(
-        "Escolha uma meta para estimar quanto "
-        "ainda precisa ser guardado por mês."
+    if not feedback:
+        return
+
+    message = str(
+        feedback.get(
+            "message",
+            "",
+        )
     )
 
-    goals = user_profile.get(
-        "objetivos_financeiros",
-        [],
+    if (
+        feedback.get(
+            "type"
+        )
+        == "error"
+    ):
+        st.error(
+            message
+        )
+
+    else:
+        st.success(
+            message
+        )
+
+
+def _find_goal(
+    goals: list[dict[str, Any]],
+    goal_id: str | None,
+) -> dict[str, Any] | None:
+    """Localiza uma meta pelo identificador."""
+    if not goal_id:
+        return None
+
+    return next(
+        (
+            goal
+            for goal in goals
+            if goal.get(
+                "goal_id"
+            )
+            == goal_id
+        ),
+        None,
+    )
+
+
+def _render_goal_form(
+    goals: list[dict[str, Any]],
+) -> None:
+    """Exibe o formulário de criação ou edição."""
+    if not st.session_state.get(
+        GOAL_FORM_OPEN_KEY,
+        False,
+    ):
+        return
+
+    edit_goal_id = (
+        st.session_state.get(
+            GOAL_EDIT_ID_KEY
+        )
+    )
+
+    editing_goal = _find_goal(
+        goals,
+        edit_goal_id,
+    )
+
+    is_editing = (
+        editing_goal is not None
+    )
+
+    if (
+        edit_goal_id
+        and editing_goal is None
+    ):
+        _close_goal_form()
+
+        st.warning(
+            "A meta selecionada para edição "
+            "não foi encontrada."
+        )
+
+        return
+
+    default_name = (
+        str(
+            editing_goal.get(
+                "nome",
+                "",
+            )
+        )
+        if editing_goal
+        else ""
+    )
+
+    default_target = (
+        float(
+            editing_goal.get(
+                "valor_meta",
+                1000.0,
+            )
+        )
+        if editing_goal
+        else 1000.0
+    )
+
+    default_current = (
+        float(
+            editing_goal.get(
+                "valor_atual",
+                0.0,
+            )
+        )
+        if editing_goal
+        else 0.0
+    )
+
+    default_deadline = (
+        int(
+            editing_goal.get(
+                "prazo_meses",
+                12,
+            )
+        )
+        if editing_goal
+        else 12
+    )
+
+    default_priority = (
+        str(
+            editing_goal.get(
+                "prioridade",
+                "média",
+            )
+        )
+        if editing_goal
+        else "média"
+    )
+
+    priority_index = (
+        PRIORITY_OPTIONS.index(
+            default_priority
+        )
+        if default_priority
+        in PRIORITY_OPTIONS
+        else 1
+    )
+
+    title = (
+        "Editar meta"
+        if is_editing
+        else "Nova meta"
+    )
+
+    st.markdown(
+        f"### {title}"
+    )
+
+    form_version = (
+        _get_form_version()
+    )
+
+    with st.form(
+        key=(
+            "financial-goal-form-"
+            f"{form_version}"
+        ),
+        border=True,
+    ):
+        name = st.text_input(
+            "Nome da meta",
+            value=default_name,
+            max_chars=120,
+            placeholder=(
+                "Ex.: Viagem, notebook ou reserva"
+            ),
+        )
+
+        (
+            target_column,
+            current_column,
+        ) = st.columns(
+            2,
+            gap="medium",
+        )
+
+        with target_column:
+            target_amount = (
+                st.number_input(
+                    "Valor da meta",
+                    min_value=1.0,
+                    value=default_target,
+                    step=100.0,
+                    format="%.2f",
+                )
+            )
+
+        with current_column:
+            current_amount = (
+                st.number_input(
+                    "Valor já guardado",
+                    min_value=0.0,
+                    value=default_current,
+                    step=50.0,
+                    format="%.2f",
+                )
+            )
+
+        (
+            deadline_column,
+            priority_column,
+        ) = st.columns(
+            2,
+            gap="medium",
+        )
+
+        with deadline_column:
+            deadline_months = (
+                st.number_input(
+                    "Prazo em meses",
+                    min_value=1,
+                    max_value=600,
+                    value=default_deadline,
+                    step=1,
+                )
+            )
+
+        with priority_column:
+            priority = st.selectbox(
+                "Prioridade",
+                options=PRIORITY_OPTIONS,
+                index=priority_index,
+                format_func=(
+                    lambda value: (
+                        value.capitalize()
+                    )
+                ),
+            )
+
+        (
+            save_column,
+            cancel_column,
+        ) = st.columns(
+            2,
+            gap="small",
+        )
+
+        with save_column:
+            submitted = (
+                st.form_submit_button(
+                    (
+                        "Salvar alterações"
+                        if is_editing
+                        else "Criar meta"
+                    ),
+                    type="primary",
+                    use_container_width=True,
+                )
+            )
+
+        with cancel_column:
+            cancelled = (
+                st.form_submit_button(
+                    "Cancelar",
+                    use_container_width=True,
+                )
+            )
+
+    if cancelled:
+        _close_goal_form()
+        st.rerun()
+
+    if not submitted:
+        return
+
+    goal_payload = build_goal_payload(
+        name=name,
+        target_amount=target_amount,
+        current_amount=current_amount,
+        deadline_months=(
+            int(
+                deadline_months
+            )
+        ),
+        priority=priority,
+    )
+
+    try:
+        if is_editing:
+            update_financial_goal(
+                database_path=ARQUIVO_BANCO,
+                user_id=LOCAL_USER_ID,
+                goal_id=str(
+                    editing_goal[
+                        "goal_id"
+                    ]
+                ),
+                goal=goal_payload,
+            )
+
+            feedback_message = (
+                "Meta atualizada com sucesso."
+            )
+
+        else:
+            create_financial_goal(
+                database_path=ARQUIVO_BANCO,
+                user_id=LOCAL_USER_ID,
+                goal=goal_payload,
+            )
+
+            feedback_message = (
+                "Meta criada com sucesso."
+            )
+
+    except (
+        DuplicateFinancialGoalError,
+        FinancialGoalNotFoundError,
+        ValueError,
+        RuntimeError,
+    ) as error:
+        st.error(
+            str(
+                error
+            )
+        )
+
+        return
+
+    _close_goal_form()
+
+    _set_goal_feedback(
+        "success",
+        feedback_message,
+    )
+
+    st.cache_data.clear()
+    st.rerun()
+
+
+def _delete_goal(
+    goal_id: str,
+) -> None:
+    """Exclui uma meta após confirmação."""
+    try:
+        deleted = delete_financial_goal(
+            database_path=ARQUIVO_BANCO,
+            user_id=LOCAL_USER_ID,
+            goal_id=goal_id,
+        )
+
+    except RuntimeError as error:
+        st.error(
+            str(
+                error
+            )
+        )
+
+        return
+
+    if not deleted:
+        st.error(
+            "A meta informada não foi encontrada."
+        )
+
+        return
+
+    if (
+        st.session_state.get(
+            SELECTED_GOAL_KEY
+        )
+        == goal_id
+    ):
+        st.session_state.pop(
+            SELECTED_GOAL_KEY,
+            None,
+        )
+
+    st.session_state[
+        GOAL_DELETE_ID_KEY
+    ] = None
+
+    _set_goal_feedback(
+        "success",
+        "Meta excluída com sucesso.",
+    )
+
+    st.cache_data.clear()
+    st.rerun()
+
+
+def _render_goal_management_cards(
+    goals: list[dict[str, Any]],
+) -> None:
+    """Exibe as metas cadastradas e suas ações."""
+    st.markdown(
+        "### Metas cadastradas"
     )
 
     if not goals:
         st.info(
-            "Nenhuma meta financeira foi cadastrada."
+            "Nenhuma meta financeira foi cadastrada. "
+            "Crie sua primeira meta para começar."
         )
+
         return
 
-    goal_names = [
-        goal["nome"]
-        for goal in goals
-    ]
-
-    selected_goal_name = st.selectbox(
-        "Meta",
-        goal_names,
-        key="selected_goal",
-    )
-
-    selected_goal = next(
-        goal
-        for goal in goals
-        if goal["nome"]
-        == selected_goal_name
-    )
-
-    goal_value = float(
-        selected_goal["valor_meta"]
-    )
-
-    current_value = float(
-        selected_goal["valor_atual"]
-    )
-
-    deadline_months = int(
-        selected_goal["prazo_meses"]
-    )
-
-    simulation = calculate_monthly_goal(
-        valor_meta=goal_value,
-        prazo_meses=deadline_months,
-        valor_ja_reservado=current_value,
-    )
-
-    remaining_value = float(
-        simulation["valor_restante"]
-    )
-
-    monthly_amount = simulation[
-        "valor_mensal_necessario"
-    ]
-
-    monthly_amount_label = (
-        format_currency(
-            monthly_amount
+    pending_delete_id = (
+        st.session_state.get(
+            GOAL_DELETE_ID_KEY
         )
-        if monthly_amount is not None
-        else "Prazo inválido"
     )
 
+    for goal in goals:
+        goal_id = str(
+            goal["goal_id"]
+        )
+
+        name = str(
+            goal["nome"]
+        )
+
+        target_amount = float(
+            goal["valor_meta"]
+        )
+
+        current_amount = float(
+            goal["valor_atual"]
+        )
+
+        deadline_months = int(
+            goal["prazo_meses"]
+        )
+
+        priority = str(
+            goal["prioridade"]
+        ).capitalize()
+
+        progress = (
+            calculate_goal_progress(
+                current_value=current_amount,
+                goal_value=target_amount,
+            )
+        )
+
+        remaining = max(
+            target_amount
+            - current_amount,
+            0.0,
+        )
+
+        with st.container(
+            border=True,
+            key=(
+                "financial-goal-card-"
+                f"{goal_id}"
+            ),
+        ):
+            (
+                details_column,
+                progress_column,
+            ) = st.columns(
+                [
+                    2,
+                    1,
+                ],
+                gap="medium",
+            )
+
+            with details_column:
+                st.markdown(
+                    f"### {name}"
+                )
+
+                st.caption(
+                    f"Prioridade {priority} · "
+                    f"Prazo de {deadline_months} meses"
+                )
+
+                st.write(
+                    "Guardado: "
+                    f"**{format_currency(current_amount)}** "
+                    "de "
+                    f"**{format_currency(target_amount)}**"
+                )
+
+            with progress_column:
+                st.metric(
+                    "Falta guardar",
+                    format_currency(
+                        remaining
+                    ),
+                )
+
+                st.progress(
+                    progress / 100,
+                    text=(
+                        f"{progress:.1f}% concluído"
+                    ),
+                )
+
+            (
+                edit_column,
+                delete_column,
+            ) = st.columns(
+                2,
+                gap="small",
+            )
+
+            with edit_column:
+                if st.button(
+                    "Editar",
+                    key=(
+                        "edit-financial-goal-"
+                        f"{goal_id}"
+                    ),
+                    use_container_width=True,
+                ):
+                    _open_goal_form(
+                        goal_id
+                    )
+
+                    st.rerun()
+
+            with delete_column:
+                if st.button(
+                    "Excluir",
+                    key=(
+                        "delete-financial-goal-"
+                        f"{goal_id}"
+                    ),
+                    use_container_width=True,
+                ):
+                    st.session_state[
+                        GOAL_DELETE_ID_KEY
+                    ] = goal_id
+
+                    st.rerun()
+
+            if (
+                pending_delete_id
+                == goal_id
+            ):
+                st.warning(
+                    f'Excluir a meta "{name}"? '
+                    "Essa ação não pode ser desfeita."
+                )
+
+                (
+                    confirm_column,
+                    cancel_column,
+                ) = st.columns(
+                    2,
+                    gap="small",
+                )
+
+                with confirm_column:
+                    if st.button(
+                        "Confirmar exclusão",
+                        key=(
+                            "confirm-delete-goal-"
+                            f"{goal_id}"
+                        ),
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        _delete_goal(
+                            goal_id
+                        )
+
+                with cancel_column:
+                    if st.button(
+                        "Cancelar",
+                        key=(
+                            "cancel-delete-goal-"
+                            f"{goal_id}"
+                        ),
+                        use_container_width=True,
+                    ):
+                        st.session_state[
+                            GOAL_DELETE_ID_KEY
+                        ] = None
+
+                        st.rerun()
+
+
+def _render_goal_summary(
+    *,
+    goal_name: str,
+    goal_value: float,
+    current_value: float,
+    remaining_value: float,
+    fourth_label: str,
+    fourth_value: str,
+    fourth_description: str,
+) -> None:
+    """Exibe os cartões e a barra de progresso da meta."""
     progress_percentage = (
         calculate_goal_progress(
             current_value=current_value,
@@ -174,15 +836,15 @@ def render_goal_simulator(
 
             <div class="finantec-goal-card monthly">
                 <div class="finantec-goal-label">
-                    Necessário por mês
+                    {escape(fourth_label)}
                 </div>
 
                 <div class="finantec-goal-value">
-                    {escape(monthly_amount_label)}
+                    {escape(fourth_value)}
                 </div>
 
                 <div class="finantec-goal-description">
-                    Considerando o prazo informado.
+                    {escape(fourth_description)}
                 </div>
             </div>
         </div>
@@ -195,7 +857,7 @@ def render_goal_simulator(
                     </div>
 
                     <div class="finantec-goal-progress-name">
-                        {escape(selected_goal_name)}
+                        {escape(goal_name)}
                     </div>
                 </div>
 
@@ -232,36 +894,400 @@ def render_goal_simulator(
         """
     )
 
-    if monthly_amount is None:
-        st.warning(
-            "Não foi possível calcular a meta "
-            "porque o prazo é inválido."
-        )
-        return
 
-    available_balance = float(
-        summary["saldo_disponivel"]
-    )
-
-    if remaining_value <= 0:
-        st.success(
-            "A meta já foi alcançada."
+def _render_balance_evaluation(
+    monthly_amount: float,
+    available_balance: float,
+) -> None:
+    """Compara o esforço mensal com o saldo do período."""
+    if available_balance <= 0:
+        st.info(
+            "Não há saldo disponível positivo no período "
+            "para comparar com esta simulação."
         )
 
     elif monthly_amount > available_balance:
         st.error(
-            "O valor mensal necessário ultrapassa "
-            "o saldo disponível do período. "
-            "Considere ajustar o prazo, os gastos ou a renda."
+            "O valor mensal simulado ultrapassa "
+            "o saldo disponível do período."
         )
 
     else:
         st.success(
-            "O valor mensal necessário cabe "
+            "O valor mensal simulado cabe "
             "no saldo disponível do período."
         )
 
+
+def _render_goal_simulation(
+    goal: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    """Exibe a simulação interativa da meta selecionada."""
+    goal_id = str(
+        goal["goal_id"]
+    )
+
+    goal_name = str(
+        goal["nome"]
+    )
+
+    goal_value = float(
+        goal["valor_meta"]
+    )
+
+    current_value = float(
+        goal["valor_atual"]
+    )
+
+    stored_deadline = int(
+        goal["prazo_meses"]
+    )
+
+    remaining_value = max(
+        goal_value
+        - current_value,
+        0.0,
+    )
+
+    available_balance = float(
+        summary.get(
+            "saldo_disponivel",
+            0.0,
+        )
+        or 0.0
+    )
+
+    if remaining_value <= 0:
+        _render_goal_summary(
+            goal_name=goal_name,
+            goal_value=goal_value,
+            current_value=current_value,
+            remaining_value=0.0,
+            fourth_label="Situação",
+            fourth_value="Concluída",
+            fourth_description=(
+                "O valor da meta já foi alcançado."
+            ),
+        )
+
+        st.success(
+            "Esta meta já foi concluída."
+        )
+
+        return
+
+    simulation_mode = st.radio(
+        "Simular por",
+        options=[
+            SIMULATION_MODE_DEADLINE,
+            SIMULATION_MODE_MONTHLY,
+        ],
+        horizontal=True,
+        key=(
+            "goal-simulation-mode-"
+            f"{goal_id}"
+        ),
+    )
+
+    if (
+        simulation_mode
+        == SIMULATION_MODE_DEADLINE
+    ):
+        maximum_deadline = max(
+            60,
+            min(
+                max(
+                    stored_deadline * 2,
+                    stored_deadline,
+                ),
+                600,
+            ),
+        )
+
+        selected_deadline = st.slider(
+            "Em quantos meses deseja concluir?",
+            min_value=1,
+            max_value=maximum_deadline,
+            value=min(
+                stored_deadline,
+                maximum_deadline,
+            ),
+            step=1,
+            key=(
+                "goal-deadline-slider-"
+                f"{goal_id}"
+            ),
+        )
+
+        simulation = (
+            calculate_monthly_goal(
+                valor_meta=goal_value,
+                prazo_meses=(
+                    selected_deadline
+                ),
+                valor_ja_reservado=(
+                    current_value
+                ),
+            )
+        )
+
+        monthly_amount = float(
+            simulation[
+                "valor_mensal_necessario"
+            ]
+            or 0.0
+        )
+
+        _render_goal_summary(
+            goal_name=goal_name,
+            goal_value=goal_value,
+            current_value=current_value,
+            remaining_value=remaining_value,
+            fourth_label=(
+                "Necessário por mês"
+            ),
+            fourth_value=(
+                format_currency(
+                    monthly_amount
+                )
+            ),
+            fourth_description=(
+                f"Para concluir em "
+                f"{selected_deadline} meses."
+            ),
+        )
+
+        _render_balance_evaluation(
+            monthly_amount=monthly_amount,
+            available_balance=(
+                available_balance
+            ),
+        )
+
+    else:
+        maximum_monthly_amount = max(
+            500.0,
+            float(
+                ceil(
+                    remaining_value
+                    / 50
+                )
+                * 50
+            ),
+        )
+
+        suggested_monthly_amount = (
+            remaining_value
+            / max(
+                stored_deadline,
+                1,
+            )
+        )
+
+        suggested_monthly_amount = (
+            round(
+                suggested_monthly_amount
+                / 50
+            )
+            * 50
+        )
+
+        suggested_monthly_amount = min(
+            max(
+                suggested_monthly_amount,
+                50.0,
+            ),
+            maximum_monthly_amount,
+        )
+
+        selected_monthly_amount = (
+            st.slider(
+                "Quanto consegue guardar por mês?",
+                min_value=50.0,
+                max_value=(
+                    maximum_monthly_amount
+                ),
+                value=float(
+                    suggested_monthly_amount
+                ),
+                step=50.0,
+                format="R$ %.2f",
+                key=(
+                    "goal-monthly-slider-"
+                    f"{goal_id}"
+                ),
+            )
+        )
+
+        estimated_months = (
+            calculate_estimated_months(
+                remaining_value=(
+                    remaining_value
+                ),
+                monthly_amount=(
+                    selected_monthly_amount
+                ),
+            )
+        )
+
+        months_label = (
+            "Prazo inválido"
+            if estimated_months is None
+            else (
+                f"{estimated_months} "
+                + (
+                    "mês"
+                    if estimated_months == 1
+                    else "meses"
+                )
+            )
+        )
+
+        _render_goal_summary(
+            goal_name=goal_name,
+            goal_value=goal_value,
+            current_value=current_value,
+            remaining_value=remaining_value,
+            fourth_label="Prazo estimado",
+            fourth_value=months_label,
+            fourth_description=(
+                "Considerando o valor mensal selecionado."
+            ),
+        )
+
+        _render_balance_evaluation(
+            monthly_amount=(
+                selected_monthly_amount
+            ),
+            available_balance=(
+                available_balance
+            ),
+        )
+
     st.caption(
-        "A análise considera uma meta por vez. "
-        "Para várias metas, some os valores mensais necessários."
+        "A simulação não altera a meta salva. "
+        "Use a ação Editar para atualizar valores ou prazo."
+    )
+
+
+def render_goal_simulator(
+    user_profile: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    """Exibe gerenciamento e simulação das metas financeiras."""
+    (
+        title_column,
+        action_column,
+    ) = st.columns(
+        [
+            3,
+            1,
+        ],
+        gap="small",
+    )
+
+    with title_column:
+        st.subheader(
+            "Metas financeiras"
+        )
+
+        st.caption(
+            "Crie objetivos, acompanhe o progresso "
+            "e simule diferentes cenários."
+        )
+
+    with action_column:
+        if st.button(
+            "Nova meta",
+            key="open-new-financial-goal",
+            type="primary",
+            use_container_width=True,
+        ):
+            _open_goal_form()
+            st.rerun()
+
+    _show_goal_feedback()
+
+    goals = list(
+        user_profile.get(
+            "objetivos_financeiros",
+            [],
+        )
+    )
+
+    _render_goal_form(
+        goals
+    )
+
+    _render_goal_management_cards(
+        goals
+    )
+
+    if not goals:
+        return
+
+    st.divider()
+
+    st.markdown(
+        "### Simulador"
+    )
+
+    st.caption(
+        "Selecione uma meta e ajuste o prazo "
+        "ou o valor mensal disponível."
+    )
+
+    goal_ids = [
+        str(
+            goal["goal_id"]
+        )
+        for goal in goals
+    ]
+
+    selected_goal_id = (
+        st.session_state.get(
+            SELECTED_GOAL_KEY
+        )
+    )
+
+    if (
+        selected_goal_id
+        not in goal_ids
+    ):
+        st.session_state[
+            SELECTED_GOAL_KEY
+        ] = goal_ids[0]
+
+    selected_goal_id = st.selectbox(
+        "Meta",
+        options=goal_ids,
+        key=SELECTED_GOAL_KEY,
+        format_func=(
+            lambda goal_id: str(
+                _find_goal(
+                    goals,
+                    goal_id,
+                )[
+                    "nome"
+                ]
+            )
+        ),
+    )
+
+    selected_goal = _find_goal(
+        goals,
+        selected_goal_id,
+    )
+
+    if selected_goal is None:
+        st.warning(
+            "A meta selecionada não foi encontrada."
+        )
+
+        return
+
+    _render_goal_simulation(
+        goal=selected_goal,
+        summary=summary,
     )

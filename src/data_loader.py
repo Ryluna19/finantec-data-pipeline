@@ -4,36 +4,73 @@ Funções de carregamento de dados do FinanTec Data Pipeline.
 Este módulo centraliza a leitura dos arquivos JSON, CSV e SQLite usados pelo
 dashboard e pelo assistente.
 
-A aplicação prioriza a base SQLite gerada pelo ETL, mas mantém fallback para CSV
-processado e CSV original. Isso permite que o projeto continue funcionando mesmo
-quando o banco local ainda não foi gerado.
+A aplicação prioriza a tabela de transações armazenada no SQLite. Quando ela
+ainda não existe, utiliza o CSV processado ou retorna uma estrutura vazia.
 """
 
 from __future__ import annotations
 
 import json
-
+import sqlite3
 from pathlib import Path
 
 import pandas as pd
 
+from src.goal_repository import (
+    list_financial_goals,
+    seed_financial_goals_if_needed,
+)
+from src.profile_repository import (
+    seed_user_profile_if_missing,
+)
 from src.transaction_repository import (
     load_transactions,
 )
+from src.user_context import (
+    LOCAL_USER_ID,
+)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = (
+    Path(__file__)
+    .resolve()
+    .parents[1]
+)
 
-DATA_DIR = PROJECT_ROOT / "data"
-PROCESSED_DIR = DATA_DIR / "processed"
-DATABASE_DIR = PROJECT_ROOT / "database"
+DATA_DIR = (
+    PROJECT_ROOT
+    / "data"
+)
 
-ARQUIVO_BANCO = DATABASE_DIR / "finantec.db"
-ARQUIVO_TRANSACOES_PROCESSADAS = PROCESSED_DIR / "transacoes_processadas.csv"
-ARQUIVO_REJEICOES = PROCESSED_DIR / "transacoes_rejeitadas.csv"
+PROCESSED_DIR = (
+    DATA_DIR
+    / "processed"
+)
 
+DATABASE_DIR = (
+    PROJECT_ROOT
+    / "database"
+)
 
-TABELA_TRANSACOES = "transacoes_processadas"
+ARQUIVO_BANCO = (
+    DATABASE_DIR
+    / "finantec.db"
+)
+
+ARQUIVO_TRANSACOES_PROCESSADAS = (
+    PROCESSED_DIR
+    / "transacoes_processadas.csv"
+)
+
+ARQUIVO_REJEICOES = (
+    PROCESSED_DIR
+    / "transacoes_rejeitadas.csv"
+)
+
+TABELA_TRANSACOES = (
+    "transacoes_processadas"
+)
+
 COLUNAS_TRANSACOES_VAZIAS = [
     "data",
     "tipo",
@@ -45,89 +82,234 @@ COLUNAS_TRANSACOES_VAZIAS = [
 ]
 
 
-def carregar_json(nome_arquivo: str) -> dict:
-    """
-    Carrega um arquivo JSON da pasta data/.
-    """
-    caminho = DATA_DIR / nome_arquivo
+# -----------------------------------------------------------------------------
+# Arquivos JSON
+# -----------------------------------------------------------------------------
 
-    with caminho.open("r", encoding="utf-8-sig") as arquivo:
-        return json.load(arquivo)
+
+def carregar_json(
+    nome_arquivo: str,
+) -> dict:
+    """Carrega um arquivo JSON da pasta data/."""
+    caminho = (
+        DATA_DIR
+        / nome_arquivo
+    )
+
+    with caminho.open(
+        "r",
+        encoding="utf-8-sig",
+    ) as arquivo:
+        return json.load(
+            arquivo
+        )
+
+
+def merge_profile_with_goals(
+    profile: dict,
+    goals: list[dict],
+) -> dict:
+    """Inclui as metas persistidas no perfil usado pela aplicação."""
+    merged_profile = (
+        profile.copy()
+    )
+
+    merged_profile[
+        "objetivos_financeiros"
+    ] = [
+        goal.copy()
+        for goal in goals
+    ]
+
+    return merged_profile
+
+
+def merge_profile_with_legacy_goals(
+    profile: dict,
+    seed_profile: dict,
+) -> dict:
+    """Mantém compatibilidade com chamadas e testes antigos."""
+    return merge_profile_with_goals(
+        profile=profile,
+        goals=list(
+            seed_profile.get(
+                "objetivos_financeiros",
+                [],
+            )
+        ),
+    )
 
 
 def carregar_perfil_usuario() -> dict:
-    """
-    Carrega o perfil financeiro simulado usado no projeto.
-    """
-    return carregar_json("perfil_usuario.json")
+    """Carrega o perfil e as metas financeiras persistidas."""
+    seed_profile = carregar_json(
+        "perfil_usuario.json"
+    )
+
+    persisted_profile = (
+        seed_user_profile_if_missing(
+            database_path=(
+                ARQUIVO_BANCO
+            ),
+            user_id=LOCAL_USER_ID,
+            seed_profile=seed_profile,
+        )
+    )
+
+    seed_financial_goals_if_needed(
+        database_path=ARQUIVO_BANCO,
+        user_id=LOCAL_USER_ID,
+        seed_goals=list(
+            seed_profile.get(
+                "objetivos_financeiros",
+                [],
+            )
+        ),
+    )
+
+    persisted_goals = (
+        list_financial_goals(
+            database_path=ARQUIVO_BANCO,
+            user_id=LOCAL_USER_ID,
+        )
+    )
+
+    return merge_profile_with_goals(
+        profile=persisted_profile,
+        goals=persisted_goals,
+    )
 
 
 def carregar_conceitos_financeiros() -> dict:
-    """
-    Carrega conceitos financeiros usados como base de conhecimento da IA.
-    """
-    return carregar_json("conceitos_financeiros.json")
+    """Carrega os conceitos usados pela IA."""
+    return carregar_json(
+        "conceitos_financeiros.json"
+    )
 
 
 def carregar_produtos_financeiros() -> dict:
-    """
-    Carrega informações simuladas sobre produtos financeiros.
-    """
-    return carregar_json("produtos_financeiros.json")
+    """Carrega produtos financeiros informativos."""
+    return carregar_json(
+        "produtos_financeiros.json"
+    )
+
+
+# -----------------------------------------------------------------------------
+# Estrutura e localização das transações
+# -----------------------------------------------------------------------------
+
 
 def criar_dataframe_transacoes_vazio() -> pd.DataFrame:
     """Cria uma estrutura vazia compatível com o dashboard."""
     return pd.DataFrame(
-        columns=COLUNAS_TRANSACOES_VAZIAS
+        columns=(
+            COLUNAS_TRANSACOES_VAZIAS
+        )
     )
 
-def obter_caminho_csv_transacoes() -> Path | None:
-    """
-    Retorna o CSV processado, caso ele exista.
 
-    Dados antigos ou de demonstração não são usados
-    automaticamente como fallback.
-    """
-    if ARQUIVO_TRANSACOES_PROCESSADAS.exists():
-        return ARQUIVO_TRANSACOES_PROCESSADAS
+def obter_caminho_csv_transacoes() -> Path | None:
+    """Retorna o CSV processado quando ele existir."""
+    if (
+        ARQUIVO_TRANSACOES_PROCESSADAS
+        .exists()
+    ):
+        return (
+            ARQUIVO_TRANSACOES_PROCESSADAS
+        )
 
     return None
 
 
+def sqlite_table_exists(
+    database_path: Path,
+    table_name: str,
+) -> bool:
+    """Verifica se uma tabela existe no banco SQLite."""
+    if not database_path.exists():
+        return False
+
+    try:
+        with sqlite3.connect(
+            database_path
+        ) as connection:
+            row = connection.execute(
+                """
+                SELECT 1
+                FROM sqlite_master
+                WHERE
+                    type = 'table'
+                    AND name = ?
+                LIMIT 1
+                """,
+                (
+                    table_name,
+                ),
+            ).fetchone()
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível verificar "
+            "a estrutura do banco local."
+        ) from error
+
+    return row is not None
+
+
+# -----------------------------------------------------------------------------
+# Carregamento das transações
+# -----------------------------------------------------------------------------
+
+
 def carregar_transacoes_sqlite() -> pd.DataFrame:
-    """
-    Carrega transações da base SQLite gerada pelo pipeline ETL.
-    """
+    """Carrega as transações da base SQLite."""
     return load_transactions(
-        database_path=ARQUIVO_BANCO,
-        table_name=TABELA_TRANSACOES,
+        database_path=(
+            ARQUIVO_BANCO
+        ),
+        table_name=(
+            TABELA_TRANSACOES
+        ),
     )
 
 
 def carregar_transacoes_csv() -> pd.DataFrame:
-    """
-    Carrega o CSV processado ou retorna uma base vazia.
-    """
-    caminho = obter_caminho_csv_transacoes()
+    """Carrega o CSV processado ou retorna uma base vazia."""
+    caminho = (
+        obter_caminho_csv_transacoes()
+    )
 
     if caminho is None:
-        return criar_dataframe_transacoes_vazio()
+        return (
+            criar_dataframe_transacoes_vazio()
+        )
 
     return pd.read_csv(
         caminho,
         encoding="utf-8-sig",
-        parse_dates=["data"],
+        parse_dates=[
+            "data",
+        ],
     )
 
 
-def preparar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
-    """
-    Padroniza os dados de transações após a leitura.
+def preparar_transacoes(
+    transacoes: pd.DataFrame,
+) -> pd.DataFrame:
+    """Padroniza as transações depois da leitura."""
+    transacoes = (
+        transacoes.copy()
+    )
 
-    Mesmo quando os dados vêm do ETL, esta etapa garante que o dashboard receba
-    datas, tipos, categorias e valores em formatos consistentes.
-    """
-    transacoes = transacoes.copy()
+    for coluna in (
+        COLUNAS_TRANSACOES_VAZIAS
+    ):
+        if coluna not in transacoes.columns:
+            transacoes[
+                coluna
+            ] = pd.Series(
+                dtype="object"
+            )
 
     transacoes["data"] = pd.to_datetime(
         transacoes["data"],
@@ -158,8 +340,13 @@ def preparar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
         errors="coerce",
     )
 
-    if "ano_mes" not in transacoes.columns:
-        transacoes["ano_mes"] = (
+    if (
+        "ano_mes"
+        not in transacoes.columns
+    ):
+        transacoes[
+            "ano_mes"
+        ] = (
             transacoes["data"]
             .dt.to_period("M")
             .astype(str)
@@ -169,43 +356,52 @@ def preparar_transacoes(transacoes: pd.DataFrame) -> pd.DataFrame:
 
 
 def carregar_transacoes() -> pd.DataFrame:
-    """
-    Carrega transações priorizando SQLite.
+    """Carrega transações priorizando a tabela do SQLite."""
+    if sqlite_table_exists(
+        database_path=(
+            ARQUIVO_BANCO
+        ),
+        table_name=(
+            TABELA_TRANSACOES
+        ),
+    ):
+        transacoes = (
+            carregar_transacoes_sqlite()
+        )
 
-    Ordem de leitura:
-    1. SQLite gerado pelo ETL;
-    2. CSV processado;
-    3. CSV original.
-    """
-    if ARQUIVO_BANCO.exists():
-        transacoes = carregar_transacoes_sqlite()
     else:
-        transacoes = carregar_transacoes_csv()
+        transacoes = (
+            carregar_transacoes_csv()
+        )
 
-    return preparar_transacoes(transacoes)
+    return preparar_transacoes(
+        transacoes
+    )
+
+
+# -----------------------------------------------------------------------------
+# Outros dados usados pelo dashboard
+# -----------------------------------------------------------------------------
 
 
 def carregar_historico_atendimento() -> pd.DataFrame:
-    """
-    Carrega o histórico simulado de atendimento usado no contexto da IA.
-    """
-    caminho = DATA_DIR / "historico_atendimento.csv"
+    """Carrega o histórico simulado usado no contexto da IA."""
+    caminho = (
+        DATA_DIR
+        / "historico_atendimento.csv"
+    )
 
     return pd.read_csv(
         caminho,
         encoding="utf-8-sig",
-        parse_dates=["data"],
+        parse_dates=[
+            "data",
+        ],
     )
 
 
 def carregar_rejeicoes() -> pd.DataFrame:
-    """
-    Carrega o relatório de transações rejeitadas, caso ele exista.
-
-    O arquivo é gerado pelo pipeline ETL apenas quando existem linhas inválidas.
-    Quando não existe relatório, retorna um DataFrame vazio para simplificar o
-    uso no dashboard.
-    """
+    """Carrega o relatório de transações rejeitadas."""
     if not ARQUIVO_REJEICOES.exists():
         return pd.DataFrame()
 

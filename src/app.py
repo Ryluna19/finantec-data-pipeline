@@ -62,6 +62,10 @@ from components.transaction_management import (
     render_persisted_transaction_management,
 )
 
+from components.profile import (
+    render_user_profile,
+)
+
 st.set_page_config(
     page_title="FinanTec",
     page_icon=":material/account_balance_wallet:",
@@ -424,6 +428,7 @@ def main() -> None:
         dashboard_tab,
         transactions_tab,
         goals_tab,
+        profile_tab,
         ai_tab,
         data_tab,
     ) = st.tabs(
@@ -431,6 +436,7 @@ def main() -> None:
             "Dashboard",
             "Transações",
             "Metas",
+            "Perfil",
             "IA",
             "Dados",
         ]
@@ -448,12 +454,15 @@ def main() -> None:
             )
 
         with goals_tab:
-            render_unavailable_feature(
-                title="Metas",
-                message=(
-                    "O simulador de metas precisa "
-                    "de uma base financeira ativa."
-                ),
+            render_goal_simulator(
+                user_profile=user_profile,
+                summary={
+                    "saldo_disponivel": 0.0,
+                },
+            )
+        with profile_tab:
+            render_user_profile(
+                user_profile
             )
 
         with ai_tab:
@@ -528,6 +537,10 @@ def main() -> None:
         render_goal_simulator(
             user_profile=user_profile,
             summary=summary,
+        )
+    with profile_tab:
+        render_user_profile(
+            user_profile
         )
 
     with ai_tab:
