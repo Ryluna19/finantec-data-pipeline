@@ -8,6 +8,7 @@ from prompts import (
     montar_contexto,
     montar_mensagem_usuario,
     resumir_gastos_por_categoria,
+    resumir_conversa_recente,
 )
 
 
@@ -102,17 +103,32 @@ def test_context_contains_precalculated_category_summary():
     )
 
 
-def test_user_message_contains_intent_context():
+def test_user_message_contains_intent_and_conversation():
     message = montar_mensagem_usuario(
         pergunta_usuario=(
-            "Quanto ainda tenho?"
+            "E quanto falta para a minha?"
         ),
         contexto=(
             "RESUMO FINANCEIRO"
         ),
         contexto_intencao=(
-            "INTENÇÃO: saldo"
+            "INTENÇÃO: meta_financeira"
         ),
+        historico_conversa=[
+            {
+                "role": "user",
+                "content": (
+                    "O que é uma reserva?"
+                ),
+            },
+            {
+                "role": "assistant",
+                "content": (
+                    "É um valor para imprevistos."
+                ),
+                "source": "ai",
+            },
+        ],
     )
 
     assert (
@@ -121,11 +137,125 @@ def test_user_message_contains_intent_context():
     )
 
     assert (
-        "INTENÇÃO: saldo"
+        "CONVERSA RECENTE"
         in message
     )
 
     assert (
-        "Quanto ainda tenho?"
+        "O que é uma reserva?"
         in message
     )
+
+    assert (
+        "INTENÇÃO: meta_financeira"
+        in message
+    )
+
+    assert (
+        "E quanto falta para a minha?"
+        in message
+    )
+    
+def test_recent_conversation_ignores_initial_message():
+    messages = [
+        {
+            "role": "assistant",
+            "content": "Mensagem inicial",
+            "source": "system",
+        },
+        {
+            "role": "user",
+            "content": "O que é reserva?",
+            "source": "",
+        },
+        {
+            "role": "assistant",
+            "content": "É um valor para imprevistos.",
+            "source": "ai",
+        },
+    ]
+
+    conversation = (
+        resumir_conversa_recente(
+            messages
+        )
+    )
+
+    assert conversation == [
+        {
+            "papel": "pessoa_usuaria",
+            "conteudo": (
+                "O que é reserva?"
+            ),
+        },
+        {
+            "papel": "finantec",
+            "conteudo": (
+                "É um valor para imprevistos."
+            ),
+        },
+    ]
+
+
+def test_recent_conversation_keeps_only_latest_messages():
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"Pergunta {index}"
+            ),
+        }
+        for index in range(
+            5
+        )
+    ]
+
+    conversation = (
+        resumir_conversa_recente(
+            mensagens=messages,
+            limite=2,
+        )
+    )
+
+    assert conversation == [
+        {
+            "papel": "pessoa_usuaria",
+            "conteudo": "Pergunta 3",
+        },
+        {
+            "papel": "pessoa_usuaria",
+            "conteudo": "Pergunta 4",
+        },
+    ]
+
+
+def test_recent_conversation_truncates_long_content():
+    long_content = (
+        "a"
+        * 900
+    )
+
+    conversation = (
+        resumir_conversa_recente(
+            [
+                {
+                    "role": "user",
+                    "content": long_content,
+                }
+            ]
+        )
+    )
+
+    content = conversation[
+        0
+    ][
+        "conteudo"
+    ]
+
+    assert content.endswith(
+        "…"
+    )
+
+    assert len(
+        content
+    ) == 801

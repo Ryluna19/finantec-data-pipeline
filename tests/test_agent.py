@@ -125,3 +125,61 @@ def test_clean_response_formatting():
     assert response == (
         r"Saldo: R\$ 100,00"
     )
+def test_agent_sends_recent_conversation(
+    monkeypatch,
+):
+    fake_client = FakeClient()
+
+    monkeypatch.setattr(
+        agent,
+        "obter_cliente",
+        lambda: fake_client,
+    )
+
+    agent.gerar_resposta_finantec(
+        pergunta_usuario=(
+            "E quanto falta para a minha?"
+        ),
+        contexto=(
+            "SIMULAÇÕES DE METAS"
+        ),
+        historico_conversa=[
+            {
+                "role": "user",
+                "content": (
+                    "Quero entender minha reserva."
+                ),
+            },
+            {
+                "role": "assistant",
+                "content": (
+                    "Sua meta de reserva é "
+                    "de R$ 1.500,00."
+                ),
+                "source": "ai",
+            },
+        ],
+    )
+
+    request = (
+        fake_client
+        .interactions
+        .last_call
+    )
+
+    assert request is not None
+
+    assert (
+        "CONVERSA RECENTE"
+        in request["input"]
+    )
+
+    assert (
+        "Quero entender minha reserva."
+        in request["input"]
+    )
+
+    assert (
+        "E quanto falta para a minha?"
+        in request["input"]
+    )

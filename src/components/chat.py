@@ -382,6 +382,9 @@ def render_chat(
                                     user_question
                                 ),
                                 contexto=context,
+                                historico_conversa=(
+                                    messages
+                                ),
                             )
                         )
 

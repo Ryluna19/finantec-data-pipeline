@@ -305,6 +305,30 @@ A persistência está em:
 src/chat_repository.py
 ```
 
+## Contexto Conversacional Recente
+
+Além de persistir o histórico no SQLite, o FinanTec envia uma pequena parte
+da conversa recente para a IA quando a pergunta precisa do modelo generativo.
+
+São enviadas no máximo seis mensagens anteriores, excluindo a mensagem inicial
+do sistema.
+
+Cada mensagem também possui um limite de caracteres para impedir que o prompt
+cresça indefinidamente.
+
+Exemplo:
+
+```text
+Pessoa:
+"O que é reserva de emergência?"
+
+FinanTec:
+"É um valor separado para situações inesperadas."
+
+Pessoa:
+"E quanto falta para a minha?"
+```
+
 ## Limitações Atuais
 
 O projeto ainda não possui:

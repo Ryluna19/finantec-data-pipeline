@@ -16,6 +16,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
+from typing import Any
 
 from prompts import (
     SYSTEM_PROMPT,
@@ -102,6 +103,10 @@ def limpar_formatacao_resposta(
 def gerar_resposta_finantec(
     pergunta_usuario: str,
     contexto: str,
+    historico_conversa: (
+        list[dict[str, Any]]
+        | None
+    ) = None,
 ) -> str:
     """Envia a pergunta e o contexto calculado para a IA."""
     pergunta = (
@@ -131,6 +136,9 @@ def gerar_resposta_finantec(
             contexto=contexto,
             contexto_intencao=(
                 intent_context
+            ),
+            historico_conversa=(
+                historico_conversa
             ),
         )
     )

@@ -12,8 +12,11 @@ from typing import Any
 
 import pandas as pd
 
-
 LIMITE_HISTORICO_ATENDIMENTO = 8
+
+LIMITE_MENSAGENS_CONVERSA = 6
+
+LIMITE_CARACTERES_MENSAGEM = 800
 
 
 SYSTEM_PROMPT = """
@@ -45,6 +48,11 @@ Regras obrigatórias:
 19. A seção "INTENÇÃO IDENTIFICADA PELA APLICAÇÃO" é uma classificação heurística. Use-a como orientação, mas priorize a pergunta literal da pessoa usuária.
 20. Para identificar a categoria de maior gasto, use somente a seção "RESUMO DE CATEGORIAS CALCULADO PELO PYTHON". Não compare ou recalcule os valores.
 21. Quando a intenção estiver como "desconhecida", não force uma resposta financeira. Informe a limitação quando a pergunta não puder ser respondida pelo contexto.
+22. Use a seção "CONVERSA RECENTE" apenas para entender referências, continuações e perguntas relacionadas.
+23. A pergunta atual tem prioridade sobre as mensagens anteriores.
+24. Se uma referência continuar ambígua mesmo com a conversa recente, faça uma pergunta curta de esclarecimento em vez de adivinhar.
+25. Não repita toda a resposta anterior quando a pessoa fizer apenas uma pergunta complementar.
+
 
 Estrutura esperada da resposta:
 - Responda diretamente à pergunta.
@@ -241,15 +249,114 @@ LIMITAÇÕES IMPORTANTES:
 """.strip()
 
 
+def resumir_conversa_recente(
+    mensagens: list[dict[str, Any]] | None,
+    limite: int = LIMITE_MENSAGENS_CONVERSA,
+) -> list[dict[str, str]]:
+    """Seleciona mensagens recentes úteis para continuidade."""
+    if (
+        not mensagens
+        or limite <= 0
+    ):
+        return []
+
+    conversa: list[
+        dict[str, str]
+    ] = []
+
+    for mensagem in mensagens:
+        role = str(
+            mensagem.get(
+                "role",
+                "",
+            )
+        ).strip().lower()
+
+        source = str(
+            mensagem.get(
+                "source",
+                "",
+            )
+        ).strip().lower()
+
+        raw_content = mensagem.get(
+            "content"
+        )
+
+        if raw_content is None:
+            continue
+
+        content = str(
+            raw_content
+        ).strip()
+
+        if (
+            source == "system"
+            or role
+            not in {
+                "user",
+                "assistant",
+            }
+            or not content
+        ):
+            continue
+
+        if (
+            len(content)
+            > LIMITE_CARACTERES_MENSAGEM
+        ):
+            content = (
+                content[
+                    :LIMITE_CARACTERES_MENSAGEM
+                ]
+                .rstrip()
+                + "…"
+            )
+
+        role_label = (
+            "pessoa_usuaria"
+            if role == "user"
+            else "finantec"
+        )
+
+        conversa.append(
+            {
+                "papel": role_label,
+                "conteudo": content,
+            }
+        )
+
+    return conversa[
+        -limite:
+    ]
+
 def montar_mensagem_usuario(
     pergunta_usuario: str,
     contexto: str,
     contexto_intencao: str | None = None,
+    historico_conversa: (
+        list[dict[str, Any]]
+        | None
+    ) = None,
 ) -> str:
-    """Junta contexto, intenção e pergunta da pessoa usuária."""
+    """Junta contexto, conversa, intenção e pergunta atual."""
     secoes = [
         contexto.strip(),
     ]
+
+    conversa_recente = (
+        resumir_conversa_recente(
+            historico_conversa
+        )
+    )
+
+    if conversa_recente:
+        secoes.append(
+            (
+                "CONVERSA RECENTE:\n"
+                f"{formatar_json(conversa_recente)}"
+            )
+        )
 
     if (
         contexto_intencao
@@ -261,7 +368,7 @@ def montar_mensagem_usuario(
 
     secoes.append(
         (
-            "PERGUNTA DA PESSOA USUÁRIA:\n"
+            "PERGUNTA ATUAL DA PESSOA USUÁRIA:\n"
             f"{pergunta_usuario.strip()}"
         )
     )
