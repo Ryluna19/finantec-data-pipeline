@@ -16,7 +16,8 @@ from components.data_management import (
     DATA_MODE_KEY,
 )
 from scripts.etl_transacoes import (
-    run_etl_with_summary,
+    ARQUIVO_BANCO,
+    TABELA_TRANSACOES,
 )
 from src.transaction_editor import (
     ARQUIVO_TRANSACOES_MANUAIS,
@@ -33,8 +34,14 @@ from src.transaction_identity import (
 from src.transaction_sources import (
     DuplicateTransactionIdError,
     TransactionNotFoundError,
-    delete_transaction_from_source,
-    update_transaction_in_source,
+)
+from src.transaction_sync_service import (
+    PartialTransactionSyncError,
+    delete_persisted_transaction,
+    update_persisted_transaction,
+)
+from src.user_context import (
+    get_current_user_id,
 )
 from ui_components import (
     TRANSACTION_TYPE_LABELS,
@@ -314,16 +321,12 @@ def _invalidate_manual_draft(
     invalidate_manual_draft()
 
 
-def _complete_source_operation(
+def _complete_persisted_operation(
     source_file: Path,
-) -> dict[str, int | bool]:
-    """Reexecuta o ETL e prepara a atualização da interface."""
+) -> None:
+    """Atualiza o estado depois da sincronização."""
     _invalidate_manual_draft(
         source_file
-    )
-
-    result = run_etl_with_summary(
-        use_demo_data=False
     )
 
     st.session_state[
@@ -334,35 +337,36 @@ def _complete_source_operation(
         DATA_REFRESH_REQUESTED_KEY
     ] = True
 
-    return result
-
 
 def _update_persisted_transaction(
     transaction_id: str,
     updates: dict[str, object],
 ) -> None:
-    """Atualiza a fonte, executa o ETL e atualiza a sessão."""
-    source_file: Path | None = None
-
+    """Atualiza a transação no arquivo e no SQLite."""
     try:
         source_file = (
-            update_transaction_in_source(
+            update_persisted_transaction(
                 transaction_id=transaction_id,
                 updates=updates,
+                database_path=ARQUIVO_BANCO,
+                table_name=TABELA_TRANSACOES,
+                user_id=(
+                    get_current_user_id()
+                ),
+                data_mode="user",
             )
         )
 
-        result = _complete_source_operation(
+        _complete_persisted_operation(
             source_file
         )
 
         _set_management_feedback(
             "success",
             (
-                "Transação atualizada com sucesso. "
-                f"Fonte modificada: {source_file.name}. "
-                "Transações processadas após a edição: "
-                f"{result['transacoes_processadas']}."
+                "Transação atualizada com sucesso "
+                "no arquivo de origem e no banco local. "
+                f"Fonte: {source_file.name}."
             ),
         )
 
@@ -370,9 +374,8 @@ def _update_persisted_transaction(
         _set_management_feedback(
             "error",
             (
-                "A transação não foi encontrada nos arquivos "
-                "do usuário. Ela pode já ter sido removida "
-                "ou pertencer aos dados de demonstração."
+                "A transação não foi encontrada "
+                "no arquivo de origem."
             ),
         )
 
@@ -380,8 +383,16 @@ def _update_persisted_transaction(
         _set_management_feedback(
             "error",
             (
-                "A edição foi bloqueada porque o mesmo ID "
-                "aparece em mais de uma fonte."
+                "A edição foi bloqueada porque "
+                "o mesmo ID aparece em mais de uma fonte."
+            ),
+        )
+
+    except PartialTransactionSyncError as error:
+        _set_management_feedback(
+            "error",
+            str(
+                error
             ),
         )
 
@@ -394,41 +405,30 @@ def _update_persisted_transaction(
             ),
         )
 
-    except OSError as error:
+    except (
+        OSError,
+        RuntimeError,
+    ) as error:
         _set_management_feedback(
             "error",
             (
-                "Não foi possível salvar a alteração "
-                f"no arquivo de origem: {error}"
+                "Não foi possível atualizar "
+                f"a transação: {error}"
             ),
         )
 
     except Exception as error:
         logging.exception(
-            "Falha inesperada ao atualizar uma transação persistida."
+            "Falha inesperada ao atualizar "
+            "uma transação persistida."
         )
-
-        if source_file is None:
-            message = (
-                "Não foi possível atualizar a transação: "
-                f"{error}"
-            )
-
-        else:
-            _invalidate_manual_draft(
-                source_file
-            )
-
-            message = (
-                "A fonte foi alterada, mas não foi possível "
-                "concluir o reprocessamento do ETL. "
-                "Execute o ETL novamente. "
-                f"Detalhes: {error}"
-            )
 
         _set_management_feedback(
             "error",
-            message,
+            (
+                "Ocorreu uma falha inesperada "
+                f"durante a atualização: {error}"
+            ),
         )
 
     _advance_management_version()
@@ -438,27 +438,30 @@ def _update_persisted_transaction(
 def _delete_persisted_transaction(
     transaction_id: str,
 ) -> None:
-    """Exclui a fonte, reexecuta o ETL e prepara o refresh."""
-    source_file: Path | None = None
-
+    """Exclui a transação do arquivo e do SQLite."""
     try:
         source_file = (
-            delete_transaction_from_source(
-                transaction_id
+            delete_persisted_transaction(
+                transaction_id=transaction_id,
+                database_path=ARQUIVO_BANCO,
+                table_name=TABELA_TRANSACOES,
+                user_id=(
+                    get_current_user_id()
+                ),
+                data_mode="user",
             )
         )
 
-        result = _complete_source_operation(
+        _complete_persisted_operation(
             source_file
         )
 
         _set_management_feedback(
             "success",
             (
-                "Transação excluída permanentemente. "
-                f"Fonte atualizada: {source_file.name}. "
-                "Transações processadas após a exclusão: "
-                f"{result['transacoes_processadas']}."
+                "Transação excluída permanentemente "
+                "do arquivo de origem e do banco local. "
+                f"Fonte: {source_file.name}."
             ),
         )
 
@@ -466,9 +469,8 @@ def _delete_persisted_transaction(
         _set_management_feedback(
             "error",
             (
-                "A transação não foi encontrada nos arquivos "
-                "do usuário. Ela pode pertencer aos dados "
-                "de demonstração ou já ter sido removida."
+                "A transação não foi encontrada "
+                "no arquivo de origem."
             ),
         )
 
@@ -476,49 +478,44 @@ def _delete_persisted_transaction(
         _set_management_feedback(
             "error",
             (
-                "A exclusão foi bloqueada porque o mesmo ID "
-                "aparece em mais de uma fonte."
+                "A exclusão foi bloqueada porque "
+                "o mesmo ID aparece em mais de uma fonte."
+            ),
+        )
+
+    except PartialTransactionSyncError as error:
+        _set_management_feedback(
+            "error",
+            str(
+                error
             ),
         )
 
     except (
         ValueError,
         OSError,
+        RuntimeError,
     ) as error:
         _set_management_feedback(
             "error",
             (
-                "Não foi possível excluir a transação: "
-                f"{error}"
+                "Não foi possível excluir "
+                f"a transação: {error}"
             ),
         )
 
     except Exception as error:
         logging.exception(
-            "Falha inesperada ao excluir uma transação persistida."
+            "Falha inesperada ao excluir "
+            "uma transação persistida."
         )
-
-        if source_file is None:
-            message = (
-                "Não foi possível excluir a transação: "
-                f"{error}"
-            )
-
-        else:
-            _invalidate_manual_draft(
-                source_file
-            )
-
-            message = (
-                "A fonte foi alterada, mas não foi possível "
-                "concluir o reprocessamento do ETL. "
-                "Execute o ETL novamente. "
-                f"Detalhes: {error}"
-            )
 
         _set_management_feedback(
             "error",
-            message,
+            (
+                "Ocorreu uma falha inesperada "
+                f"durante a exclusão: {error}"
+            ),
         )
 
     _advance_management_version()
@@ -803,8 +800,9 @@ def _render_delete_confirmation(
 ) -> None:
     """Exibe a confirmação da exclusão permanente."""
     st.warning(
-        "A exclusão altera o arquivo de origem e não pode "
-        "ser desfeita pela interface."
+        "A exclusão remove a transação do arquivo de origem "
+        "e do banco local. Essa ação não pode ser desfeita "
+        "pela interface."
     )
 
     confirmed = st.checkbox(
@@ -852,8 +850,8 @@ def render_persisted_transaction_management(
         ):
             st.caption(
                 "Selecione uma movimentação já processada. "
-                "As alterações são aplicadas ao arquivo de origem, "
-                "seguidas por uma nova execução do ETL."
+                "As alterações são sincronizadas diretamente "
+                "entre o arquivo de origem e o banco local."
             )
 
             if (

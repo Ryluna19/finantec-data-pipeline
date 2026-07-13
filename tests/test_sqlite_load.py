@@ -1,4 +1,8 @@
-﻿import sqlite3
+﻿"""Testes da carga de transações no SQLite."""
+
+from __future__ import annotations
+
+import sqlite3
 
 import pandas as pd
 
@@ -9,9 +13,13 @@ from src.user_context import (
 
 
 def criar_transacoes_processadas_teste() -> pd.DataFrame:
-    """Cria transações processadas para os testes do SQLite."""
+    """Cria transações processadas com IDs persistentes."""
     return pd.DataFrame(
         {
+            "transaction_id": [
+                "transaction-1",
+                "transaction-2",
+            ],
             "data": pd.to_datetime(
                 [
                     "2026-06-01",
@@ -116,8 +124,11 @@ def test_salvar_em_sqlite_cria_banco_e_tabela_com_transacoes(
         criar_transacoes_processadas_teste()
     )
 
-    etl_transacoes.salvar_em_sqlite(
-        transacoes
+    inserted_count = (
+        etl_transacoes
+        .salvar_em_sqlite(
+            transacoes
+        )
     )
 
     with sqlite3.connect(
@@ -168,12 +179,12 @@ def test_salvar_em_sqlite_cria_banco_e_tabela_com_transacoes(
         )
 
     assert banco_teste.exists()
-
+    assert inserted_count == 2
     assert total_linhas == 2
-
     assert total_receitas == 1600.00
 
     assert colunas == [
+        "transaction_id",
         "data",
         "tipo",
         "descricao",
@@ -195,7 +206,7 @@ def test_salvar_em_sqlite_cria_banco_e_tabela_com_transacoes(
     ]
 
 
-def test_salvar_em_sqlite_substitui_apenas_contexto_existente(
+def test_etl_do_usuario_nao_remove_transacoes_existentes(
     monkeypatch,
     tmp_path,
 ):
@@ -210,13 +221,19 @@ def test_salvar_em_sqlite_substitui_apenas_contexto_existente(
         criar_transacoes_processadas_teste()
     )
 
-    etl_transacoes.salvar_em_sqlite(
-        transacoes
+    first_inserted = (
+        etl_transacoes
+        .salvar_em_sqlite(
+            transacoes
+        )
     )
 
-    etl_transacoes.salvar_em_sqlite(
-        transacoes.head(
-            1
+    second_inserted = (
+        etl_transacoes
+        .salvar_em_sqlite(
+            transacoes.head(
+                1
+            )
         )
     )
 
@@ -244,10 +261,159 @@ def test_salvar_em_sqlite_substitui_apenas_contexto_existente(
             ]
         )
 
-        descricao_restante = (
+    assert first_inserted == 2
+    assert second_inserted == 0
+    assert total_linhas == 2
+
+
+def test_etl_do_usuario_insere_somente_ids_novos(
+    monkeypatch,
+    tmp_path,
+):
+    banco_teste, tabela_teste = (
+        configurar_banco_temporario(
+            monkeypatch,
+            tmp_path,
+        )
+    )
+
+    transacoes = (
+        criar_transacoes_processadas_teste()
+    )
+
+    etl_transacoes.salvar_em_sqlite(
+        transacoes
+    )
+
+    nova_transacao = pd.DataFrame(
+        {
+            "transaction_id": [
+                "transaction-3",
+            ],
+            "data": pd.to_datetime(
+                [
+                    "2026-06-03",
+                ]
+            ),
+            "tipo": [
+                "despesa",
+            ],
+            "descricao": [
+                "Transporte",
+            ],
+            "categoria": [
+                "Transporte",
+            ],
+            "valor": [
+                50.00,
+            ],
+            "arquivo_origem": [
+                "novo.csv",
+            ],
+            "ano_mes": [
+                "2026-06",
+            ],
+        }
+    )
+
+    lote_misto = pd.concat(
+        [
+            transacoes.tail(
+                1
+            ),
+            nova_transacao,
+        ],
+        ignore_index=True,
+    )
+
+    inserted_count = (
+        etl_transacoes
+        .salvar_em_sqlite(
+            lote_misto
+        )
+    )
+
+    with sqlite3.connect(
+        banco_teste
+    ) as conexao:
+        transacoes_salvas = (
             pd.read_sql_query(
                 f"""
-                SELECT descricao
+                SELECT
+                    transaction_id,
+                    descricao
+                FROM {tabela_teste}
+                WHERE
+                    user_id = ?
+                    AND data_mode = ?
+                ORDER BY transaction_id
+                """,
+                conexao,
+                params=(
+                    LOCAL_USER_ID,
+                    "user",
+                ),
+            )
+        )
+
+    assert inserted_count == 1
+
+    assert (
+        transacoes_salvas[
+            "transaction_id"
+        ].tolist()
+        == [
+            "transaction-1",
+            "transaction-2",
+            "transaction-3",
+        ]
+    )
+
+
+def test_etl_demo_substitui_particao_existente(
+    monkeypatch,
+    tmp_path,
+):
+    banco_teste, tabela_teste = (
+        configurar_banco_temporario(
+            monkeypatch,
+            tmp_path,
+        )
+    )
+
+    transacoes = (
+        criar_transacoes_processadas_teste()
+    )
+
+    first_saved = (
+        etl_transacoes
+        .salvar_em_sqlite(
+            transactions=transacoes,
+            user_id=LOCAL_USER_ID,
+            data_mode="demo",
+        )
+    )
+
+    second_saved = (
+        etl_transacoes
+        .salvar_em_sqlite(
+            transactions=(
+                transacoes.head(
+                    1
+                )
+            ),
+            user_id=LOCAL_USER_ID,
+            data_mode="demo",
+        )
+    )
+
+    with sqlite3.connect(
+        banco_teste
+    ) as conexao:
+        total_demo = (
+            pd.read_sql_query(
+                f"""
+                SELECT COUNT(*) AS total
                 FROM {tabela_teste}
                 WHERE
                     user_id = ?
@@ -256,18 +422,44 @@ def test_salvar_em_sqlite_substitui_apenas_contexto_existente(
                 conexao,
                 params=(
                     LOCAL_USER_ID,
-                    "user",
+                    "demo",
                 ),
             )
             .loc[
                 0,
-                "descricao",
+                "total",
             ]
         )
 
-    assert total_linhas == 1
+    assert first_saved == 2
+    assert second_saved == 1
+    assert total_demo == 1
+
+
+def test_filter_new_transactions_preserva_apenas_ids_desconhecidos():
+    incoming = (
+        criar_transacoes_processadas_teste()
+    )
+
+    existing = incoming.head(
+        1
+    ).copy()
+
+    result = (
+        etl_transacoes
+        .filter_new_transactions(
+            transactions=incoming,
+            existing_transactions=existing,
+        )
+    )
+
+    assert len(
+        result
+    ) == 1
 
     assert (
-        descricao_restante
-        == "Bolsa-estágio"
+        result.iloc[0][
+            "transaction_id"
+        ]
+        == "transaction-2"
     )

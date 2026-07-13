@@ -32,6 +32,8 @@ from src.transaction_identity import (
 )
 
 from src.transaction_repository import (
+    insert_transactions,
+    load_transactions,
     replace_transactions,
 )
 
@@ -240,33 +242,136 @@ def save_rejection_report(
         ARQUIVO_REJEICOES,
     )
 
+def filter_new_transactions(
+    transactions: pd.DataFrame,
+    existing_transactions: pd.DataFrame,
+) -> pd.DataFrame:
+    """Mantém apenas IDs ainda não persistidos no contexto."""
+    if transactions.empty:
+        return transactions.copy()
+
+    if (
+        TRANSACTION_ID_COLUMN
+        not in transactions.columns
+    ):
+        raise ValueError(
+            "As transações processadas não possuem "
+            "a coluna transaction_id."
+        )
+
+    if (
+        existing_transactions.empty
+        or TRANSACTION_ID_COLUMN
+        not in existing_transactions.columns
+    ):
+        return (
+            transactions.copy()
+            .reset_index(
+                drop=True
+            )
+        )
+
+    incoming_ids = (
+        transactions[
+            TRANSACTION_ID_COLUMN
+        ]
+        .astype("string")
+        .fillna("")
+        .str.strip()
+    )
+
+    existing_ids = set(
+        existing_transactions[
+            TRANSACTION_ID_COLUMN
+        ]
+        .astype("string")
+        .fillna("")
+        .str.strip()
+        .tolist()
+    )
+
+    new_rows = (
+        ~incoming_ids.isin(
+            existing_ids
+        )
+    )
+
+    return (
+        transactions.loc[
+            new_rows
+        ]
+        .copy()
+        .reset_index(
+            drop=True
+        )
+    )
 
 def save_to_sqlite(
     transactions: pd.DataFrame,
     user_id: str | None = None,
     data_mode: str = "user",
-) -> None:
-    """Substitui somente a partição processada no SQLite."""
+) -> int:
+    """Persiste transações sem sobrescrever dados reais existentes."""
     current_user_id = (
         user_id
         or get_current_user_id()
     )
 
-    replace_transactions(
-        transactions=transactions,
-        database_path=ARQUIVO_BANCO,
-        table_name=TABELA_TRANSACOES,
-        user_id=current_user_id,
-        data_mode=data_mode,
-    )
+    if data_mode == "demo":
+        replace_transactions(
+            transactions=transactions,
+            database_path=ARQUIVO_BANCO,
+            table_name=TABELA_TRANSACOES,
+            user_id=current_user_id,
+            data_mode=data_mode,
+        )
+
+        saved_count = len(
+            transactions
+        )
+
+    else:
+        existing_transactions = (
+            load_transactions(
+                database_path=ARQUIVO_BANCO,
+                table_name=TABELA_TRANSACOES,
+                user_id=current_user_id,
+                data_mode=data_mode,
+            )
+        )
+
+        new_transactions = (
+            filter_new_transactions(
+                transactions=transactions,
+                existing_transactions=(
+                    existing_transactions
+                ),
+            )
+        )
+
+        saved_count = (
+            insert_transactions(
+                transactions=new_transactions,
+                database_path=ARQUIVO_BANCO,
+                table_name=TABELA_TRANSACOES,
+                user_id=current_user_id,
+                data_mode=data_mode,
+            )
+        )
 
     logging.info(
         "Dados carregados no SQLite: %s | "
-        "tabela: %s | usuário: %s | modo: %s",
+        "tabela: %s | usuário: %s | modo: %s | "
+        "novas linhas: %s",
         ARQUIVO_BANCO,
         TABELA_TRANSACOES,
         current_user_id,
         data_mode,
+        saved_count,
+    )
+
+    return int(
+        saved_count
     )
 
 def find_transaction_files(
