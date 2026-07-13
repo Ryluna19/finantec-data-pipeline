@@ -295,12 +295,20 @@ Quando o `.env` não existe ou a variável `GEMINI_API_KEY` está vazia, o proje
 
 ---
 
+## Histórico Persistente de Conversa
+
+O histórico do assistente é armazenado localmente no SQLite.
+
+A persistência está em:
+
+```text
+src/chat_repository.py
+```
+
 ## Limitações Atuais
 
 O projeto ainda não possui:
 
-- memória persistente de conversa fora da sessão do Streamlit;
-- histórico armazenado em banco;
 - testes automatizados para respostas da IA;
 - avaliação automática de qualidade das respostas;
 - comparação semântica entre resposta esperada e resposta gerada;

@@ -81,6 +81,7 @@ def _clear_manual_session_state() -> None:
         MANUAL_FORM_VERSION_KEY,
         MANUAL_FEEDBACK_KEY,
         "resultado_etl",
+        "messages_by_period",
     ]
 
     for state_key in state_keys:

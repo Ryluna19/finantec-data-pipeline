@@ -22,6 +22,7 @@ from components.chat import (
     render_chat,
 )
 from components.data_management import (
+    DATA_MODE_KEY,
     render_data_management,
 )
 from components.file_transfer import (
@@ -496,8 +497,14 @@ def main() -> None:
         financial_products=financial_products,
     )
 
+    data_mode = st.session_state.get(
+        DATA_MODE_KEY,
+        "user",
+    )
+
     messages = get_period_messages(
-        period
+        period=period,
+        data_mode=data_mode,
     )
 
     with dashboard_tab:
@@ -527,6 +534,8 @@ def main() -> None:
         render_chat(
             messages=messages,
             context=context,
+            period=period,
+            data_mode=data_mode,
             summary=summary,
             expenses_by_category=(
                 expenses_by_category
