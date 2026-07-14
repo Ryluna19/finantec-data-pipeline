@@ -22,6 +22,7 @@ from src.transaction_sources import (
 )
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
+    build_rejection_message,
     split_transactions_by_validity,
 )
 
@@ -30,40 +31,6 @@ class PartialTransactionSyncError(
     RuntimeError
 ):
     """Indica que apenas uma das fontes foi alterada."""
-
-
-def _build_rejection_message(
-    rejected_transactions: pd.DataFrame,
-) -> str:
-    """Monta uma mensagem com os erros da transação."""
-    if (
-        rejected_transactions.empty
-        or "motivo_rejeicao"
-        not in rejected_transactions.columns
-    ):
-        return (
-            "Os dados informados para a transação "
-            "não são válidos."
-        )
-
-    reasons = (
-        rejected_transactions[
-            "motivo_rejeicao"
-        ]
-        .dropna()
-        .astype(str)
-        .tolist()
-    )
-
-    if not reasons:
-        return (
-            "Os dados informados para a transação "
-            "não são válidos."
-        )
-
-    return "; ".join(
-        reasons
-    )
 
 
 def prepare_persisted_transaction_updates(
@@ -106,8 +73,12 @@ def prepare_persisted_transaction_updates(
 
     if not rejected_transactions.empty:
         raise ValueError(
-            _build_rejection_message(
-                rejected_transactions
+            build_rejection_message(
+                rejected_transactions,
+                default_message=(
+                    "Os dados informados para a transação "
+                    "não são válidos."
+                ),
             )
         )
 
