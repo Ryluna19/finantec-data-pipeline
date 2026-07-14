@@ -16,6 +16,7 @@ from src.transaction_identity import (
 )
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
+    build_rejection_message,
     split_transactions_by_validity,
     validate_required_columns,
 )
@@ -303,39 +304,6 @@ def find_transaction_source(
 
     return matches[0]
 
-
-def _build_rejection_message(
-    rejected_transactions: pd.DataFrame,
-) -> str:
-    """Cria uma mensagem com os erros da atualização."""
-    if (
-        rejected_transactions.empty
-        or "motivo_rejeicao"
-        not in rejected_transactions.columns
-    ):
-        return (
-            "Os novos dados da transação são inválidos."
-        )
-
-    reasons = (
-        rejected_transactions[
-            "motivo_rejeicao"
-        ]
-        .dropna()
-        .astype(str)
-        .tolist()
-    )
-
-    if not reasons:
-        return (
-            "Os novos dados da transação são inválidos."
-        )
-
-    return "; ".join(
-        reasons
-    )
-
-
 def update_transaction_in_source(
     transaction_id: str,
     updates: Mapping[str, object],
@@ -381,14 +349,14 @@ def update_transaction_in_source(
     )
 
     candidate = (
-    transactions.loc[
-        [
-            match.row_index
-        ],
-        REQUIRED_TRANSACTION_COLUMNS,
-    ]
-    .copy()
-    .astype("object")
+        transactions.loc[
+            [
+                match.row_index
+            ],
+            REQUIRED_TRANSACTION_COLUMNS,
+        ]
+        .copy()
+        .astype("object")
     )
 
     for column, value in (
@@ -407,8 +375,12 @@ def update_transaction_in_source(
 
     if not rejected_transactions.empty:
         raise ValueError(
-            _build_rejection_message(
-                rejected_transactions
+            build_rejection_message(
+                rejected_transactions,
+                default_message=(
+                    "Os novos dados da transação "
+                    "são inválidos."
+                ),
             )
         )
 
@@ -445,8 +417,6 @@ def update_transaction_in_source(
         transactions,
     )
     
-    
-
     return match.source_file
 
 

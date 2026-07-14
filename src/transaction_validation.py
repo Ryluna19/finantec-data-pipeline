@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 REQUIRED_TRANSACTION_COLUMNS = [
     "data",
     "tipo",
@@ -38,7 +37,6 @@ def validate_required_columns(
             f"as colunas obrigatórias: "
             f"{', '.join(missing_columns)}"
         )
-
 
 def prepare_transactions(
     transactions: pd.DataFrame,
@@ -77,7 +75,6 @@ def prepare_transactions(
 
     return prepared_transactions
 
-
 def add_rejection_reason(
     reasons: pd.Series,
     mask: pd.Series,
@@ -98,7 +95,6 @@ def add_rejection_reason(
     )
 
     return reasons
-
 
 def identify_rejection_reasons(
     transactions: pd.DataFrame,
@@ -168,7 +164,6 @@ def identify_rejection_reasons(
 
     return reasons
 
-
 def split_transactions_by_validity(
     transactions: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -201,7 +196,6 @@ def split_transactions_by_validity(
         valid_transactions,
         rejected_transactions,
     )
-
 
 def finalize_valid_transactions(
     transactions: pd.DataFrame,
@@ -252,7 +246,6 @@ def build_rejection_message(
     return "; ".join(
         reasons
     )
-
 
 def prepare_valid_transactions_for_database(
     transactions: pd.DataFrame,
