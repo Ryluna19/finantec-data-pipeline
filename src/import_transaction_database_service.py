@@ -16,6 +16,8 @@ from src.transaction_repository import (
 )
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
+    build_rejection_message,
+    prepare_valid_transactions_for_database,
     split_transactions_by_validity,
 )
 from src.user_context import (
@@ -26,39 +28,6 @@ from src.user_context import (
 IMPORT_DATABASE_SOURCE = (
     "database:import"
 )
-
-
-def _build_rejection_message(
-    rejected_transactions: pd.DataFrame,
-) -> str:
-    """Monta uma mensagem com os erros encontrados."""
-    if (
-        rejected_transactions.empty
-        or "motivo_rejeicao"
-        not in rejected_transactions.columns
-    ):
-        return (
-            "O lote importado possui dados inválidos."
-        )
-
-    reasons = (
-        rejected_transactions[
-            "motivo_rejeicao"
-        ]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    if not reasons:
-        return (
-            "O lote importado possui dados inválidos."
-        )
-
-    return "; ".join(
-        reasons
-    )
 
 
 def prepare_imported_transactions_for_database(
@@ -81,12 +50,16 @@ def prepare_imported_transactions_for_database(
 
     if not rejected_transactions.empty:
         raise ValueError(
-            _build_rejection_message(
-                rejected_transactions
+            build_rejection_message(
+                rejected_transactions,
+                default_message=(
+                    "O lote importado possui "
+                    "dados inválidos."
+                ),
             )
         )
 
-    prepared = (
+    prepared_transactions = (
         valid_transactions[
             REQUIRED_TRANSACTION_COLUMNS
         ]
@@ -96,84 +69,28 @@ def prepare_imported_transactions_for_database(
         )
     )
 
-    prepared.insert(
+    prepared_transactions.insert(
         0,
         TRANSACTION_ID_COLUMN,
         [
             create_transaction_id()
             for _ in range(
                 len(
-                    prepared
+                    prepared_transactions
                 )
             )
         ],
     )
 
-    prepared["data"] = pd.to_datetime(
-        prepared["data"],
-        errors="coerce",
-    )
-
-    if prepared["data"].isna().any():
-        raise ValueError(
-            "Uma ou mais transações possuem "
-            "data inválida."
-        )
-
-    prepared["tipo"] = (
-        prepared["tipo"]
-        .astype("string")
-        .str.strip()
-        .str.lower()
-    )
-
-    prepared["descricao"] = (
-        prepared["descricao"]
-        .astype("string")
-        .str.strip()
-    )
-
-    prepared["categoria"] = (
-        prepared["categoria"]
-        .astype("string")
-        .str.strip()
-    )
-
-    prepared["valor"] = pd.to_numeric(
-        prepared["valor"],
-        errors="coerce",
-    )
-
-    if (
-        prepared["valor"].isna().any()
-        or prepared["valor"].le(0).any()
-    ):
-        raise ValueError(
-            "Uma ou mais transações possuem "
-            "valor inválido."
-        )
-
-    prepared[
-        "arquivo_origem"
-    ] = IMPORT_DATABASE_SOURCE
-
-    prepared["ano_mes"] = (
-        prepared["data"]
-        .dt.to_period(
-            "M"
-        )
-        .astype(str)
-    )
-
-    prepared["data"] = (
-        prepared["data"]
-        .dt.strftime(
-            "%Y-%m-%d"
+    prepared_transactions = (
+        prepare_valid_transactions_for_database(
+            prepared_transactions,
+            source=IMPORT_DATABASE_SOURCE,
         )
     )
 
     return (
-        prepared[
+        prepared_transactions[
             PERSISTED_TRANSACTION_COLUMNS
         ]
         .copy()

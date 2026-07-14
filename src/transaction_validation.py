@@ -222,3 +222,75 @@ def finalize_valid_transactions(
             "categoria",
         ]
     ).reset_index(drop=True)
+
+def build_rejection_message(
+    rejected_transactions: pd.DataFrame,
+    *,
+    default_message: str,
+) -> str:
+    """Monta uma mensagem com os motivos de rejeição encontrados."""
+    if (
+        rejected_transactions.empty
+        or "motivo_rejeicao"
+        not in rejected_transactions.columns
+    ):
+        return default_message
+
+    reasons = (
+        rejected_transactions[
+            "motivo_rejeicao"
+        ]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
+
+    if not reasons:
+        return default_message
+
+    return "; ".join(
+        reasons
+    )
+
+
+def prepare_valid_transactions_for_database(
+    transactions: pd.DataFrame,
+    *,
+    source: str,
+) -> pd.DataFrame:
+    """Finaliza transações já validadas para persistência."""
+    prepared_transactions = (
+        transactions.copy()
+        .reset_index(
+            drop=True
+        )
+    )
+
+    if prepared_transactions.empty:
+        return prepared_transactions
+
+    prepared_transactions[
+        "arquivo_origem"
+    ] = str(
+        source
+    ).strip()
+
+    prepared_transactions[
+        "ano_mes"
+    ] = (
+        prepared_transactions["data"]
+        .dt.to_period(
+            "M"
+        )
+        .astype(str)
+    )
+
+    prepared_transactions["data"] = (
+        prepared_transactions["data"]
+        .dt.strftime(
+            "%Y-%m-%d"
+        )
+    )
+
+    return prepared_transactions

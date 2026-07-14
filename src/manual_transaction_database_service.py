@@ -20,6 +20,10 @@ from src.transaction_repository import (
     load_transactions,
     update_transaction,
 )
+from src.transaction_validation import (
+    build_rejection_message,
+    prepare_valid_transactions_for_database,
+)
 from src.user_context import (
     LOCAL_USER_ID,
 )
@@ -28,42 +32,6 @@ from src.user_context import (
 MANUAL_DATABASE_SOURCE = (
     "database:manual"
 )
-
-
-def _build_rejection_message(
-    rejected_transactions: pd.DataFrame,
-) -> str:
-    """Cria uma mensagem com os erros encontrados."""
-    if (
-        rejected_transactions.empty
-        or "motivo_rejeicao"
-        not in rejected_transactions.columns
-    ):
-        return (
-            "As transações manuais possuem "
-            "dados inválidos."
-        )
-
-    reasons = (
-        rejected_transactions[
-            "motivo_rejeicao"
-        ]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    if not reasons:
-        return (
-            "As transações manuais possuem "
-            "dados inválidos."
-        )
-
-    return "; ".join(
-        reasons
-    )
-
 
 def _normalize_transaction_ids(
     transactions: pd.DataFrame,
@@ -129,8 +97,12 @@ def prepare_manual_transactions_for_database(
 
     if not rejected_transactions.empty:
         raise ValueError(
-            _build_rejection_message(
-                rejected_transactions
+            build_rejection_message(
+                rejected_transactions,
+                default_message=(
+                    "As transações manuais possuem "
+                    "dados inválidos."
+                ),
             )
         )
 
@@ -140,84 +112,15 @@ def prepare_manual_transactions_for_database(
         )
     )
 
-    prepared = (
-        identified_transactions[
-            [
-                TRANSACTION_ID_COLUMN,
-                *MANUAL_TRANSACTION_COLUMNS,
-            ]
-        ]
-        .copy()
-        .reset_index(
-            drop=True
-        )
-    )
-
-    prepared["data"] = pd.to_datetime(
-        prepared["data"],
-        errors="coerce",
-    )
-
-    if prepared["data"].isna().any():
-        raise ValueError(
-            "Uma ou mais transações possuem "
-            "data inválida."
-        )
-
-    prepared["tipo"] = (
-        prepared["tipo"]
-        .astype("string")
-        .str.strip()
-        .str.lower()
-    )
-
-    prepared["descricao"] = (
-        prepared["descricao"]
-        .astype("string")
-        .str.strip()
-    )
-
-    prepared["categoria"] = (
-        prepared["categoria"]
-        .astype("string")
-        .str.strip()
-    )
-
-    prepared["valor"] = pd.to_numeric(
-        prepared["valor"],
-        errors="coerce",
-    )
-
-    if (
-        prepared["valor"].isna().any()
-        or prepared["valor"].le(0).any()
-    ):
-        raise ValueError(
-            "Uma ou mais transações possuem "
-            "valor inválido."
-        )
-
-    prepared[
-        "arquivo_origem"
-    ] = MANUAL_DATABASE_SOURCE
-
-    prepared["ano_mes"] = (
-        prepared["data"]
-        .dt.to_period(
-            "M"
-        )
-        .astype(str)
-    )
-
-    prepared["data"] = (
-        prepared["data"]
-        .dt.strftime(
-            "%Y-%m-%d"
+    prepared_transactions = (
+        prepare_valid_transactions_for_database(
+            identified_transactions,
+            source=MANUAL_DATABASE_SOURCE,
         )
     )
 
     return (
-        prepared[
+        prepared_transactions[
             PERSISTED_TRANSACTION_COLUMNS
         ]
         .copy()
@@ -247,7 +150,6 @@ def _get_existing_transaction_ids(
         .str.strip()
         .tolist()
     )
-
 
 def _update_existing_manual_transactions(
     transactions: pd.DataFrame,
