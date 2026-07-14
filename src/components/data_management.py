@@ -208,7 +208,7 @@ def _render_data_summary() -> dict[str, int | bool]:
 def _render_user_data_action(
     summary: dict[str, int | bool],
 ) -> None:
-    """Permite processar somente os dados reais do usuário."""
+    """Permite voltar para as transações reais do usuário."""
     with st.container(
         border=True,
         key="user-data-action-card",
@@ -218,58 +218,41 @@ def _render_user_data_action(
         )
 
         st.caption(
-            "Processa somente os arquivos existentes "
-            "em data/raw/, incluindo transações manuais "
-            "e lotes importados."
+            "Carrega as transações reais do usuário "
+            "diretamente do banco local."
         )
 
-        has_user_sources = (
-            summary["source_files"] > 0
+        has_user_transactions = (
+            summary["transaction_rows"] > 0
         )
 
-        if not has_user_sources:
+        if not has_user_transactions:
             st.info(
-                "Nenhuma fonte de dados do usuário "
-                "foi encontrada."
+                "Nenhuma transação do usuário "
+                "foi encontrada no banco."
             )
 
         if st.button(
             "Usar meus dados",
             key="use-user-data",
-            disabled=not has_user_sources,
+            disabled=not has_user_transactions,
             use_container_width=False,
         ):
-            try:
-                result = run_etl_with_summary(
-                    use_demo_data=False
-                )
+            st.session_state[
+                DATA_MODE_KEY
+            ] = "user"
 
-                st.session_state[
-                    DATA_MODE_KEY
-                ] = "user"
+            _set_feedback(
+                "success",
+                (
+                    "Dados do usuário carregados. "
+                    f"{summary['transaction_rows']} "
+                    "transação(ões) disponível(is)."
+                ),
+            )
 
-                _set_feedback(
-                    "success",
-                    (
-                        "Dados do usuário processados. "
-                        f"{result['transacoes_processadas']} "
-                        "transação(ões) carregada(s)."
-                    ),
-                )
-
-                _refresh_application_data()
-                st.rerun()
-
-            except Exception as error:
-                _set_feedback(
-                    "error",
-                    (
-                        "Não foi possível processar "
-                        f"os dados do usuário: {error}"
-                    ),
-                )
-
-                st.rerun()
+            _refresh_application_data()
+            st.rerun()
 
 
 def _render_demo_action() -> None:
