@@ -8,19 +8,29 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from scripts.etl_transacoes import run_etl_with_summary
+from components.data_management import (
+    DATA_MODE_KEY,
+)
+from scripts.etl_transacoes import (
+    ARQUIVO_BANCO,
+    TABELA_TRANSACOES,
+)
+from src.import_transaction_database_service import (
+    save_imported_transactions_to_database,
+)
 from src.transaction_files import (
-    build_import_file_path,
     create_excel_template,
     export_transactions_to_excel,
     read_csv_transactions,
     read_excel_transactions,
-    save_imported_transactions,
     split_imported_transactions_by_match,
 )
 from src.transaction_validation import (
     split_transactions_by_validity,
     validate_required_columns,
+)
+from src.user_context import (
+    get_current_user_id,
 )
 
 
@@ -31,6 +41,38 @@ EXCEL_MIME_TYPE = (
 
 SKIP_MATCHES = "skip_matches"
 INCLUDE_MATCHES = "include_matches"
+IMPORT_WIDGET_VERSION_KEY = (
+    "transaction_import_widget_version"
+)
+
+def _get_import_widget_version() -> int:
+    """Retorna a versão atual dos widgets de importação."""
+    if (
+        IMPORT_WIDGET_VERSION_KEY
+        not in st.session_state
+    ):
+        st.session_state[
+            IMPORT_WIDGET_VERSION_KEY
+        ] = 0
+
+    return int(
+        st.session_state[
+            IMPORT_WIDGET_VERSION_KEY
+        ]
+    )
+
+
+def _advance_import_widget_version() -> None:
+    """Recria os widgets após uma importação concluída."""
+    current_version = (
+        _get_import_widget_version()
+    )
+
+    st.session_state[
+        IMPORT_WIDGET_VERSION_KEY
+    ] = (
+        current_version + 1
+    )
 
 
 def read_uploaded_transactions(
@@ -51,8 +93,14 @@ def read_uploaded_transactions(
             return read_excel_transactions(
                 uploaded_file
             )
+
         except ValueError as error:
-            if "Worksheet named" in str(error):
+            if (
+                "Worksheet named"
+                in str(
+                    error
+                )
+            ):
                 raise ValueError(
                     "O arquivo Excel precisa conter uma aba "
                     "chamada 'Transacoes'."
@@ -79,16 +127,15 @@ def render_import_result() -> None:
     if result["success"]:
         st.success(
             f"{result['message']}\n\n"
-            f"Linhas importadas: "
-            f"{result['imported_transactions']} | "
-            f"Total processado pelo ETL: "
-            f"{result['processed_transactions']} | "
-            f"Linhas rejeitadas pelo ETL: "
-            f"{result['rejected_transactions']}"
+            "Linhas importadas: "
+            f"{result['imported_transactions']}."
         )
+
         return
 
-    st.error(result["message"])
+    st.error(
+        result["message"]
+    )
 
 
 def render_file_downloads(
@@ -98,11 +145,12 @@ def render_file_downloads(
     with st.container(
         key="file-downloads",
     ):
-        template_column, export_column = (
-            st.columns(
-                2,
-                gap="small",
-            )
+        (
+            template_column,
+            export_column,
+        ) = st.columns(
+            2,
+            gap="small",
         )
 
         with template_column:
@@ -128,6 +176,7 @@ def render_file_downloads(
                     "Não há transações no período "
                     "atual para exportar."
                 )
+
             else:
                 st.download_button(
                     label="Exportar período atual",
@@ -167,11 +216,12 @@ def render_validation_summary(
         else "import-validation-rejected-neutral"
     )
 
-    valid_column, rejected_column = (
-        st.columns(
-            2,
-            gap="small",
-        )
+    (
+        valid_column,
+        rejected_column,
+    ) = st.columns(
+        2,
+        gap="small",
     )
 
     with valid_column:
@@ -196,18 +246,20 @@ def render_validation_summary(
         st.success(
             "O arquivo passou pela validação."
         )
+
     else:
         st.warning(
             "O arquivo possui linhas que precisam "
             "ser corrigidas antes da importação."
         )
 
+
 def render_matching_transactions(
     matching_transactions: pd.DataFrame,
-) -> str:
-    """Exibe possíveis duplicatas e solicita a estratégia de importação."""
+) -> str | None:
+    """Exibe duplicatas e exige uma escolha explícita."""
     st.warning(
-        f"Foram encontradas "
+        "Foram encontradas "
         f"{len(matching_transactions)} ocorrência(s) "
         "correspondente(s) a transações já existentes."
     )
@@ -215,14 +267,18 @@ def render_matching_transactions(
     with st.expander(
         "Ver possíveis duplicatas"
     ):
-        preview = matching_transactions.copy()
+        preview = (
+            matching_transactions.copy()
+        )
 
         preview["data"] = (
             pd.to_datetime(
                 preview["data"],
                 errors="coerce",
             )
-            .dt.strftime("%Y-%m-%d")
+            .dt.strftime(
+                "%Y-%m-%d"
+            )
         )
 
         st.dataframe(
@@ -231,24 +287,32 @@ def render_matching_transactions(
             hide_index=True,
         )
 
+    widget_version = (
+        _get_import_widget_version()
+    )
+
     return st.radio(
         "Como deseja tratar essas linhas?",
         options=[
             SKIP_MATCHES,
             INCLUDE_MATCHES,
         ],
+        index=None,
         format_func=lambda option: {
             SKIP_MATCHES: (
-                "Ignorar linhas que já existem "
-                "(recomendado)"
+                "Ignorar linhas que já existem"
             ),
             INCLUDE_MATCHES: (
                 "Importar todas as linhas, "
                 "incluindo possíveis duplicatas"
             ),
-        }[option],
-        index=0,
-        key="duplicate_import_strategy",
+        }[
+            option
+        ],
+        key=(
+            "duplicate_import_strategy_"
+            f"{widget_version}"
+        ),
     )
 
 
@@ -256,7 +320,7 @@ def render_import_confirmation(
     valid_transactions: pd.DataFrame,
     existing_transactions: pd.DataFrame,
 ) -> bool:
-    """Solicita confirmação e importa o lote selecionado."""
+    """Solicita uma decisão e importa o lote selecionado."""
     (
         new_transactions,
         matching_transactions,
@@ -265,7 +329,9 @@ def render_import_confirmation(
         existing_transactions,
     )
 
-    duplicate_strategy = SKIP_MATCHES
+    duplicate_strategy: str | None = (
+        SKIP_MATCHES
+    )
 
     if not matching_transactions.empty:
         duplicate_strategy = (
@@ -274,10 +340,22 @@ def render_import_confirmation(
             )
         )
 
-    if duplicate_strategy == INCLUDE_MATCHES:
+        if duplicate_strategy is None:
+            st.info(
+                "Escolha como tratar as linhas "
+                "já existentes para continuar."
+            )
+
+            return False
+
+    if (
+        duplicate_strategy
+        == INCLUDE_MATCHES
+    ):
         transactions_to_import = (
             valid_transactions.copy()
         )
+
     else:
         transactions_to_import = (
             new_transactions.copy()
@@ -297,7 +375,9 @@ def render_import_confirmation(
         ):
             st.metric(
                 "Linhas válidas no arquivo",
-                len(valid_transactions),
+                len(
+                    valid_transactions
+                ),
             )
 
     with import_column:
@@ -306,40 +386,46 @@ def render_import_confirmation(
         ):
             st.metric(
                 "Linhas que serão importadas",
-                len(transactions_to_import),
+                len(
+                    transactions_to_import
+                ),
             )
+
+    widget_version = (
+        _get_import_widget_version()
+    )
 
     if transactions_to_import.empty:
         st.info(
-            "Nenhuma linha nova está disponível para importação. "
-            "Todas as transações do arquivo já existem na base."
+            "Com a opção escolhida, nenhuma linha "
+            "será importada porque todas já existem."
         )
+
+        st.button(
+            "Confirmar importação",
+            key=(
+                "confirm-transaction-import-"
+                f"{widget_version}"
+            ),
+            type="primary",
+            disabled=True,
+            use_container_width=False,
+        )
+
         return False
 
-    import_path = build_import_file_path(
-        transactions_to_import
-    )
-
-    batch_already_imported = (
-        import_path.exists()
-    )
-
-    if batch_already_imported:
-        st.warning(
-            "Este mesmo lote de transações "
-            "já foi importado anteriormente."
-        )
-
     st.caption(
-        "As linhas selecionadas serão salvas como um lote local "
-        "e o pipeline ETL será executado novamente."
+        "As linhas selecionadas serão inseridas "
+        "diretamente no banco local."
     )
 
     import_confirmed = st.button(
         "Confirmar importação",
-        key="confirm-transaction-import",
+        key=(
+            "confirm-transaction-import-"
+            f"{widget_version}"
+        ),
         type="primary",
-        disabled=batch_already_imported,
         use_container_width=False,
     )
 
@@ -347,34 +433,39 @@ def render_import_confirmation(
         return False
 
     try:
-        saved_path = (
-            save_imported_transactions(
-                transactions_to_import
+        inserted_count = (
+            save_imported_transactions_to_database(
+                transactions=(
+                    transactions_to_import
+                ),
+                database_path=ARQUIVO_BANCO,
+                table_name=(
+                    TABELA_TRANSACOES
+                ),
+                user_id=(
+                    get_current_user_id()
+                ),
             )
         )
 
-        result = (
-            run_etl_with_summary()
-        )
+        st.session_state[
+            DATA_MODE_KEY
+        ] = "user"
 
         st.session_state[
             "file_import_result"
         ] = {
             "success": True,
             "message": (
-                "Lote importado e processado "
-                f"com sucesso: {saved_path.name}"
+                "Transações importadas diretamente "
+                "para o banco local."
             ),
-            "imported_transactions": len(
-                transactions_to_import
+            "imported_transactions": (
+                inserted_count
             ),
-            "processed_transactions": result[
-                "transacoes_processadas"
-            ],
-            "rejected_transactions": result[
-                "transacoes_rejeitadas"
-            ],
         }
+
+        _advance_import_widget_version()
 
         return True
 
@@ -398,13 +489,17 @@ def render_uploaded_file_preview(
 ) -> bool:
     """Valida, exibe e permite confirmar o arquivo enviado."""
     try:
-        transactions = read_uploaded_transactions(
-            uploaded_file
+        transactions = (
+            read_uploaded_transactions(
+                uploaded_file
+            )
         )
 
         validate_required_columns(
             transactions,
-            Path(uploaded_file.name),
+            Path(
+                uploaded_file.name
+            ),
         )
 
     except (
@@ -413,8 +508,10 @@ def render_uploaded_file_preview(
         pd.errors.EmptyDataError,
     ) as error:
         st.error(
-            f"Não foi possível ler o arquivo: {error}"
+            "Não foi possível ler o arquivo: "
+            f"{error}"
         )
+
         return False
 
     if transactions.empty:
@@ -422,6 +519,7 @@ def render_uploaded_file_preview(
             "O arquivo possui as colunas corretas, "
             "mas não contém nenhuma transação."
         )
+
         return False
 
     (
@@ -436,7 +534,10 @@ def render_uploaded_file_preview(
         rejected_transactions,
     )
 
-    valid_tab, rejected_tab = st.tabs(
+    (
+        valid_tab,
+        rejected_tab,
+    ) = st.tabs(
         [
             "Linhas válidas",
             "Linhas com erro",
@@ -448,12 +549,17 @@ def render_uploaded_file_preview(
             st.info(
                 "Nenhuma linha válida foi encontrada."
             )
+
         else:
-            valid_preview = valid_transactions.copy()
+            valid_preview = (
+                valid_transactions.copy()
+            )
 
             valid_preview["data"] = (
                 valid_preview["data"]
-                .dt.strftime("%Y-%m-%d")
+                .dt.strftime(
+                    "%Y-%m-%d"
+                )
             )
 
             st.dataframe(
@@ -467,6 +573,7 @@ def render_uploaded_file_preview(
             st.success(
                 "Nenhuma linha foi rejeitada."
             )
+
         else:
             rejected_preview = (
                 rejected_transactions.copy()
@@ -474,7 +581,9 @@ def render_uploaded_file_preview(
 
             rejected_preview["data"] = (
                 rejected_preview["data"]
-                .dt.strftime("%Y-%m-%d")
+                .dt.strftime(
+                    "%Y-%m-%d"
+                )
             )
 
             st.dataframe(
@@ -488,14 +597,19 @@ def render_uploaded_file_preview(
             "Corrija todas as linhas com erro e envie "
             "o arquivo novamente para liberar a importação."
         )
+
         return False
 
     if valid_transactions.empty:
         return False
 
     return render_import_confirmation(
-        valid_transactions=valid_transactions,
-        existing_transactions=existing_transactions,
+        valid_transactions=(
+            valid_transactions
+        ),
+        existing_transactions=(
+            existing_transactions
+        ),
     )
 
 
@@ -504,7 +618,9 @@ def render_transaction_file_tools(
     existing_transactions: pd.DataFrame,
 ) -> bool:
     """Exibe download, prévia e confirmação de importação."""
-    st.subheader("Importação e exportação")
+    st.subheader(
+        "Importação e exportação"
+    )
 
     render_import_result()
 
@@ -519,6 +635,10 @@ def render_transaction_file_tools(
 
     st.divider()
 
+    widget_version = (
+        _get_import_widget_version()
+    )
+
     uploaded_file = st.file_uploader(
         "Selecionar arquivo de transações",
         type=[
@@ -526,7 +646,10 @@ def render_transaction_file_tools(
             "csv",
         ],
         accept_multiple_files=False,
-        key="transaction_file_upload",
+        key=(
+            "transaction_file_upload_"
+            f"{widget_version}"
+        ),
         help=(
             "O arquivo deve seguir o contrato "
             "de dados do FinanTec."
@@ -538,5 +661,7 @@ def render_transaction_file_tools(
 
     return render_uploaded_file_preview(
         uploaded_file=uploaded_file,
-        existing_transactions=existing_transactions,
+        existing_transactions=(
+            existing_transactions
+        ),
     )
