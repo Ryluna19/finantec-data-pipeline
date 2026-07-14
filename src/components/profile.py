@@ -23,17 +23,9 @@ PROFILE_FEEDBACK_KEY = (
     "profile_feedback"
 )
 
-KNOWLEDGE_LEVEL_OPTIONS = [
-    "iniciante",
-    "intermediário",
-    "avançado",
-]
-
-COMMUNICATION_TONE_OPTIONS = [
-    "claro, direto e educativo",
-    "resumido e objetivo",
-    "detalhado e educativo",
-]
+PROFILE_EDIT_MODE_KEY = (
+    "profile_edit_mode"
+)
 
 
 def _show_profile_feedback() -> None:
@@ -80,22 +72,13 @@ def _set_profile_feedback(
     }
 
 
-def _get_option_index(
-    options: list[str],
-    current_value: object,
-) -> int:
-    """Obtém o índice seguro de uma opção atual."""
-    normalized_value = str(
-        current_value
-        or ""
-    ).strip()
-
-    if normalized_value in options:
-        return options.index(
-            normalized_value
-        )
-
-    return 0
+def _set_profile_edit_mode(
+    is_editing: bool,
+) -> None:
+    """Ativa ou encerra a edição do perfil."""
+    st.session_state[
+        PROFILE_EDIT_MODE_KEY
+    ] = is_editing
 
 
 def income_sources_to_dataframe(
@@ -156,7 +139,7 @@ def prepare_income_sources(
         dict[str, Any]
     ] = []
 
-    for index, row in table.iterrows():
+    for _, row in table.iterrows():
         source_type = str(
             row.get(
                 "Tipo",
@@ -221,11 +204,6 @@ def _render_profile_summary(
         {},
     )
 
-    preferences = profile.get(
-        "preferencias_de_comunicacao",
-        {},
-    )
-
     name = str(
         profile.get(
             "nome",
@@ -241,6 +219,10 @@ def _render_profile_summary(
         or "Ocupação não informada"
     )
 
+    age = profile.get(
+        "idade"
+    )
+
     monthly_income = float(
         profile.get(
             "renda_mensal_principal",
@@ -249,28 +231,31 @@ def _render_profile_summary(
         or 0
     )
 
-    knowledge_level = str(
-        preferences.get(
-            "nivel_de_conhecimento_financeiro",
-            "iniciante",
+    profile_details = [
+        occupation,
+    ]
+
+    if age:
+        profile_details.append(
+            f"{int(age)} anos"
         )
-    ).capitalize()
 
     st.markdown(
         f"### {name}"
     )
 
     st.caption(
-        occupation
+        " • ".join(
+            profile_details
+        )
     )
 
     (
         income_column,
-        knowledge_column,
         debt_column,
         card_column,
     ) = st.columns(
-        4,
+        3,
         gap="small",
     )
 
@@ -280,12 +265,6 @@ def _render_profile_summary(
             format_currency(
                 monthly_income
             ),
-        )
-
-    with knowledge_column:
-        st.metric(
-            "Conhecimento financeiro",
-            knowledge_level,
         )
 
     with debt_column:
@@ -337,8 +316,7 @@ def _build_profile_payload(
     has_debts: bool,
     uses_credit_card: bool,
     observation: str,
-    communication_tone: str,
-    knowledge_level: str,
+    existing_preferences: dict[str, Any],
 ) -> dict[str, Any]:
     """Monta o perfil recebido pelo repositório."""
     return {
@@ -364,12 +342,11 @@ def _build_profile_payload(
             ),
             "observacao": observation,
         },
-        "preferencias_de_comunicacao": {
-            "tom": communication_tone,
-            "nivel_de_conhecimento_financeiro": (
-                knowledge_level
-            ),
-        },
+        "preferencias_de_comunicacao": (
+            dict(
+                existing_preferences
+            )
+        ),
     }
 
 
@@ -382,19 +359,40 @@ def render_user_profile(
     )
 
     st.caption(
-        "Estas informações personalizam as metas "
-        "e o contexto utilizado pelo assistente."
+        "Consulte e atualize suas informações "
+        "financeiras pessoais."
     )
 
     _show_profile_feedback()
 
-    with st.container(
-        border=True,
-        key="profile-summary-card",
-    ):
-        _render_profile_summary(
-            profile
+    is_editing = bool(
+        st.session_state.get(
+            PROFILE_EDIT_MODE_KEY,
+            False,
         )
+    )
+
+    if not is_editing:
+        with st.container(
+            border=True,
+            key="profile-summary-card",
+        ):
+            _render_profile_summary(
+                profile
+            )
+
+        if st.button(
+            "Editar perfil",
+            key="start-profile-edit",
+            type="primary",
+        ):
+            _set_profile_edit_mode(
+                True
+            )
+
+            st.rerun()
+
+        return
 
     st.markdown(
         "### Editar perfil"
@@ -405,10 +403,16 @@ def render_user_profile(
         {},
     )
 
-    preferences = profile.get(
+    existing_preferences = profile.get(
         "preferencias_de_comunicacao",
         {},
     )
+
+    if not isinstance(
+        existing_preferences,
+        dict,
+    ):
+        existing_preferences = {}
 
     current_age = profile.get(
         "idade"
@@ -425,41 +429,6 @@ def render_user_profile(
             profile
         )
     )
-
-    current_tone = preferences.get(
-        "tom",
-        COMMUNICATION_TONE_OPTIONS[0],
-    )
-
-    tone_options = (
-        COMMUNICATION_TONE_OPTIONS.copy()
-    )
-
-    if current_tone not in tone_options:
-        tone_options.append(
-            str(
-                current_tone
-            )
-        )
-
-    current_knowledge = preferences.get(
-        "nivel_de_conhecimento_financeiro",
-        KNOWLEDGE_LEVEL_OPTIONS[0],
-    )
-
-    knowledge_options = (
-        KNOWLEDGE_LEVEL_OPTIONS.copy()
-    )
-
-    if (
-        current_knowledge
-        not in knowledge_options
-    ):
-        knowledge_options.append(
-            str(
-                current_knowledge
-            )
-        )
 
     with st.form(
         "user-profile-form",
@@ -617,46 +586,37 @@ def render_user_profile(
             ),
         )
 
-        st.markdown(
-            "#### Preferências do assistente"
-        )
-
         (
-            knowledge_column,
-            tone_column,
+            save_column,
+            cancel_column,
         ) = st.columns(
             2,
             gap="medium",
         )
 
-        with knowledge_column:
-            knowledge_level = st.selectbox(
-                "Conhecimento financeiro",
-                options=knowledge_options,
-                index=_get_option_index(
-                    knowledge_options,
-                    current_knowledge,
-                ),
-                format_func=lambda value: (
-                    value.capitalize()
-                ),
+        with save_column:
+            submitted = (
+                st.form_submit_button(
+                    "Salvar alterações",
+                    type="primary",
+                    use_container_width=True,
+                )
             )
 
-        with tone_column:
-            communication_tone = st.selectbox(
-                "Estilo das explicações",
-                options=tone_options,
-                index=_get_option_index(
-                    tone_options,
-                    current_tone,
-                ),
+        with cancel_column:
+            cancelled = (
+                st.form_submit_button(
+                    "Cancelar",
+                    use_container_width=True,
+                )
             )
 
-        submitted = st.form_submit_button(
-            "Salvar perfil",
-            type="primary",
-            use_container_width=True,
+    if cancelled:
+        _set_profile_edit_mode(
+            False
         )
+
+        st.rerun()
 
     if not submitted:
         return
@@ -665,7 +625,9 @@ def render_user_profile(
         profile_payload = (
             _build_profile_payload(
                 name=name,
-                age=int(age),
+                age=int(
+                    age
+                ),
                 occupation=occupation,
                 monthly_income=float(
                     monthly_income
@@ -678,11 +640,8 @@ def render_user_profile(
                     uses_credit_card
                 ),
                 observation=observation,
-                communication_tone=(
-                    communication_tone
-                ),
-                knowledge_level=(
-                    knowledge_level
+                existing_preferences=(
+                    existing_preferences
                 ),
             )
         )
@@ -706,6 +665,10 @@ def render_user_profile(
         )
 
         return
+
+    _set_profile_edit_mode(
+        False
+    )
 
     _set_profile_feedback(
         "success",
