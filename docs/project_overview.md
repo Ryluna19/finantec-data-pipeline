@@ -1,77 +1,300 @@
-# Project Overview — FinanTec Data Pipeline
+# Project Overview — FinanTec
 
 ## Visão Geral
 
-O FinanTec Data Pipeline é um projeto de análise, validação e visualização de dados financeiros simulados.
+O FinanTec é uma aplicação de controle financeiro pessoal desenvolvida com Python, Streamlit, pandas e SQLite.
 
-A aplicação processa arquivos CSV mensais de transações, valida e padroniza os dados com Python e pandas, carrega os resultados em SQLite e apresenta indicadores em um dashboard Streamlit.
+O projeto começou como um pipeline ETL para processar dados financeiros simulados em arquivos CSV. Com a evolução da aplicação, passou a permitir que o próprio usuário registre, edite, exclua, importe e exporte transações diretamente pela interface.
 
-Além da visualização dos dados, o projeto possui um assistente com IA generativa que responde perguntas com base nos indicadores calculados pela aplicação e na base de conhecimento do projeto.
+Atualmente, o SQLite é a principal fonte de dados das transações do usuário. O pipeline ETL continua disponível para os dados de demonstração, validações em lote e compatibilidade com o fluxo original do projeto.
 
-O projeto não utiliza dados bancários reais. Todos os dados são simulados.
+Além do controle financeiro, a aplicação possui:
+
+- dashboard com indicadores financeiros;
+- acompanhamento de receitas, despesas, reserva e saldo;
+- metas financeiras persistentes;
+- perfil financeiro;
+- histórico de conversa persistente;
+- assistente com IA generativa;
+- importação e exportação de planilhas;
+- validação e tratamento de possíveis transações duplicadas.
+
+A aplicação ainda funciona localmente, mas sua arquitetura está sendo preparada para evoluir futuramente para um pequeno SaaS com poucos usuários.
 
 ---
 
 ## Problema
 
-Pessoas em início de carreira, estudantes e estagiários geralmente começam a lidar com renda própria sem ter uma visão clara sobre receitas, gastos, reserva e metas financeiras.
+Pessoas que começam a administrar a própria renda frequentemente registram suas finanças em planilhas ou anotações dispersas.
 
-Ao mesmo tempo, dados financeiros muitas vezes começam em formatos simples, como planilhas ou arquivos CSV. Antes de gerar qualquer análise confiável, esses dados precisam ser organizados, validados e padronizados.
+Esse processo apresenta alguns problemas:
 
-Sem esse processo, é fácil tirar conclusões erradas a partir de dados incompletos, inconsistentes ou mal estruturados.
+- dificuldade para acompanhar receitas e despesas ao longo do tempo;
+- ausência de uma visão consolidada do saldo;
+- dados preenchidos com formatos inconsistentes;
+- risco de importar ou registrar transações duplicadas;
+- dificuldade para acompanhar metas financeiras;
+- pouca contextualização sobre os indicadores apresentados.
+
+Antes de gerar análises confiáveis, os dados precisam ser validados, padronizados e armazenados de maneira consistente.
 
 ---
 
 ## Solução
 
-O FinanTec Data Pipeline simula um fluxo em que arquivos financeiros mensais são processados por um pipeline ETL.
+O FinanTec centraliza o registro e a análise de transações financeiras em uma única aplicação.
 
-O projeto realiza:
+O usuário pode:
 
-- leitura de arquivos CSV brutos;
-- validação de colunas obrigatórias;
-- limpeza e padronização dos dados;
-- separação entre transações válidas e rejeitadas;
-- geração de relatório de rejeições com motivo;
-- criação de campos auxiliares, como `ano_mes`;
-- geração de base processada;
-- carga em SQLite;
-- visualização dos dados por período;
-- simulação de metas financeiras;
-- explicação dos indicadores com apoio de IA generativa.
+- registrar transações manualmente;
+- editar ou excluir transações existentes;
+- importar arquivos CSV ou Excel;
+- exportar os dados financeiros;
+- filtrar informações por período;
+- acompanhar indicadores e categorias de gastos;
+- criar e simular metas financeiras;
+- consultar um assistente sobre os próprios indicadores.
+
+As transações inseridas manualmente ou importadas pela interface são validadas e gravadas diretamente no SQLite.
+
+O projeto também mantém um pipeline ETL separado para processar arquivos de demonstração e fluxos compatíveis com a estrutura original.
 
 ---
 
 ## Público-Alvo
 
-O projeto foi pensado para dois públicos principais:
+O projeto possui dois públicos principais.
 
-1. Pessoas que querem entender melhor seus gastos, reserva e metas financeiras a partir de dados simples.
-2. Recrutadores ou avaliadores técnicos que desejam ver um exemplo prático de Python, ETL, pandas, SQLite, Streamlit, testes automatizados e IA generativa aplicados em um fluxo coerente.
+### Usuário da aplicação
+
+Uma pessoa que deseja controlar suas finanças pessoais em uma ferramenta simples, privada e personalizável.
+
+O uso atual é local e voltado principalmente para o próprio desenvolvedor, familiares ou pessoas próximas.
+
+Em uma evolução futura, o projeto poderá funcionar como um pequeno SaaS para poucos usuários.
+
+### Avaliação técnica e portfólio
+
+Recrutadores, desenvolvedores e avaliadores técnicos que desejam observar a aplicação prática de:
+
+- Python;
+- pandas;
+- Streamlit;
+- SQLite;
+- modelagem e persistência de dados;
+- validação de arquivos;
+- testes automatizados;
+- integração com IA generativa;
+- evolução incremental de arquitetura.
 
 ---
 
-## Fluxo Principal
+## Escopo Atual
+
+O FinanTec não pretende competir com grandes plataformas bancárias ou aplicações empresariais de gestão financeira.
+
+O foco é oferecer uma aplicação funcional, tecnicamente coerente e adequada para uso pessoal ou para um pequeno grupo de usuários.
+
+Não fazem parte do escopo atual:
+
+- integração direta com bancos;
+- Open Finance;
+- conciliação bancária oficial;
+- recomendação personalizada de investimentos;
+- infraestrutura empresarial;
+- microsserviços;
+- processamento financeiro em grande escala.
+
+---
+
+## Fluxos de Dados
+
+### Transações do usuário
 
 ```text
-CSV bruto em data/raw/
+Entrada manual ou arquivo CSV/Excel
         ↓
-Extração dos arquivos
+Validação e padronização
         ↓
-Validação de estrutura
+Análise de possíveis duplicatas
+        ↓
+Gravação direta no SQLite
+        ↓
+Dashboard e indicadores
+        ↓
+Assistente explicando os resultados
+```
+
+### Dados de demonstração e ETL
+
+```text
+Arquivos CSV de demonstração
+        ↓
+Extração e validação
         ↓
 Transformação com pandas
         ↓
-Separação entre linhas válidas e rejeitadas
+Separação entre registros válidos e rejeitados
         ↓
-CSV processado em data/processed/
+Carga no SQLite
         ↓
-Carga em SQLite
-        ↓
-Dashboard Streamlit
-        ↓
-Assistente de IA explicando os indicadores
+Dashboard em modo de demonstração
 ```
+
+---
+
+## Principais Funcionalidades
+
+### Controle de transações
+
+- cadastro manual de transações;
+- edição de registros existentes;
+- exclusão de registros;
+- persistência direta no SQLite;
+- isolamento por usuário;
+- separação entre dados reais e dados de demonstração;
+- identificadores internos gerados pela aplicação.
+
+### Importação de arquivos
+
+- suporte a arquivos CSV e Excel;
+- planilha-modelo para preenchimento;
+- validação de colunas obrigatórias;
+- separação entre linhas válidas e inválidas;
+- pré-visualização antes da importação;
+- detecção de possíveis duplicatas pelo conteúdo;
+- escolha entre ignorar ou incluir linhas correspondentes;
+- gravação direta no SQLite;
+- limpeza do uploader após a conclusão.
+
+### Exportação
+
+- exportação das transações para Excel;
+- remoção de campos técnicos do arquivo entregue ao usuário;
+- formatação básica da planilha;
+- compatibilidade com uma nova importação.
+
+### Dashboard financeiro
+
+- receitas totais;
+- despesas do período;
+- valor reservado;
+- saldo disponível;
+- distribuição de gastos por categoria;
+- filtros por período;
+- diagnóstico financeiro simples.
+
+### Metas financeiras
+
+- criação de metas personalizadas;
+- edição e exclusão;
+- persistência por usuário;
+- simulação de prazo e contribuição;
+- metas iniciais geradas a partir do perfil quando necessário.
+
+### Perfil financeiro
+
+- informações persistidas por usuário;
+- preferências e dados financeiros básicos;
+- uso dessas informações em partes do dashboard e do assistente.
+
+### Assistente com IA
+
+- respostas determinísticas para perguntas financeiras suportadas;
+- uso de IA generativa como complemento;
+- cálculos realizados pela aplicação, não pela IA;
+- histórico persistente;
+- separação por usuário, período e modo de dados;
+- fallback seguro para perguntas não reconhecidas.
+
+### Gerenciamento de dados
+
+- resumo das fontes e registros existentes;
+- reset seguro dos dados do usuário;
+- preservação das informações de outros usuários;
+- preservação dos dados de demonstração;
+- execução manual do pipeline ETL quando necessário.
+
+---
+
+## Contrato das Transações
+
+As informações principais de uma transação são:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+Essas colunas permitem calcular os indicadores atuais e manter a planilha simples para o usuário.
+
+Campos técnicos como identificadores, usuário, origem e modo de dados são controlados internamente pela aplicação e não precisam ser preenchidos na planilha.
+
+---
+
+## Detecção de Possíveis Duplicatas
+
+Arquivos importados não precisam possuir um identificador técnico.
+
+Antes da gravação, o FinanTec compara as informações financeiras da transação, como:
+
+- data;
+- tipo;
+- descrição;
+- categoria;
+- valor.
+
+Quando uma ou mais correspondências são encontradas, o usuário precisa escolher explicitamente entre:
+
+- ignorar linhas que já existem;
+- importar todas as linhas, incluindo possíveis duplicatas.
+
+Essa abordagem reduz importações acidentais sem impedir que duas transações legítimas possuam os mesmos dados.
+
+---
+
+## Arquitetura Atual
+
+### Interface
+
+- Streamlit;
+- componentes separados por responsabilidade;
+- CSS personalizado;
+- estado de sessão para interações temporárias.
+
+### Aplicação e regras de negócio
+
+- Python;
+- pandas;
+- serviços específicos para persistência e sincronização;
+- funções de análise financeira separadas da interface.
+
+### Persistência
+
+- SQLite para o ambiente local;
+- dados isolados por `user_id`;
+- separação por modo de dados;
+- repositórios para acesso às principais entidades.
+
+### Inteligência artificial
+
+- Google GenAI;
+- contexto preparado pela aplicação;
+- respostas baseadas nos indicadores calculados;
+- regras determinísticas para perguntas suportadas.
+
+### Qualidade
+
+- pytest;
+- bancos temporários durante os testes;
+- testes de persistência;
+- testes de isolamento entre usuários;
+- testes de validação e regras financeiras;
+- testes dos fluxos de importação;
+- validações manuais da interface.
 
 ---
 
@@ -79,192 +302,145 @@ Assistente de IA explicando os indicadores
 
 | Componente | Responsabilidade |
 |---|---|
-| `data/raw/` | Armazena os arquivos CSV brutos de entrada. |
-| `data/templates/` | Contém o modelo de CSV para novas transações. |
-| `data/processed/` | Armazena localmente os arquivos processados e relatórios gerados pelo ETL. |
-| `database/` | Armazena localmente o banco SQLite gerado pelo pipeline. |
-| `logs/` | Armazena localmente os logs de execução do ETL. |
-| `scripts/etl_transacoes.py` | Executa o pipeline ETL das transações. |
-| `src/analytics.py` | Centraliza os cálculos financeiros. |
-| `src/data_loader.py` | Carrega dados de JSON, CSV ou SQLite. |
-| `src/app.py` | Interface Streamlit do dashboard e chat. |
+| `src/app.py` | Coordena a interface principal e os diferentes módulos da aplicação. |
+| `src/analytics.py` | Centraliza os cálculos e indicadores financeiros. |
+| `src/transaction_repository.py` | Realiza operações de persistência das transações. |
+| `src/transaction_editor.py` | Gerencia a entrada manual e a edição de transações. |
+| `src/import_transaction_database_service.py` | Prepara e salva importações diretamente no SQLite. |
+| `src/transaction_sync_service.py` | Sincroniza alterações durante a transição entre fontes antigas e o banco. |
+| `src/transaction_files.py` | Leitura, exportação, validação e comparação de arquivos. |
+| `src/components/file_transfer.py` | Interface de importação e exportação. |
+| `src/components/data_management.py` | Resumo, reset e execução dos fluxos de gerenciamento de dados. |
 | `src/agent.py` | Integração com a IA generativa. |
-| `src/prompts.py` | Montagem do contexto e regras de comportamento da IA. |
-| `tests/` | Testes automatizados do pipeline, cálculos financeiros, rejeições e carga SQLite. |
-| `manual_tests/` | Scripts auxiliares para verificações manuais durante o desenvolvimento. |
-| `main.py` | Entrada principal para executar app, ETL e testes com comandos simples. |
+| `src/prompts.py` | Regras e contexto enviados ao assistente. |
+| `scripts/etl_transacoes.py` | Pipeline ETL usado por dados de demonstração e fluxos compatíveis. |
+| `tests/` | Testes automatizados das regras, persistência e fluxos principais. |
+| `docs/` | Documentação técnica e decisões do projeto. |
+| `main.py` | Entrada simplificada para execução do projeto. |
 
 ---
 
 ## Decisões Técnicas
 
-### Uso de SQLite
+### SQLite como fonte principal local
 
-O SQLite foi escolhido por ser simples, gratuito e local. Ele permite demonstrar a etapa de carga do ETL sem exigir configuração de servidor externo.
+O SQLite foi escolhido por ser simples, gratuito e suficiente para o estágio atual.
 
-Para a versão atual, SQLite é suficiente porque o projeto trabalha com dados simulados e execução local.
+As transações do usuário são gravadas diretamente no banco, sem necessidade de executar o ETL após cada alteração.
 
-Em uma evolução futura, PostgreSQL pode ser adicionado como alternativa mais próxima de ambientes produtivos.
+O PostgreSQL poderá substituir o SQLite quando autenticação, deploy e múltiplos usuários reais forem implementados.
 
----
+### ETL mantido com responsabilidade limitada
+
+O pipeline ETL continua sendo uma parte válida do projeto, mas deixou de ser o único caminho para inserir dados.
+
+Atualmente, ele é utilizado principalmente para:
+
+- dados de demonstração;
+- processamento de arquivos antigos;
+- validações em lote;
+- preservação da proposta original de engenharia de dados.
 
 ### Cálculos fora da IA
 
-Os cálculos financeiros são feitos em Python, não pela IA.
+Receitas, despesas, saldo, percentuais e demais indicadores são calculados em Python.
 
-A IA recebe os indicadores já calculados e atua apenas na explicação contextualizada dos resultados.
+A IA recebe os resultados prontos e atua principalmente na interpretação e explicação.
 
-Essa decisão reduz o risco de respostas inconsistentes, cálculos errados ou números inventados.
+Essa decisão reduz o risco de números inventados ou cálculos inconsistentes.
 
----
+### Identificadores internos
 
-### Relatório de rejeições
+Cada transação persistida recebe um identificador interno.
 
-O pipeline não apenas remove linhas inválidas. Ele também gera um relatório local com os motivos de rejeição.
+O usuário não precisa informar esse identificador em planilhas ou formulários.
 
-Arquivo gerado quando há linhas inválidas:
+### Isolamento por usuário
 
-```text
-data/processed/transacoes_rejeitadas.csv
-```
+As principais entidades utilizam `user_id` para separar os dados.
 
-Exemplos de motivos:
+A autenticação real ainda não foi implementada, mas a estrutura interna já evita que registros de usuários diferentes sejam misturados.
 
-- data inválida ou vazia;
-- tipo inválido;
-- descrição vazia;
-- categoria vazia;
-- valor inválido ou vazio;
-- valor menor ou igual a zero.
+### Uma conta representa um perfil financeiro
 
-Isso melhora a rastreabilidade do pipeline e facilita a correção dos arquivos de entrada.
+Na versão inicial, cada conta de usuário representa um único perfil financeiro.
+
+Contas bancárias, cartões e carteiras separadas poderão ser adicionadas futuramente caso tragam valor real para o produto.
 
 ---
 
-### Dados simulados
-
-O projeto não utiliza dados bancários reais.
-
-A base representa uma pessoa fictícia chamada Marina Costa. Essa escolha permite demonstrar o fluxo técnico sem expor informações sensíveis.
-
----
-
-### Execução simplificada
-
-O projeto possui um arquivo `main.py` para centralizar comandos comuns.
-
-Exemplos:
-
-```bash
-python main.py app
-python main.py etl
-python main.py test
-python main.py dev
-```
-
-Isso torna o uso mais simples e aproxima a experiência de execução de projetos que usam scripts, como `npm run dev` em aplicações Node.js.
-
----
-
-## Validação
-
-A validação do projeto usa uma combinação de testes automatizados e scripts manuais.
-
-Os testes automatizados cobrem:
-
-- cálculos financeiros;
-- metas financeiras;
-- filtros por período;
-- transformação dos dados;
-- separação entre transações válidas e rejeitadas;
-- relatório de rejeições;
-- carga em SQLite com banco temporário.
-
-Os scripts manuais ajudam a verificar:
-
-- leitura dos dados;
-- períodos disponíveis;
-- contexto enviado para a IA;
-- chamada manual ao assistente;
-- consulta ao banco SQLite gerado pelo ETL.
-
----
-
-## Limitações
+## Limitações Atuais
 
 O projeto ainda não possui:
 
-- upload de planilhas pela interface;
-- validação visual avançada para transações manuais;
-- edição avançada de registros já processados;
-- autenticação;
-- múltiplos usuários;
-- controle de permissões;
-- integração com contas bancárias reais;
+- autenticação real;
+- cadastro e login de usuários;
+- recuperação de senha;
+- banco PostgreSQL;
 - deploy público;
-- PostgreSQL;
-- automação RPA completa;
-- testes automatizados da interface Streamlit;
-- testes automatizados para chamadas de IA.
+- múltiplas contas financeiras por usuário;
+- aplicativo mobile;
+- integração bancária;
+- sincronização automática com instituições financeiras;
+- testes end-to-end completos da interface;
+- avaliação automatizada ampla das respostas da IA.
 
-Esses pontos fazem parte do roadmap e podem ser evoluídos de forma incremental.
+A interface ainda possui áreas que precisarão de uma revisão visual dedicada, mas a prioridade atual é concluir as funcionalidades e estabilizar a arquitetura.
 
 ---
 
 ## Direção Futura
 
-A direção futura mais coerente é evoluir o projeto para uma ferramenta local de controle financeiro pessoal.
+A evolução planejada é transformar o FinanTec em um pequeno SaaS financeiro, mantendo o escopo controlado.
 
-A ideia não é criar um sistema multiusuário com login, autenticação e integração bancária real neste momento.
-
-A evolução mais útil seria permitir que uma pessoa registre ou importe suas próprias transações em uma experiência parecida com uma planilha simples de gastos.
-
-A versão inicial da entrada manual já permite registrar transações pelo dashboard e salvar os dados localmente em `data/raw/transacoes_manuais.csv`.
-
-As próximas evoluções devem melhorar a validação visual, a experiência de edição e a integração com SQLite.
-
-Fluxo futuro possível:
+O caminho principal é:
 
 ```text
-Pessoa registra ou importa transações
+SQLite como fonte local confiável
         ↓
-Sistema valida os dados
+Revisão dos módulos transacionais
         ↓
-Pipeline organiza e salva em SQLite
+Autenticação
         ↓
-Dashboard mostra indicadores
+PostgreSQL
         ↓
-IA ajuda a interpretar os resultados
+Deploy
+        ↓
+Melhorias incrementais de produto
 ```
 
-Essa direção mantém o projeto simples, útil e tecnicamente defensável.
+Possíveis melhorias posteriores incluem:
+
+- múltiplas contas financeiras;
+- filtros e relatórios adicionais;
+- evolução da detecção de intenção do assistente;
+- acesso responsivo por dispositivos móveis;
+- refinamento visual;
+- notificações e lembretes;
+- importações mais flexíveis.
 
 ---
 
 ## Status Atual
 
-O projeto já possui:
+O FinanTec já possui:
 
 - pipeline ETL funcional;
-- leitura de múltiplos arquivos CSV;
-- validação e transformação de dados;
-- relatório de rejeições;
-- carga em SQLite;
-- dashboard com filtro por período;
-- resumo financeiro;
-- gráfico de gastos por categoria;
-- simulador de metas financeiras;
-- chat com IA generativa;
-- histórico de conversa separado por período;
-- testes automatizados com pytest;
-- testes manuais documentados;
-- contrato de dados para arquivos de transações;
-- comando principal com `main.py`.
-- entrada manual inicial de transações pelo dashboard;
-- salvamento local de transações manuais em `data/raw/transacoes_manuais.csv`;
+- dashboard financeiro;
+- dados de demonstração;
+- entrada manual de transações;
+- edição e exclusão;
+- importação de CSV e Excel;
+- exportação para Excel;
+- detecção de possíveis duplicatas;
+- persistência direta no SQLite;
+- isolamento por usuário;
+- perfil financeiro persistente;
+- metas financeiras persistentes;
+- chat persistente;
+- assistente com IA generativa;
+- reset seguro dos dados;
+- testes automatizados;
+- documentação técnica.
 
-Fluxo atual:
-
-```text
-CSV bruto → ETL com pandas → CSV processado → SQLite → dashboard Streamlit → IA explicando indicadores
-```
+O foco atual é finalizar a centralização dos dados transacionais no SQLite e revisar os módulos relacionados antes de iniciar autenticação e PostgreSQL.

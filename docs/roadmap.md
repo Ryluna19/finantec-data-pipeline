@@ -1,307 +1,427 @@
-﻿# Roadmap — FinanTec Data Pipeline
+﻿# Roadmap — FinanTec
 
 ## Visão Geral
 
-Este roadmap organiza as próximas evoluções possíveis do FinanTec Data Pipeline.
+Este roadmap organiza as próximas evoluções do FinanTec de acordo com o estado atual do projeto.
 
-O objetivo é evoluir o projeto de forma incremental, sem transformar o escopo em algo grande demais ou difícil de manter.
+O objetivo é continuar evoluindo a aplicação de forma incremental, com foco em valor real para portfólio e possível uso como pequeno SaaS, sem adicionar complexidade empresarial antes da hora.
 
-A direção futura mais coerente é transformar o projeto em uma ferramenta local de controle financeiro pessoal, mantendo o foco em dados, validação, SQLite, dashboard e IA explicando indicadores.
+O projeto já deixou de ser apenas um pipeline ETL. Hoje, o FinanTec funciona como uma aplicação de controle financeiro pessoal com persistência em SQLite, entrada manual, importação de planilhas, metas, perfil, histórico de chat e assistente com IA.
 
-A proposta não é criar, neste momento, um sistema multiusuário com login, autenticação, permissões ou integração bancária real.
+A próxima fase deve consolidar essa base antes de avançar para autenticação, PostgreSQL e deploy.
 
 ---
 
-## Versão Atual
+## Estado Atual
 
-### Status
-
-Protótipo funcional em evolução.
-
-### A versão atual já possui
+O FinanTec já possui:
 
 - pipeline ETL com Python e pandas;
-- leitura de múltiplos arquivos CSV;
-- validação e transformação dos dados;
-- separação entre transações válidas e rejeitadas;
-- relatório de rejeições com motivo;
-- carga em SQLite;
+- dados de demonstração;
 - dashboard em Streamlit;
-- filtro por período;
-- resumo financeiro;
-- gráfico de gastos por categoria;
-- simulador de metas financeiras;
-- assistente com IA generativa;
-- histórico de conversa separado por período;
-- testes automatizados com pytest;
-- testes manuais documentados;
-- contrato de dados para arquivos de transações;
-- comando principal com `main.py`.
-
-### Fluxo atual
-
-```text
-CSV bruto
-   ↓
-ETL com pandas
-   ↓
-CSV processado
-   ↓
-SQLite
-   ↓
-Dashboard Streamlit
-   ↓
-IA explicando indicadores
-```
-
-### Objetivo da versão atual
-
-Demonstrar um fluxo completo e simples de dados financeiros simulados, desde a entrada dos arquivos até a validação, persistência, visualização e explicação dos indicadores.
-
-- entrada manual inicial de transações pelo dashboard;
-- salvamento local de transações manuais em CSV;
-
----
-
-## Próximas Evoluções Prioritárias
-
-### 1. Melhorar o controle financeiro local
-
-A versão inicial da entrada manual já permite editar transações pelo dashboard e salvar os dados em `data/raw/transacoes_manuais.csv`.
-
-As próximas melhorias devem focar em validação visual, experiência de uso e integração mais clara com o pipeline ETL.
-
-Permitir que a pessoa registre ou edite transações em uma experiência parecida com uma planilha simples de gastos.
-
-A ideia não é criar um sistema de usuários, mas sim uma ferramenta local/pessoal baseada em um único perfil financeiro simulado.
-
-Possíveis melhorias:
-
-- criar uma tela de cadastro/edição de transações no Streamlit;
-- usar `st.data_editor` para editar transações em formato de tabela;
-- salvar novas transações em CSV local ou SQLite;
-- reaproveitar o contrato de dados atual;
-- validar entradas antes de processar;
-- mostrar erros de validação de forma clara;
-- permitir baixar ou visualizar a planilha-modelo.
-
-Valor da melhoria:
-
-```text
-Transforma o projeto em algo mais próximo de uma ferramenta real de gestão financeira pessoal, sem aumentar demais o escopo com autenticação ou infraestrutura complexa.
-```
-
-Fluxo possível:
-
-```text
-Pessoa registra gastos na interface
-        ↓
-Sistema salva os dados localmente
-        ↓
-Pipeline valida e organiza
-        ↓
-SQLite armazena os dados
-        ↓
-Dashboard mostra os indicadores
-        ↓
-IA ajuda a interpretar os resultados
-```
-
----
-
-### 2. Melhorar a entrada via planilha-modelo
-
-Permitir que a pessoa utilize uma planilha-modelo para preencher novas transações e importar os dados para o projeto.
-
-Possíveis melhorias:
-
-- manter `data/templates/transacoes_template.csv`;
-- documentar melhor como preencher o arquivo;
-- adicionar exemplos válidos e inválidos;
-- exibir instruções no dashboard;
-- permitir upload manual pelo Streamlit;
-- validar o arquivo enviado antes de processar;
-- mostrar relatório de rejeições após o upload.
-
-Valor da melhoria:
-
-```text
-Aproxima o projeto de um uso real, onde alguém fornece seus próprios dados em um formato padronizado.
-```
-
----
-
-### 3. Ler dados com consultas mais específicas ao SQLite
-
-A aplicação já prioriza SQLite quando o banco existe, mas essa etapa pode ser expandida.
-
-Possíveis melhorias:
-
-- criar consultas SQL específicas por período;
-- evitar carregar a tabela inteira quando o volume crescer;
-- criar uma camada simples de repositório para consultas;
-- documentar queries principais;
-- usar SQLite como fonte principal do dashboard de forma mais explícita.
-
-Valor da melhoria:
-
-```text
-Deixa o projeto mais próximo de aplicações que usam banco como fonte principal de dados.
-```
-
----
-
-### 4. Relatórios financeiros
-
-Gerar relatórios simples a partir dos dados processados.
-
-Possíveis melhorias:
-
-- relatório CSV por período;
-- relatório Excel com resumo e categorias;
-- exportação de dados filtrados;
-- resumo mensal em arquivo separado;
-- relatório de transações rejeitadas mais amigável;
-- botão de download no Streamlit.
-
-Valor da melhoria:
-
-```text
-Adiciona uma saída útil ao pipeline, além do dashboard.
-```
-
----
-
-### 5. Automação de arquivos
-
-Criar uma automação simples para organizar arquivos processados.
-
-Possíveis melhorias:
-
-- mover arquivos processados para uma pasta `data/archive/`;
-- registrar arquivos já processados;
-- evitar reprocessamento duplicado;
-- criar logs mais detalhados;
-- gerar resumo da execução do ETL;
-- executar o pipeline com um único comando.
-
-Valor da melhoria:
-
-```text
-Aproxima o projeto de uma automação simples de processos, conectando o projeto a conceitos de RPA sem tornar o escopo pesado.
-```
-
----
-
-## Evoluções Futuras
-
-### Histórico de conversas em banco
-
-Persistir o histórico do chat em SQLite.
-
-Hoje o histórico existe apenas durante a sessão do Streamlit.
-
-Uma evolução futura poderia salvar:
-
-- período analisado;
-- pergunta;
-- resposta;
-- data e hora;
-- origem dos dados usados.
-
-Essa melhoria faria sentido depois que o projeto estiver mais consolidado como ferramenta local.
-
----
-
-### PostgreSQL
-
-Adicionar PostgreSQL como alternativa ao SQLite.
-
-Não é prioridade imediata, porque SQLite é suficiente para a versão local e reduz a complexidade de configuração.
-
-Quando fizer sentido, o PostgreSQL pode ser adicionado para demonstrar:
-
-- banco relacional mais próximo de ambiente produtivo;
-- queries SQL mais robustas;
-- separação entre ambiente local e banco externo;
-- possível deploy futuro.
-
----
-
-### Testes da interface
-
-Adicionar testes para componentes da aplicação Streamlit.
-
-Essa melhoria não é prioridade agora, porque o maior risco técnico do projeto está no pipeline de dados e nos cálculos financeiros, que já possuem testes automatizados.
-
----
-
-### Avaliação automatizada da IA
-
-Criar um processo para avaliar respostas da IA de forma mais estruturada.
-
-Possibilidades:
-
-- conjunto fixo de perguntas;
-- respostas esperadas;
-- avaliação manual registrada;
-- comparação semântica futura;
-- uso de rubricas de segurança e coerência.
-
----
-
-## O que não é prioridade agora
-
-Algumas ideias poderiam aumentar o escopo sem trazer retorno proporcional neste momento.
-
-Não são prioridade:
-
-- login e autenticação;
-- múltiplos usuários;
-- controle de permissões;
-- múltiplas contas reais;
-- integração com bancos reais;
-- recomendação personalizada de investimentos;
-- deploy com custos;
-- arquitetura com microsserviços;
-- uso de LangChain ou frameworks complexos;
-- RAG com embeddings;
-- PostgreSQL obrigatório desde o início;
-- integração com Open Finance;
-- aplicativo mobile.
-
-Essas tecnologias podem ser úteis em outros contextos, mas adicioná-las agora poderia deixar o projeto mais complexo sem melhorar sua proposta principal.
-
----
-
-## Direção Recomendada
-
-A evolução mais estratégica para a próxima etapa é:
-
-```text
-Controle financeiro local + validação forte + SQLite + dashboard
-```
-
-Na prática, isso significa evoluir de:
-
-```text
-CSV bruto → ETL → SQLite → dashboard → IA
-```
-
-para:
+- filtros por período;
+- indicadores financeiros;
+- gráficos por categoria;
+- diagnóstico financeiro;
+- cadastro manual de transações;
+- edição e exclusão de transações;
+- importação de arquivos CSV e Excel;
+- exportação para Excel;
+- validação de dados;
+- detecção de possíveis duplicatas;
+- persistência direta no SQLite;
+- isolamento por `user_id`;
+- separação entre dados reais e dados de demonstração;
+- perfil financeiro persistente;
+- metas financeiras persistentes;
+- histórico de chat persistente;
+- assistente com regras determinísticas e IA generativa;
+- reset seguro dos dados do usuário;
+- testes automatizados com pytest.
+
+Fluxo principal atual:
 
 ```text
 Pessoa registra ou importa transações
         ↓
-Sistema valida os dados
+Sistema valida e padroniza os dados
         ↓
-SQLite armazena a base
+Possíveis duplicatas são analisadas
         ↓
-Dashboard apresenta indicadores
+SQLite armazena as transações
         ↓
-IA explica os resultados
+Dashboard calcula e apresenta os indicadores
+        ↓
+Assistente ajuda a interpretar os resultados
 ```
 
-Essa direção mantém o projeto simples, útil e tecnicamente defensável.
+---
 
-Ela também deixa o projeto mais interessante para portfólio, porque mostra evolução de um pipeline de dados para uma ferramenta local de gestão financeira pessoal.
+## Prioridade Atual
+
+### 1. Finalizar a centralização das transações no SQLite
+
+Grande parte do fluxo já foi migrada, mas ainda existem pontos de compatibilidade com arquivos antigos e com o pipeline ETL.
+
+Objetivos:
+
+- confirmar que todas as entradas do usuário gravam diretamente no SQLite;
+- manter o ETL apenas onde ele ainda possui responsabilidade real;
+- remover caminhos antigos de persistência que não são mais utilizados;
+- revisar textos da interface que ainda descrevem fluxos antigos;
+- evitar que dados do usuário dependam de arquivos processados para aparecer no dashboard.
+
+Critério de conclusão:
+
+```text
+Entrada manual, importação, edição, exclusão e leitura do usuário
+funcionam com o SQLite como fonte principal.
+```
+
+---
+
+### 2. Revisão direcionada dos módulos transacionais
+
+Depois que a migração para SQLite estiver concluída, será feita uma revisão apenas da área transacional.
+
+Arquivos principais:
+
+- `src/transaction_repository.py`;
+- `src/transaction_editor.py`;
+- `src/transaction_sync_service.py`;
+- `src/transaction_files.py`;
+- `src/import_transaction_database_service.py`;
+- `src/components/file_transfer.py`;
+- `src/components/data_management.py`.
+
+A revisão deve procurar:
+
+- funções redundantes;
+- regras repetidas em módulos diferentes;
+- wrappers sem responsabilidade real;
+- normalizações duplicadas;
+- nomes que não representam mais o comportamento;
+- código mantido apenas por compatibilidade;
+- funções grandes com decisões demais;
+- testes que verificam detalhes internos em vez de comportamento.
+
+O objetivo não é reduzir linhas por estética.
+
+O objetivo é:
+
+```text
+menos caminhos para a mesma regra
+menos código morto
+menos testes frágeis
+fluxos mais fáceis de entender
+```
+
+---
+
+### 3. Consolidar a documentação
+
+A documentação precisa acompanhar o estado real do projeto.
+
+Tarefas:
+
+- manter `docs/project_overview.md` atualizado;
+- manter este roadmap apenas com trabalho futuro;
+- revisar o README principal;
+- documentar claramente como executar a aplicação;
+- explicar os modos de dados;
+- explicar o papel atual do ETL;
+- registrar decisões importantes de arquitetura;
+- remover referências a funcionalidades que já foram concluídas.
+
+A documentação deve servir para:
+
+- recrutadores;
+- outros desenvolvedores;
+- revisões por IA;
+- retomada do projeto depois de algum tempo;
+- apresentação do projeto em entrevistas.
+
+---
+
+## Próxima Fase Estrutural
+
+### 4. Autenticação
+
+A estrutura interna já utiliza `user_id`, mas ainda não existe autenticação real.
+
+A primeira versão deve ser simples.
+
+Possíveis funcionalidades:
+
+- cadastro;
+- login;
+- logout;
+- senha armazenada com hash;
+- sessão autenticada;
+- usuário atual definido pela autenticação;
+- proteção contra acesso a dados de outro usuário.
+
+Não é necessário implementar inicialmente:
+
+- login social;
+- autenticação multifator;
+- controle avançado de permissões;
+- equipes;
+- organizações;
+- múltiplos papéis administrativos.
+
+Critério de conclusão:
+
+```text
+Dois usuários conseguem usar a aplicação
+sem visualizar ou alterar os dados um do outro.
+```
+
+---
+
+### 5. Preparação para PostgreSQL
+
+O SQLite é adequado para o estágio atual, mas PostgreSQL será necessário para deploy e uso por múltiplos usuários reais.
+
+Antes da migração:
+
+- reduzir dependências específicas do SQLite;
+- centralizar conexões;
+- evitar SQL espalhado pela aplicação;
+- revisar tipos de dados;
+- revisar criação de tabelas;
+- preparar configurações por ambiente;
+- manter os testes usando bancos temporários.
+
+Durante a migração:
+
+- criar esquema compatível com PostgreSQL;
+- migrar repositórios gradualmente;
+- manter a interface de acesso aos dados estável;
+- testar isolamento por usuário;
+- testar integridade das transações;
+- documentar o processo de migração.
+
+Não é necessário usar ORM apenas por obrigação.
+
+A escolha entre SQL direto e ORM deve considerar:
+
+- simplicidade;
+- manutenção;
+- compatibilidade;
+- valor de aprendizado;
+- impacto no projeto.
+
+---
+
+### 6. Deploy
+
+Depois de autenticação e PostgreSQL, o projeto poderá ser publicado.
+
+Objetivos:
+
+- configurar variáveis de ambiente;
+- separar ambiente local e produção;
+- proteger chaves da IA;
+- configurar banco externo;
+- revisar logs;
+- revisar mensagens de erro;
+- validar comportamento em ambiente remoto;
+- testar uso em telas menores.
+
+O primeiro deploy deve priorizar funcionamento e segurança básica, não escala empresarial.
+
+---
+
+## Melhorias de Produto
+
+### 7. Múltiplas contas financeiras
+
+Atualmente, uma conta de usuário representa um único perfil financeiro.
+
+Uma evolução futura poderá permitir separar:
+
+- conta corrente;
+- carteira;
+- poupança;
+- cartão de crédito;
+- outras contas.
+
+Essa funcionalidade só deve ser implementada quando houver:
+
+- cadastro de contas;
+- filtros por conta;
+- indicadores por conta;
+- uso claro da informação no dashboard.
+
+Não basta adicionar uma coluna `conta` sem funcionalidade associada.
+
+---
+
+### 8. Relatórios e exportações
+
+Possíveis melhorias:
+
+- relatório mensal em Excel;
+- resumo por categoria;
+- exportação por período;
+- relatório de metas;
+- comparação entre meses;
+- resumo financeiro para download.
+
+A prioridade deve ser gerar relatórios que respondam perguntas reais, não apenas criar arquivos adicionais.
+
+---
+
+### 9. Evolução do assistente
+
+O assistente já combina regras determinísticas e IA generativa.
+
+Melhorias futuras:
+
+- reconhecer intenções sem depender de frases exatas;
+- compreender perguntas informais;
+- manter melhor contexto entre mensagens;
+- melhorar fallback;
+- ampliar testes de frases equivalentes;
+- separar perguntas financeiras de perguntas fora do escopo;
+- melhorar explicações sem permitir cálculos inventados.
+
+O assistente não deve substituir os cálculos da aplicação.
+
+---
+
+### 10. Refinamento visual
+
+A interface ainda possui áreas que precisam de revisão visual.
+
+Essa etapa deve acontecer depois da estabilização funcional.
+
+Pontos conhecidos:
+
+- reorganizar o acesso ao perfil;
+- revisar o nome e espaço da aba do assistente;
+- melhorar a tela de metas;
+- revisar responsividade;
+- limitar largura em monitores grandes;
+- melhorar navegação em notebooks;
+- revisar consistência entre componentes.
+
+Evitar novos ciclos de microajustes visuais antes de concluir as etapas estruturais.
+
+---
+
+### 11. Experiência mobile
+
+O projeto poderá ser acessado por celular depois do deploy.
+
+Primeiras melhorias possíveis:
+
+- layout responsivo;
+- navegação simplificada;
+- tabelas adaptadas;
+- formulários mais confortáveis;
+- botões adequados para toque.
+
+Um aplicativo nativo não é prioridade inicial.
+
+A primeira meta é tornar a versão web utilizável em telas menores.
+
+---
+
+## Qualidade e Testes
+
+Os testes devem continuar focados nos comportamentos de maior risco.
+
+Prioridades:
+
+- isolamento entre usuários;
+- persistência;
+- criação, edição e exclusão;
+- reset seguro;
+- validação de arquivos;
+- detecção de duplicatas;
+- cálculos financeiros;
+- metas;
+- autenticação;
+- migrações de banco.
+
+Evitar criar testes apenas porque uma função existe.
+
+Testes de baixo valor incluem:
+
+- wrappers triviais;
+- mensagens exatas da interface;
+- detalhes internos sem impacto no comportamento;
+- fluxos obsoletos;
+- repetição da mesma regra em vários arquivos.
+
+A organização dos testes poderá ser revisada no futuro, mas não deve virar uma grande refatoração enquanto a arquitetura ainda está mudando.
+
+---
+
+## O que Não é Prioridade Agora
+
+Não são prioridade imediata:
+
+- integração com bancos reais;
+- Open Finance;
+- recomendação de investimentos;
+- microsserviços;
+- Kubernetes;
+- filas distribuídas;
+- arquitetura empresarial;
+- múltiplas organizações;
+- papéis avançados;
+- app mobile nativo;
+- LangChain por obrigação;
+- RAG com embeddings sem necessidade;
+- conciliação bancária oficial;
+- processamento em grande escala.
+
+Essas tecnologias podem ser válidas em outros projetos, mas não melhoram automaticamente o FinanTec.
+
+---
+
+## Ordem Recomendada
+
+```text
+1. Finalizar SQLite como fonte principal
+        ↓
+2. Revisar módulos transacionais
+        ↓
+3. Atualizar documentação
+        ↓
+4. Implementar autenticação
+        ↓
+5. Preparar e migrar para PostgreSQL
+        ↓
+6. Fazer deploy
+        ↓
+7. Evoluir funcionalidades de produto
+        ↓
+8. Refinar interface e experiência mobile
+```
+
+---
+
+## Critério Geral de Prioridade
+
+Antes de adicionar uma funcionalidade, avaliar:
+
+1. Qual problema real ela resolve?
+2. O usuário consegue responder uma nova pergunta com ela?
+3. Ela melhora o valor do projeto para portfólio?
+4. O custo de implementação é proporcional ao benefício?
+5. Ela depende de alguma etapa estrutural ainda incompleta?
+6. Existe risco de refazer esse trabalho depois?
+
+A direção do FinanTec deve continuar sendo:
+
+```text
+produto pequeno
+arquitetura coerente
+dados confiáveis
+escopo controlado
+evolução incremental
+```
