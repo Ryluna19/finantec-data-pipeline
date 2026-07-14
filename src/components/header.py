@@ -8,8 +8,10 @@ from ui_components import (
 )
 
 
-def render_header(period: str) -> None:
-    """Exibe a identidade visual e os avisos do período analisado."""
+def render_header(
+    period: str | None = None,
+) -> None:
+    """Exibe a identidade visual e os avisos da seção atual."""
     render_html(
         """
         <header class="finantec-brand-header">
@@ -73,7 +75,8 @@ def render_header(period: str) -> None:
         variant="warning",
     )
 
-    render_alert(
-        text=f"Período analisado: {period}",
-        variant="info",
-    )
+    if period:
+        render_alert(
+            text=f"Período analisado: {period}",
+            variant="info",
+        )

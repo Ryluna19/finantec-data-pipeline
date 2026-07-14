@@ -19,6 +19,11 @@ from components.chat import (
     get_period_messages,
     render_chat,
 )
+from components.navigation import (
+    DATA_SECTION,
+    PROFILE_SECTION,
+    render_user_navigation,
+)
 from components.data_management import (
     DATA_MODE_KEY,
     render_data_management,
@@ -228,7 +233,7 @@ def render_empty_dashboard() -> None:
 
         - cadastrar uma transação na aba **Transações**;
         - importar um arquivo CSV ou Excel;
-        - carregar a base simulada na aba **Dados**.
+        - carregar a base simulada em **Dados e privacidade**.
         """
     )
 
@@ -239,8 +244,11 @@ def render_empty_dashboard() -> None:
 
 
 def render_unavailable_feature(
-    title: str,
-    message: str,
+    title="Insights financeiros",
+    message=(
+        "Os insights precisam de transações "
+        "para analisar o período."
+    ),
 ) -> None:
     """Exibe um estado vazio para recursos que dependem de transações."""
     st.header(title)
@@ -249,7 +257,7 @@ def render_unavailable_feature(
 
     st.caption(
         "Adicione transações reais ou carregue "
-        "a demonstração na aba Dados."
+        "a demonstração em Dados e privacidade."
     )
 
 
@@ -428,6 +436,27 @@ def main() -> None:
         current_user_id,
         data_mode,
     )
+    active_section = (
+        render_user_navigation(
+            user_profile
+        )
+    )
+
+    if active_section == PROFILE_SECTION:
+        render_header()
+
+        render_user_profile(
+            user_profile
+        )
+
+        return
+
+    if active_section == DATA_SECTION:
+        render_header()
+
+        render_data_management()
+
+        return
 
     (
         selected_month,
@@ -449,17 +478,13 @@ def main() -> None:
         dashboard_tab,
         transactions_tab,
         goals_tab,
-        profile_tab,
-        ai_tab,
-        data_tab,
+        insights_tab,
     ) = st.tabs(
         [
-            "Dashboard",
+            "Visão geral",
             "Transações",
             "Metas",
-            "Perfil",
-            "IA",
-            "Dados",
+            "Insights",
         ]
     )
 
@@ -481,23 +506,15 @@ def main() -> None:
                     "saldo_disponivel": 0.0,
                 },
             )
-        with profile_tab:
-            render_user_profile(
-                user_profile
-            )
 
-        with ai_tab:
+        with insights_tab:
             render_unavailable_feature(
                 title="Assistente financeiro",
                 message=(
                     "O assistente precisa de transações "
                     "para criar o contexto financeiro do período."
                 ),
-            )
-
-        with data_tab:
-            render_data_management()
-
+            ),
         return
 
     summary = calculate_financial_summary(
@@ -538,12 +555,8 @@ def main() -> None:
             user_profile=user_profile,
             summary=summary,
         )
-    with profile_tab:
-        render_user_profile(
-            user_profile
-        )
-
-    with ai_tab:
+    
+    with insights_tab:
         render_chat(
             messages=messages,
             user_id=current_user_id,
@@ -554,10 +567,6 @@ def main() -> None:
                 expenses_by_category
             ),
         )
-
-    with data_tab:
-        render_data_management()
-
-
+        
 if __name__ == "__main__":
     main()
