@@ -58,7 +58,7 @@ def executar_app() -> int:
 
 
 def executar_etl() -> int:
-    """Executa o pipeline ETL como módulo Python."""
+    """Executa explicitamente o ETL de compatibilidade com arquivos CSV."""
     return executar_comando(
         [
             sys.executable,
@@ -82,14 +82,7 @@ def executar_testes() -> int:
 
 
 def executar_fluxo_dev() -> int:
-    """
-    Executa o ETL e, se tudo der certo, inicia o dashboard.
-    """
-    codigo_etl = executar_etl()
-
-    if codigo_etl != 0:
-        return codigo_etl
-
+    """Inicia o dashboard sem reprocessar os arquivos CSV antigos."""
     return executar_app()
 
 
@@ -102,10 +95,10 @@ def exibir_ajuda() -> int:
 Uso:
   python main.py          Inicia o dashboard Streamlit
   python main.py app      Inicia o dashboard Streamlit
-  python main.py etl      Executa o pipeline ETL
+  python main.py etl      Processa explicitamente os arquivos CSV
   python main.py test     Executa os testes automatizados
   python main.py tests    Executa os testes automatizados
-  python main.py dev      Executa o ETL e inicia o dashboard
+  python main.py dev      Inicia o dashboard sem executar o ETL
   python main.py help     Mostra esta ajuda
 """.strip()
     )
