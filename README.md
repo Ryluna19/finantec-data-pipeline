@@ -271,7 +271,7 @@ Ou:
 python main.py app
 ```
 
-Para executar o pipeline ETL:
+Para processar explicitamente os arquivos CSV pelo pipeline ETL:
 
 ```bash
 python main.py etl
@@ -283,7 +283,7 @@ Para executar os testes automatizados:
 python main.py test
 ```
 
-Para executar o ETL e depois abrir o dashboard:
+Para abrir o dashboard sem executar o ETL:
 
 ```bash
 python main.py dev
