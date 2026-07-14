@@ -14,16 +14,13 @@ from src.transaction_files import (
     INSTRUCTIONS_SHEET_NAME,
     TRANSACTION_HEADER_LABELS,
     TRANSACTION_SHEET_NAME,
-    build_import_file_path,
     create_excel_template,
-    create_transactions_fingerprint,
     export_transactions_to_excel,
     find_matching_transactions,
     normalize_transaction_headers,
     prepare_transactions_for_export,
     read_csv_transactions,
     read_excel_transactions,
-    save_imported_transactions,
     split_imported_transactions_by_match,
 )
 from src.transaction_validation import (
@@ -286,104 +283,6 @@ def test_create_excel_template_contains_instructions() -> None:
     assert instructions["CAMPO"].tolist() == (
         REQUIRED_TRANSACTION_COLUMNS
     )
-
-
-def test_fingerprint_does_not_depend_on_row_order() -> None:
-    """Mantém o fingerprint quando apenas a ordem muda."""
-    transactions = create_test_transactions()
-
-    reversed_transactions = (
-        transactions
-        .iloc[::-1]
-        .reset_index(drop=True)
-    )
-
-    first_fingerprint = (
-        create_transactions_fingerprint(
-            transactions
-        )
-    )
-
-    second_fingerprint = (
-        create_transactions_fingerprint(
-            reversed_transactions
-        )
-    )
-
-    assert (
-        first_fingerprint
-        == second_fingerprint
-    )
-
-
-def test_build_import_file_path_is_content_based(
-    tmp_path,
-) -> None:
-    """Usa o conteúdo do lote para construir o caminho."""
-    transactions = create_test_transactions()
-
-    reversed_transactions = (
-        transactions
-        .iloc[::-1]
-        .reset_index(drop=True)
-    )
-
-    first_path = build_import_file_path(
-        transactions,
-        import_dir=tmp_path,
-    )
-
-    second_path = build_import_file_path(
-        reversed_transactions,
-        import_dir=tmp_path,
-    )
-
-    modified_transactions = (
-        transactions.copy()
-    )
-
-    modified_transactions.loc[
-        0,
-        "valor",
-    ] = 1700.00
-
-    different_path = build_import_file_path(
-        modified_transactions,
-        import_dir=tmp_path,
-    )
-
-    assert first_path == second_path
-    assert first_path != different_path
-
-    assert first_path.name.startswith(
-        "transacoes_importadas_"
-    )
-
-    assert first_path.suffix == ".csv"
-
-
-def test_save_imported_transactions_rejects_same_batch(
-    tmp_path,
-) -> None:
-    """Impede que o mesmo lote seja salvo novamente."""
-    transactions = create_test_transactions()
-
-    saved_path = save_imported_transactions(
-        transactions=transactions,
-        import_dir=tmp_path,
-    )
-
-    assert saved_path.exists()
-
-    with pytest.raises(
-        FileExistsError
-    ):
-        save_imported_transactions(
-            transactions=(
-                transactions.iloc[::-1]
-            ),
-            import_dir=tmp_path,
-        )
 
 
 def test_find_matching_transactions_detects_existing_rows() -> None:

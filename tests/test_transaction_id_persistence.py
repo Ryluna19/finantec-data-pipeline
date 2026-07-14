@@ -7,10 +7,7 @@ from uuid import UUID
 import pandas as pd
 
 import src.transaction_editor as transaction_editor
-from src.transaction_files import (
-    create_transactions_fingerprint,
-    save_imported_transactions,
-)
+
 from src.transaction_identity import (
     TRANSACTION_ID_COLUMN,
     create_transaction_id,
@@ -150,69 +147,3 @@ def test_manual_save_preserves_existing_id(
         0,
         TRANSACTION_ID_COLUMN,
     ] == existing_id
-
-
-def test_imported_batch_persists_transaction_ids(
-    tmp_path,
-) -> None:
-    saved_path = (
-        save_imported_transactions(
-            build_transactions(),
-            import_dir=tmp_path,
-        )
-    )
-
-    saved_transactions = pd.read_csv(
-        saved_path,
-        encoding="utf-8-sig",
-    )
-
-    assert list(
-        saved_transactions.columns
-    ) == [
-        TRANSACTION_ID_COLUMN,
-        "data",
-        "tipo",
-        "descricao",
-        "categoria",
-        "valor",
-    ]
-
-    assert saved_transactions[
-        TRANSACTION_ID_COLUMN
-    ].nunique() == len(
-        saved_transactions
-    )
-
-
-def test_fingerprint_ignores_transaction_ids() -> None:
-    first_transactions = (
-        build_transactions()
-    )
-
-    second_transactions = (
-        build_transactions()
-    )
-
-    first_transactions[
-        TRANSACTION_ID_COLUMN
-    ] = [
-        create_transaction_id(),
-        create_transaction_id(),
-    ]
-
-    second_transactions[
-        TRANSACTION_ID_COLUMN
-    ] = [
-        create_transaction_id(),
-        create_transaction_id(),
-    ]
-
-    assert (
-        create_transactions_fingerprint(
-            first_transactions
-        )
-        == create_transactions_fingerprint(
-            second_transactions
-        )
-    )

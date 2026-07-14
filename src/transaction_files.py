@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
+
 from collections import Counter
 from io import BytesIO
 from pathlib import Path
@@ -33,10 +33,6 @@ from openpyxl.worksheet.table import (
     Table,
     TableStyleInfo,
 )
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-IMPORTED_RAW_DIR = PROJECT_ROOT / "data" / "raw" / "imported"
 
 TRANSACTION_SHEET_NAME = "Transacoes"
 INSTRUCTIONS_SHEET_NAME = "Instrucoes"
@@ -585,114 +581,6 @@ def normalize_transaction_keys(
     normalized["valor"] = normalized["valor"].round(2)
 
     return normalized
-
-
-def create_transactions_fingerprint(
-    transactions: pd.DataFrame,
-) -> str:
-    """Cria uma identificação estável baseada no conteúdo do lote."""
-    normalized = normalize_transaction_keys(transactions)
-
-    # A ordem das linhas não deve alterar a identidade do mesmo lote.
-    canonical = normalized.sort_values(
-        by=REQUIRED_TRANSACTION_COLUMNS,
-        kind="stable",
-    ).reset_index(drop=True)
-
-    canonical_content = canonical.to_csv(
-        index=False,
-        lineterminator="\n",
-    )
-
-    return hashlib.sha256(canonical_content.encode("utf-8")).hexdigest()
-
-
-def build_import_file_path(
-    transactions: pd.DataFrame,
-    import_dir: Path = IMPORTED_RAW_DIR,
-) -> Path:
-    """Cria o caminho de um lote usando sua identificação de conteúdo."""
-    fingerprint = create_transactions_fingerprint(transactions)
-
-    file_name = "transacoes_importadas_" f"{fingerprint[:16]}.csv"
-
-    return import_dir / file_name
-
-def build_import_source_key(
-    import_path: Path,
-) -> str:
-    """Cria uma identificação estável para o arquivo importado."""
-    try:
-        return (
-            import_path.resolve()
-            .relative_to(
-                PROJECT_ROOT.resolve()
-            )
-            .as_posix()
-        )
-
-    except ValueError:
-        # Diretórios temporários usados nos testes
-        # ficam fora da pasta principal do projeto.
-        return import_path.name
-
-def save_imported_transactions(
-    transactions: pd.DataFrame,
-    import_dir: Path = IMPORTED_RAW_DIR,
-) -> Path:
-    """Salva um lote validado com IDs persistentes."""
-    import_path = build_import_file_path(
-        transactions,
-        import_dir=import_dir,
-    )
-
-    if import_path.exists():
-        raise FileExistsError(
-            "Este mesmo lote de transações "
-            "já foi importado anteriormente."
-        )
-
-    import_dir.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    # A planilha enviada pelo usuário contém apenas
-    # as colunas financeiras públicas.
-    transactions_to_save = (
-        prepare_transactions_for_export(
-            transactions
-        )
-    )
-
-    # O ID técnico nasce depois do fingerprint do lote,
-    # portanto não altera a detecção de duplicatas.
-    transactions_to_save = (
-        ensure_transaction_ids(
-            transactions=transactions_to_save,
-            source_key=build_import_source_key(
-                import_path
-            ),
-            identity_columns=(
-                REQUIRED_TRANSACTION_COLUMNS
-            ),
-        )
-    )
-
-    transactions_to_save = (
-        transactions_to_save[
-            STORED_TRANSACTION_COLUMNS
-        ].copy()
-    )
-
-    transactions_to_save.to_csv(
-        import_path,
-        index=False,
-        encoding="utf-8-sig",
-    )
-
-    return import_path
-
 
 def split_imported_transactions_by_match(
     imported_transactions: pd.DataFrame,

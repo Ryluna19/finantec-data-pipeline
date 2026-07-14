@@ -369,8 +369,8 @@ def render_transactions_tab(
         st.rerun()
 
     st.caption(
-        "Transações manuais e importadas aparecem "
-        "nos indicadores após o processamento do ETL."
+        "Transações manuais e importadas são salvas "
+        "diretamente no banco e aparecem nos indicadores."
     )
 
     with st.container(
