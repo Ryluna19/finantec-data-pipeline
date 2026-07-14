@@ -14,7 +14,11 @@ import pandas as pd
 import streamlit as st
 
 from scripts.etl_transacoes import (
-    run_etl_with_summary,
+    ARQUIVO_BANCO,
+    TABELA_TRANSACOES,
+)
+from src.manual_transaction_database_service import (
+    save_manual_transactions_to_database,
 )
 from src.manual_transaction_service import (
     MANUAL_TRANSACTION_COLUMNS,
@@ -46,10 +50,17 @@ from src.manual_transaction_state import (
     set_manual_feedback,
     start_manual_edit,
 )
+from src.user_context import (
+    get_current_user_id,
+)
 
 
 DATA_REFRESH_REQUESTED_KEY = (
     "app_data_refresh_requested"
+)
+
+CURRENT_DATA_MODE_KEY = (
+    "finantec_data_mode"
 )
 
 PROJECT_ROOT = (
@@ -186,7 +197,7 @@ def set_manual_draft(
 
 
 # -----------------------------------------------------------------------------
-# Feedback e execução do ETL
+# Feedback e persistência direta
 # -----------------------------------------------------------------------------
 
 
@@ -200,53 +211,62 @@ def show_manual_feedback() -> None:
         )
 
 
-def _save_manual_draft_callback() -> None:
-    """Salva o rascunho sem executar o ETL."""
+def _save_manual_database_callback() -> None:
+    """Salva o rascunho diretamente no SQLite."""
     transactions = get_manual_draft()
-
-    salvar_transacoes_manuais(
-        transactions
-    )
-
-    set_manual_feedback(
-        "Rascunho salvo em "
-        "data/raw/transacoes_manuais.csv."
-    )
-
-
-def _process_manual_etl_callback() -> None:
-    """Salva o rascunho, executa o ETL e atualiza os dados."""
-    transactions = get_manual_draft()
-
-    salvar_transacoes_manuais(
-        transactions
-    )
 
     try:
-        resultado = (
-            run_etl_with_summary()
+        result = (
+            save_manual_transactions_to_database(
+                transactions=transactions,
+                database_path=ARQUIVO_BANCO,
+                table_name=TABELA_TRANSACOES,
+                user_id=(
+                    get_current_user_id()
+                ),
+            )
         )
 
-    except Exception as erro:
+    except Exception as error:
         st.session_state[
             "resultado_etl"
         ] = {
             "sucesso": False,
             "mensagem": (
-                "Erro ao executar ETL: "
-                f"{erro}"
+                "Não foi possível salvar "
+                f"as transações: {error}"
             ),
         }
 
         return
 
+    # O arquivo manual antigo deixa de ser necessário
+    # depois que o lote entra diretamente no banco.
+    limpar_transacoes_manuais()
+
+    set_manual_draft(
+        criar_dataframe_vazio()
+    )
+
+    reset_manual_form()
+
+    st.session_state[
+        CURRENT_DATA_MODE_KEY
+    ] = "user"
+
     st.session_state[
         "resultado_etl"
     ] = {
-        **resultado,
+        "sucesso": True,
         "mensagem": (
-            "Transações salvas e ETL "
-            "executado com sucesso."
+            "Transações salvas diretamente "
+            "no banco local."
+        ),
+        "transacoes_inseridas": (
+            result["inserted"]
+        ),
+        "transacoes_atualizadas": (
+            result["updated"]
         ),
     }
 
@@ -256,7 +276,7 @@ def _process_manual_etl_callback() -> None:
 
 
 def _clear_manual_transactions_callback() -> None:
-    """Remove as transações manuais e reexecuta o ETL."""
+    """Limpa somente o rascunho ainda não persistido."""
     limpar_transacoes_manuais()
 
     set_manual_draft(
@@ -265,41 +285,13 @@ def _clear_manual_transactions_callback() -> None:
 
     reset_manual_form()
 
-    try:
-        resultado = (
-            run_etl_with_summary()
-        )
-
-    except Exception as erro:
-        st.session_state[
-            "resultado_etl"
-        ] = {
-            "sucesso": False,
-            "mensagem": (
-                "Erro ao executar ETL: "
-                f"{erro}"
-            ),
-        }
-
-        return
-
-    st.session_state[
-        "resultado_etl"
-    ] = {
-        **resultado,
-        "mensagem": (
-            "Transações manuais removidas "
-            "e ETL executado novamente."
-        ),
-    }
-
-    st.session_state[
-        DATA_REFRESH_REQUESTED_KEY
-    ] = True
+    set_manual_feedback(
+        "Rascunho manual limpo."
+    )
 
 
 def exibir_resultado_etl_salvo() -> None:
-    """Exibe o resultado do ETL guardado na sessão."""
+    """Exibe o resultado da persistência manual."""
     resultado = st.session_state.pop(
         "resultado_etl",
         None,
@@ -311,10 +303,10 @@ def exibir_resultado_etl_salvo() -> None:
     if resultado["sucesso"]:
         st.success(
             f"{resultado['mensagem']}\n\n"
-            "Transações processadas: "
-            f"{resultado['transacoes_processadas']} | "
-            "Transações rejeitadas: "
-            f"{resultado['transacoes_rejeitadas']}"
+            "Novas transações: "
+            f"{resultado['transacoes_inseridas']} | "
+            "Transações atualizadas: "
+            f"{resultado['transacoes_atualizadas']}"
         )
 
         return
@@ -364,7 +356,9 @@ def _get_form_defaults(
     if (
         edit_index is None
         or edit_index < 0
-        or edit_index >= len(transactions)
+        or edit_index >= len(
+            transactions
+        )
     ):
         return {
             "data": date.today(),
@@ -399,7 +393,9 @@ def _get_form_defaults(
     )
 
     if (
-        pd.isna(amount)
+        pd.isna(
+            amount
+        )
         or amount <= 0
     ):
         amount = 0.01
@@ -933,7 +929,7 @@ def exibir_editor_transacoes_manuais() -> bool:
 
     st.caption(
         "Adicione as transações pelo formulário, "
-        "revise os cartões e processe o lote quando terminar."
+        "revise o rascunho e salve o lote no banco local."
     )
 
     transactions = get_manual_draft()
@@ -971,7 +967,7 @@ def exibir_editor_transacoes_manuais() -> bool:
     if not rejected_transactions.empty:
         st.warning(
             "Corrija as transações com erro "
-            "antes de salvar e processar."
+            "antes de salvar o lote."
         )
 
         with st.expander(
@@ -1004,49 +1000,40 @@ def exibir_editor_transacoes_manuais() -> bool:
         key="manual-actions",
     ):
         (
-            save_column,
-            process_column,
-        ) = st.columns(
-            2,
-            gap="small",
-        )
+        save_column,
+        clear_column,
+    ) = st.columns(
+        2,
+        gap="small",
+        vertical_alignment="bottom",
+    )
 
         with save_column:
             st.button(
-                "Salvar sem processar",
-                key="manual-save-draft",
-                disabled=actions_disabled,
-                use_container_width=True,
-                on_click=(
-                    _save_manual_draft_callback
-                ),
-            )
-
-        with process_column:
-            st.button(
-                "Salvar e processar ETL",
-                key="manual-process-etl",
+                "Salvar transações",
+                key="manual-save-database",
                 type="primary",
                 disabled=actions_disabled,
                 use_container_width=True,
                 on_click=(
-                    _process_manual_etl_callback
+                    _save_manual_database_callback
                 ),
             )
 
-        st.button(
-            "Limpar transações manuais",
-            key="manual-clear-all",
-            disabled=not has_transactions,
-            use_container_width=True,
-            on_click=(
-                _clear_manual_transactions_callback
-            ),
-        )
+        with clear_column:
+            st.button(
+                "Limpar rascunho",
+                key="manual-clear-all",
+                disabled=not has_transactions,
+                use_container_width=True,
+                on_click=(
+                    _clear_manual_transactions_callback
+                ),
+            )
 
     st.info(
-        "As transações entram no SQLite somente "
-        "depois que o pipeline ETL é executado."
+        "As transações são salvas diretamente no SQLite. "
+        "Não é necessário executar o pipeline ETL."
     )
 
     return False

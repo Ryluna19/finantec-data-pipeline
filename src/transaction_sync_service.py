@@ -8,12 +8,15 @@ from typing import Mapping
 import pandas as pd
 
 from src.transaction_repository import (
+    TransactionNotFoundError as DatabaseTransactionNotFoundError,
     delete_transaction as delete_transaction_from_database,
+    load_transaction as load_transaction_from_database,
     update_transaction as update_transaction_in_database,
 )
 from src.transaction_sources import (
     PROJECT_ROOT,
     RAW_DIR,
+    TransactionNotFoundError,
     delete_transaction_from_source,
     update_transaction_in_source,
 )
@@ -85,7 +88,9 @@ def prepare_persisted_transaction_updates(
     candidate = pd.DataFrame(
         [
             {
-                column: updates[column]
+                column: updates[
+                    column
+                ]
                 for column
                 in REQUIRED_TRANSACTION_COLUMNS
             }
@@ -107,8 +112,9 @@ def prepare_persisted_transaction_updates(
         )
 
     prepared = (
-        valid_transactions
-        .iloc[0]
+        valid_transactions.iloc[
+            0
+        ]
     )
 
     transaction_date = pd.Timestamp(
@@ -139,6 +145,31 @@ def prepare_persisted_transaction_updates(
     }
 
 
+def _is_database_source(
+    source_name: str,
+) -> bool:
+    """Informa se a transação existe somente no banco."""
+    return source_name.startswith(
+        "database:"
+    )
+
+
+def _get_database_source_after_update(
+    source_name: str,
+    source_file: Path | None,
+) -> str:
+    """Mantém ou atualiza a identificação da fonte persistida."""
+    if _is_database_source(
+        source_name
+    ):
+        return source_name
+
+    if source_file is not None:
+        return source_name
+
+    return "database:migrated"
+
+
 def update_persisted_transaction(
     *,
     transaction_id: str,
@@ -149,8 +180,8 @@ def update_persisted_transaction(
     data_mode: str = "user",
     source_dir: Path = RAW_DIR,
     project_root: Path = PROJECT_ROOT,
-) -> Path:
-    """Atualiza a transação no arquivo e no SQLite."""
+) -> Path | None:
+    """Atualiza a transação no SQLite e, quando existir, no arquivo."""
     if data_mode != "user":
         raise ValueError(
             "Somente transações reais podem ser editadas."
@@ -162,20 +193,61 @@ def update_persisted_transaction(
         )
     )
 
-    source_updates = {
-        column: prepared_updates[
-            column
-        ]
-        for column
-        in REQUIRED_TRANSACTION_COLUMNS
-    }
-
-    source_file = (
-        update_transaction_in_source(
+    stored_transaction = (
+        load_transaction_from_database(
+            database_path=database_path,
+            table_name=table_name,
             transaction_id=transaction_id,
-            updates=source_updates,
-            source_dir=source_dir,
-            project_root=project_root,
+            user_id=user_id,
+            data_mode=data_mode,
+        )
+    )
+
+    if stored_transaction is None:
+        raise TransactionNotFoundError(
+            "A transação informada não foi encontrada."
+        )
+
+    source_name = str(
+        stored_transaction.get(
+            "arquivo_origem",
+            "",
+        )
+        or ""
+    ).strip()
+
+    source_file: Path | None = None
+
+    if not _is_database_source(
+        source_name
+    ):
+        source_updates = {
+            column: prepared_updates[
+                column
+            ]
+            for column
+            in REQUIRED_TRANSACTION_COLUMNS
+        }
+
+        try:
+            source_file = (
+                update_transaction_in_source(
+                    transaction_id=transaction_id,
+                    updates=source_updates,
+                    source_dir=source_dir,
+                    project_root=project_root,
+                )
+            )
+
+        except TransactionNotFoundError:
+            # Arquivos antigos podem ter sido removidos.
+            # Nesse caso, o banco assume a fonte principal.
+            source_file = None
+
+    updated_source_name = (
+        _get_database_source_after_update(
+            source_name=source_name,
+            source_file=source_file,
         )
     )
 
@@ -184,18 +256,38 @@ def update_persisted_transaction(
             database_path=database_path,
             table_name=table_name,
             transaction_id=transaction_id,
-            updates=prepared_updates,
+            updates={
+                **prepared_updates,
+                "arquivo_origem": (
+                    updated_source_name
+                ),
+            },
             user_id=user_id,
             data_mode=data_mode,
         )
 
-    except Exception as error:
-        raise PartialTransactionSyncError(
-            "O arquivo de origem foi atualizado, "
-            "mas o SQLite não pôde ser sincronizado. "
-            f"Fonte alterada: {source_file.name}. "
-            f"Detalhes: {error}"
+    except DatabaseTransactionNotFoundError as error:
+        if source_file is not None:
+            raise PartialTransactionSyncError(
+                "O arquivo de origem foi atualizado, "
+                "mas a transação não foi encontrada no SQLite. "
+                f"Fonte alterada: {source_file.name}."
+            ) from error
+
+        raise TransactionNotFoundError(
+            "A transação informada não foi encontrada."
         ) from error
+
+    except Exception as error:
+        if source_file is not None:
+            raise PartialTransactionSyncError(
+                "O arquivo de origem foi atualizado, "
+                "mas o SQLite não pôde ser sincronizado. "
+                f"Fonte alterada: {source_file.name}. "
+                f"Detalhes: {error}"
+            ) from error
+
+        raise
 
     return source_file
 
@@ -209,20 +301,54 @@ def delete_persisted_transaction(
     data_mode: str = "user",
     source_dir: Path = RAW_DIR,
     project_root: Path = PROJECT_ROOT,
-) -> Path:
-    """Exclui a transação do arquivo e do SQLite."""
+) -> Path | None:
+    """Exclui a transação do SQLite e do arquivo quando necessário."""
     if data_mode != "user":
         raise ValueError(
             "Somente transações reais podem ser excluídas."
         )
 
-    source_file = (
-        delete_transaction_from_source(
+    stored_transaction = (
+        load_transaction_from_database(
+            database_path=database_path,
+            table_name=table_name,
             transaction_id=transaction_id,
-            source_dir=source_dir,
-            project_root=project_root,
+            user_id=user_id,
+            data_mode=data_mode,
         )
     )
+
+    if stored_transaction is None:
+        raise TransactionNotFoundError(
+            "A transação informada não foi encontrada."
+        )
+
+    source_name = str(
+        stored_transaction.get(
+            "arquivo_origem",
+            "",
+        )
+        or ""
+    ).strip()
+
+    source_file: Path | None = None
+
+    if not _is_database_source(
+        source_name
+    ):
+        try:
+            source_file = (
+                delete_transaction_from_source(
+                    transaction_id=transaction_id,
+                    source_dir=source_dir,
+                    project_root=project_root,
+                )
+            )
+
+        except TransactionNotFoundError:
+            # O arquivo pode já ter sido removido.
+            # A exclusão no banco ainda deve continuar.
+            source_file = None
 
     try:
         deleted = (
@@ -236,18 +362,26 @@ def delete_persisted_transaction(
         )
 
     except Exception as error:
-        raise PartialTransactionSyncError(
-            "A transação foi removida do arquivo, "
-            "mas não pôde ser excluída do SQLite. "
-            f"Fonte alterada: {source_file.name}. "
-            f"Detalhes: {error}"
-        ) from error
+        if source_file is not None:
+            raise PartialTransactionSyncError(
+                "A transação foi removida do arquivo, "
+                "mas não pôde ser excluída do SQLite. "
+                f"Fonte alterada: {source_file.name}. "
+                f"Detalhes: {error}"
+            ) from error
+
+        raise
 
     if not deleted:
-        raise PartialTransactionSyncError(
-            "A transação foi removida do arquivo, "
-            "mas não foi encontrada no SQLite. "
-            f"Fonte alterada: {source_file.name}."
+        if source_file is not None:
+            raise PartialTransactionSyncError(
+                "A transação foi removida do arquivo, "
+                "mas não foi encontrada no SQLite. "
+                f"Fonte alterada: {source_file.name}."
+            )
+
+        raise TransactionNotFoundError(
+            "A transação não foi encontrada no SQLite."
         )
 
     return source_file

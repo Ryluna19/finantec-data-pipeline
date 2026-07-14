@@ -19,13 +19,13 @@ from scripts.etl_transacoes import (
     ARQUIVO_BANCO,
     TABELA_TRANSACOES,
 )
+from src.manual_transaction_state import (
+    invalidate_manual_draft,
+)
 from src.transaction_editor import (
     ARQUIVO_TRANSACOES_MANUAIS,
     CATEGORIAS_SUGERIDAS,
     DATA_REFRESH_REQUESTED_KEY,
-)
-from src.manual_transaction_state import (
-    invalidate_manual_draft,
 )
 from src.transaction_identity import (
     TRANSACTION_ID_COLUMN,
@@ -166,6 +166,7 @@ def _safe_text(
             value
         ):
             return ""
+
     except (
         TypeError,
         ValueError,
@@ -322,12 +323,13 @@ def _invalidate_manual_draft(
 
 
 def _complete_persisted_operation(
-    source_file: Path,
+    source_file: Path | None,
 ) -> None:
-    """Atualiza o estado depois da sincronização."""
-    _invalidate_manual_draft(
-        source_file
-    )
+    """Atualiza o estado depois da operação persistida."""
+    if source_file is not None:
+        _invalidate_manual_draft(
+            source_file
+        )
 
     st.session_state[
         DATA_MODE_KEY
@@ -338,11 +340,34 @@ def _complete_persisted_operation(
     ] = True
 
 
+def _build_location_message(
+    source_file: Path | None,
+    *,
+    operation: str,
+) -> str:
+    """Informa onde a operação foi aplicada."""
+    if source_file is None:
+        if operation == "updated":
+            return (
+                "Registro atualizado diretamente "
+                "no banco local."
+            )
+
+        return (
+            "Registro removido diretamente "
+            "do banco local."
+        )
+
+    return (
+        f"Fonte sincronizada: {source_file.name}."
+    )
+
+
 def _update_persisted_transaction(
     transaction_id: str,
     updates: dict[str, object],
 ) -> None:
-    """Atualiza a transação no arquivo e no SQLite."""
+    """Atualiza a transação persistida."""
     try:
         source_file = (
             update_persisted_transaction(
@@ -361,12 +386,18 @@ def _update_persisted_transaction(
             source_file
         )
 
+        location_message = (
+            _build_location_message(
+                source_file,
+                operation="updated",
+            )
+        )
+
         _set_management_feedback(
             "success",
             (
-                "Transação atualizada com sucesso "
-                "no arquivo de origem e no banco local. "
-                f"Fonte: {source_file.name}."
+                "Transação atualizada com sucesso. "
+                f"{location_message}"
             ),
         )
 
@@ -375,7 +406,7 @@ def _update_persisted_transaction(
             "error",
             (
                 "A transação não foi encontrada "
-                "no arquivo de origem."
+                "nos dados do usuário."
             ),
         )
 
@@ -438,7 +469,7 @@ def _update_persisted_transaction(
 def _delete_persisted_transaction(
     transaction_id: str,
 ) -> None:
-    """Exclui a transação do arquivo e do SQLite."""
+    """Exclui a transação persistida."""
     try:
         source_file = (
             delete_persisted_transaction(
@@ -456,12 +487,18 @@ def _delete_persisted_transaction(
             source_file
         )
 
+        location_message = (
+            _build_location_message(
+                source_file,
+                operation="deleted",
+            )
+        )
+
         _set_management_feedback(
             "success",
             (
-                "Transação excluída permanentemente "
-                "do arquivo de origem e do banco local. "
-                f"Fonte: {source_file.name}."
+                "Transação excluída permanentemente. "
+                f"{location_message}"
             ),
         )
 
@@ -470,7 +507,7 @@ def _delete_persisted_transaction(
             "error",
             (
                 "A transação não foi encontrada "
-                "no arquivo de origem."
+                "nos dados do usuário."
             ),
         )
 
@@ -553,7 +590,9 @@ def _get_amount_default(
     )
 
     if (
-        pd.isna(amount)
+        pd.isna(
+            amount
+        )
         or amount <= 0
     ):
         return 0.01
@@ -800,9 +839,9 @@ def _render_delete_confirmation(
 ) -> None:
     """Exibe a confirmação da exclusão permanente."""
     st.warning(
-        "A exclusão remove a transação do arquivo de origem "
-        "e do banco local. Essa ação não pode ser desfeita "
-        "pela interface."
+        "A exclusão remove a transação do banco local "
+        "e também do arquivo de origem quando ele existir. "
+        "Essa ação não pode ser desfeita pela interface."
     )
 
     confirmed = st.checkbox(
@@ -849,9 +888,9 @@ def render_persisted_transaction_management(
             expanded=should_expand,
         ):
             st.caption(
-                "Selecione uma movimentação já processada. "
-                "As alterações são sincronizadas diretamente "
-                "entre o arquivo de origem e o banco local."
+                "Selecione uma movimentação já persistida. "
+                "As alterações são aplicadas ao banco local "
+                "e ao arquivo de origem quando ele ainda existir."
             )
 
             if (
@@ -955,6 +994,14 @@ def render_persisted_transaction_management(
                 )
             )
 
+            source_label = (
+                "Banco local"
+                if source_name.startswith(
+                    "database:"
+                )
+                else source_name
+            )
+
             category = (
                 _safe_text(
                     selected_transaction.get(
@@ -964,11 +1011,12 @@ def render_persisted_transaction_management(
                 or "Sem categoria"
             )
 
-            if source_name:
+            if source_label:
                 st.caption(
                     f"Categoria: {category} · "
-                    f"Origem: {source_name}"
+                    f"Origem: {source_label}"
                 )
+
             else:
                 st.caption(
                     f"Categoria: {category}"
