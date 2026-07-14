@@ -1,8 +1,8 @@
 # FinanTec Data Pipeline
 
-Pipeline de dados financeiros simulados com Python, pandas, SQLite, Streamlit e IA generativa.
+Aplicação de organização financeira com Python, pandas, SQLite, Streamlit e insights calculados localmente.
 
-O projeto simula um fluxo de organização financeira pessoal a partir de arquivos CSV mensais. Ele processa transações, valida dados, separa linhas inválidas, salva a base tratada em SQLite, exibe indicadores em um dashboard e usa IA generativa para explicar os resultados.
+O projeto organiza transações financeiras, valida dados, salva as informações em SQLite, exibe indicadores em um dashboard e responde consultas financeiras por meio de cálculos locais.
 
 O FinanTec Data Pipeline não utiliza dados bancários reais. Todos os dados são simulados.
 
@@ -15,7 +15,7 @@ O FinanTec Data Pipeline transforma arquivos brutos de transações financeiras 
 A proposta é demonstrar um fluxo completo de dados aplicado a um contexto financeiro pessoal:
 
 ```text
-CSV bruto → ETL → SQLite → dashboard → IA explicando indicadores
+CSV bruto → ETL → SQLite → dashboard → insights financeiros locais
 ```
 
 A ideia atual é manter o projeto como uma ferramenta local/pessoal de gestão financeira simulada, sem login, múltiplos usuários ou integração bancária real.
@@ -34,7 +34,7 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - carga dos dados processados em SQLite;
 - análise por período;
 - visualização em Streamlit;
-- explicação dos indicadores com IA generativa.
+- consultas e explicações financeiras calculadas localmente.
 
 ---
 
@@ -54,8 +54,9 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - gráfico de gastos por categoria;
 - simulador de metas financeiras;
 - resumo da validação dos dados no dashboard;
-- chat com IA generativa usando contexto dos dados;
+- assistente financeiro local para consultas sobre os dados do período;
 - histórico de conversa separado por período analisado;
+- processamento local das perguntas, sem envio de informações financeiras para serviços externos;
 - comando centralizado de execução com `main.py`.
 - entrada manual de transações pelo dashboard;
 - edição local de transações em formato de tabela com `st.data_editor`;
@@ -70,11 +71,8 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - Streamlit
 - SQLite
 - pytest
-- python-dotenv
-- google-genai
 - CSV
 - JSON
-- Gemini API
 
 ---
 
@@ -97,7 +95,7 @@ database/finantec.db
         ↓
 Dashboard em Streamlit
         ↓
-IA explicando os indicadores calculados
+Consultas e insights calculados localmente
 ```
 
 ---
@@ -152,26 +150,21 @@ finantec-data-pipeline/
 ├── manual_tests/
 │   ├── README.md
 │   ├── _path_setup.py
-│   ├── teste_contexto.py
 │   ├── teste_dados.py
-│   ├── teste_ia.py
 │   ├── teste_metas.py
 │   ├── teste_periodos.py
 │   └── teste_sqlite.py
 ├── scripts/
 │   └── etl_transacoes.py
 ├── src/
-│   ├── agent.py
 │   ├── analytics.py
 │   ├── app.py
 │   ├── data_loader.py
-│   └── prompts.py
 ├── tests/
 │   ├── test_analytics.py
 │   ├── test_etl_pipeline.py
 │   ├── test_rejections.py
 │   └── test_sqlite_load.py
-├── .env.example
 ├── .gitignore
 ├── main.py
 ├── README.md
@@ -188,8 +181,8 @@ A pasta `docs/` reúne a documentação técnica e de produto do projeto.
 |---|---|
 | `docs/project_overview.md` | Visão geral do projeto, problema, solução, componentes e decisões técnicas. |
 | `docs/data_contract.md` | Contrato de dados dos arquivos CSV de transações. |
-| `docs/knowledge_base.md` | Explicação das fontes de dados usadas pelo pipeline, dashboard e IA. |
-| `docs/ai_prompting.md` | Regras de prompt, uso da IA e estratégia para reduzir respostas inventadas. |
+| `docs/knowledge_base.md` | Explicação das fontes de dados usadas pelo pipeline e pelo dashboard. |
+| `docs/ai_prompting.md` | Registro da integração externa descontinuada, pendente de revisão documental. |
 | `docs/validation.md` | Estratégia de validação, testes automatizados, testes manuais e limitações. |
 | `docs/roadmap.md` | Próximas evoluções planejadas para o projeto. |
 
@@ -236,26 +229,6 @@ py -m venv .venv
 ```bash
 pip install -r requirements.txt
 ```
-
-### 4. Configure a chave da IA
-
-Copie o arquivo `.env.example` para `.env`:
-
-```bash
-copy .env.example .env
-```
-
-Depois preencha sua chave da Gemini API no arquivo `.env`:
-
-```env
-GEMINI_API_KEY=SUA_CHAVE_DA_GEMINI_AQUI
-```
-
-O arquivo `.env` não deve ser enviado para o GitHub.
-
-Sem a chave configurada, o pipeline, os testes e o dashboard continuam funcionando, mas o chat com IA não conseguirá consultar a Gemini API.
-
----
 
 ## Comandos Principais
 
@@ -315,7 +288,7 @@ O arquivo `transacoes_rejeitadas.csv` só é criado quando existem linhas invál
 O arquivo `data/raw/transacoes_manuais.csv` é criado pelo editor manual de transações e representa dados locais inseridos pela interface. Ele não deve ser versionado no GitHub.
 ---
 
-## Exemplos de Perguntas para o Chat
+## Exemplos de Perguntas para o Assistente Local
 
 ```text
 Em qual categoria eu mais gastei neste período?
@@ -326,11 +299,11 @@ Qual é meu saldo neste período?
 ```
 
 ```text
-Quanto preciso guardar por mês para comprar o notebook?
+Quanto entrou?
 ```
 
 ```text
-Quanto preciso guardar por mês para montar a reserva?
+Quanto eu gastei?
 ```
 
 ```text
@@ -338,10 +311,10 @@ Quanto eu separei para reserva neste período?
 ```
 
 ```text
-Qual banco oferece o melhor CDB hoje?
+Me dê um resumo financeiro.
 ```
 
-Para perguntas que dependem de dados externos ou informações em tempo real, o assistente deve informar que não possui dados suficientes.
+As respostas são calculadas localmente. Perguntas não reconhecidas não são enviadas para serviços externos.
 
 ---
 
@@ -375,7 +348,7 @@ pytest
 
 A pasta `manual_tests/` contém scripts auxiliares usados para verificar partes do projeto durante o desenvolvimento.
 
-Esses arquivos não substituem os testes automatizados, mas ajudam a validar manualmente pontos como contexto enviado para IA, leitura de dados, períodos disponíveis e conexão com SQLite.
+Esses arquivos não substituem os testes automatizados, mas ajudam a validar manualmente pontos como leitura de dados, períodos disponíveis e conexão com SQLite.
 
 Exemplos:
 
@@ -383,14 +356,7 @@ Exemplos:
 python manual_tests/teste_dados.py
 python manual_tests/teste_metas.py
 python manual_tests/teste_periodos.py
-python manual_tests/teste_contexto.py
 python manual_tests/teste_sqlite.py
-```
-
-O teste manual da IA depende do `.env` configurado:
-
-```bash
-python manual_tests/teste_ia.py
 ```
 
 ---
@@ -438,11 +404,11 @@ Projeto independente em desenvolvimento.
 Fluxo atual:
 
 ```text
-CSV bruto → ETL com pandas → CSV processado → SQLite → dashboard Streamlit → IA explicando indicadores
+CSV bruto → ETL com pandas → CSV processado → SQLite → dashboard Streamlit → insights financeiros locais
 ```
 
 Direção futura:
 
 ```text
-Controle financeiro local → validação dos dados → SQLite → dashboard → IA explicando indicadores
+Controle financeiro local → validação dos dados → SQLite → dashboard → insights financeiros locais
 ```
