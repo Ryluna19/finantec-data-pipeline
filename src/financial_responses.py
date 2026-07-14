@@ -1,7 +1,7 @@
-"""Respostas determinísticas para perguntas financeiras simples.
+"""Respostas determinísticas para consultas financeiras locais.
 
 Os valores são recebidos dos cálculos já realizados pela aplicação.
-Perguntas mais complexas continuam sendo encaminhadas ao modelo generativo.
+Perguntas não reconhecidas recebem uma orientação segura sem envio externo.
 """
 
 from __future__ import annotations
@@ -389,21 +389,33 @@ def _build_help_response() -> str:
     """Apresenta exemplos de perguntas aceitas."""
     return (
         "Posso ajudar você a consultar os dados financeiros "
-        "do período e entender conceitos básicos.\n\n"
+        "do período.\n\n"
         "Alguns exemplos:\n"
         "- Quanto ainda tenho?\n"
-        "- Quanto entrou e quanto eu gastei?\n"
+        "- Quanto entrou?\n"
+        "- Quanto eu gastei?\n"
+        "- Quanto foi reservado?\n"
         "- Onde estou gastando mais?\n"
-        "- Quanto preciso guardar para uma meta?"
+        "- Me dê um resumo do período."
     )
 
+
+def _build_unsupported_response() -> str:
+    """Orienta quando a pergunta não possui resposta local."""
+    return (
+        "Esta pergunta ainda não é atendida pelos cálculos locais.\n\n"
+        "Posso ajudar com saldo, receitas, despesas, reserva, "
+        "maior categoria de gastos e resumo do período.\n\n"
+        "Para preservar a privacidade dos seus dados, "
+        "a pergunta não será enviada para um serviço externo."
+    )
 
 def build_local_financial_response(
     question: str,
     summary: dict[str, Any],
     expenses_by_category: pd.Series,
-) -> str | None:
-    """Cria uma resposta local quando a intenção for simples."""
+) -> str:
+    """Cria uma resposta local para todas as perguntas recebidas."""
     classification = (
         classify_financial_intent(
             question
@@ -413,7 +425,7 @@ def build_local_financial_response(
     intent = classification.intent
 
     if intent not in LOCAL_RESPONSE_INTENTS:
-        return None
+        return _build_unsupported_response()
 
     if intent == FinancialIntent.BALANCE:
         return _build_balance_response(
@@ -451,4 +463,4 @@ def build_local_financial_response(
     if intent == FinancialIntent.HELP:
         return _build_help_response()
 
-    return None
+    return _build_unsupported_response()

@@ -1,4 +1,4 @@
-"""Componente de conversa contextual com o assistente FinanTec."""
+"""Componente de conversa financeira processada localmente."""
 
 from __future__ import annotations
 
@@ -8,12 +8,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from agent import (
-    gerar_resposta_finantec as generate_finantec_response,
-)
-from prompts import (
-    montar_contexto as build_context,
-)
+
 from scripts.etl_transacoes import (
     ARQUIVO_BANCO,
 )
@@ -26,14 +21,9 @@ from src.financial_responses import (
     build_local_financial_response,
 )
 
+CHAT_MESSAGES_STATE_KEY = "messages_by_period"
 
-CHAT_MESSAGES_STATE_KEY = (
-    "messages_by_period"
-)
-
-CHAT_PERSISTENCE_WARNING_KEY = (
-    "chat_persistence_warning"
-)
+CHAT_PERSISTENCE_WARNING_KEY = "chat_persistence_warning"
 
 
 def create_initial_message(
@@ -45,8 +35,8 @@ def create_initial_message(
             "role": "assistant",
             "content": (
                 f"Olá! Sou o FinanTec. Estou analisando o período "
-                f"{period}. Posso ajudar você a entender gastos, "
-                "metas e conceitos financeiros básicos."
+                f"{period}. Posso ajudar com saldo, receitas, "
+                "despesas, reserva e categorias de gastos."
             ),
             "source": "system",
         }
@@ -59,11 +49,7 @@ def _build_conversation_key(
     data_mode: str,
 ) -> str:
     """Cria uma chave isolada por usuário, modo e período."""
-    return (
-        f"{user_id.strip()}"
-        f"::{data_mode.strip().lower()}"
-        f"::{period.strip()}"
-    )
+    return f"{user_id.strip()}" f"::{data_mode.strip().lower()}" f"::{period.strip()}"
 
 
 def get_period_messages(
@@ -73,115 +59,50 @@ def get_period_messages(
     database_path: Path = ARQUIVO_BANCO,
 ) -> list[dict[str, str]]:
     """Carrega e mantém o histórico do contexto atual."""
-    messages_by_period = (
-        st.session_state.setdefault(
-            CHAT_MESSAGES_STATE_KEY,
-            {},
-        )
+    messages_by_period = st.session_state.setdefault(
+        CHAT_MESSAGES_STATE_KEY,
+        {},
     )
 
-    conversation_key = (
-        _build_conversation_key(
+    conversation_key = _build_conversation_key(
+        user_id=user_id,
+        period=period,
+        data_mode=data_mode,
+    )
+
+    if conversation_key in messages_by_period:
+        return messages_by_period[conversation_key]
+
+    try:
+        persisted_messages = load_chat_messages(
+            database_path=database_path,
             user_id=user_id,
             period=period,
             data_mode=data_mode,
-        )
-    )
-
-    if (
-        conversation_key
-        in messages_by_period
-    ):
-        return messages_by_period[
-            conversation_key
-        ]
-
-    try:
-        persisted_messages = (
-            load_chat_messages(
-                database_path=database_path,
-                user_id=user_id,
-                period=period,
-                data_mode=data_mode,
-            )
         )
 
     except RuntimeError as error:
         persisted_messages = []
 
-        st.session_state[
-            CHAT_PERSISTENCE_WARNING_KEY
-        ] = str(
-            error
-        )
+        st.session_state[CHAT_PERSISTENCE_WARNING_KEY] = str(error)
 
-    messages_by_period[
-        conversation_key
-    ] = [
-        *create_initial_message(
-            period
-        ),
+    messages_by_period[conversation_key] = [
+        *create_initial_message(period),
         *persisted_messages,
     ]
 
-    return messages_by_period[
-        conversation_key
-    ]
-
-
-def build_period_context(
-    period: str,
-    user_profile: dict[str, Any],
-    summary: dict[str, Any],
-    expenses_by_category: pd.Series,
-    goal_simulations: list[
-        dict[str, Any]
-    ],
-    service_history: pd.DataFrame,
-    financial_concepts: dict[str, Any],
-    financial_products: dict[str, Any],
-) -> str:
-    """Monta o contexto enviado ao modelo de IA."""
-    context = build_context(
-        perfil_usuario=user_profile,
-        resumo_financeiro=summary,
-        gastos_por_categoria=(
-            expenses_by_category
-        ),
-        simulacoes_metas=(
-            goal_simulations
-        ),
-        historico_atendimento=(
-            service_history
-        ),
-        conceitos_financeiros=(
-            financial_concepts
-        ),
-        produtos_financeiros=(
-            financial_products
-        ),
-    )
-
-    return (
-        "PERÍODO ANALISADO:\n"
-        f"{period}\n\n"
-        f"{context}"
-    ).strip()
-
+    return messages_by_period[conversation_key]
 
 def _render_response_source(
     source: str,
 ) -> None:
     """Exibe uma indicação discreta da origem da resposta."""
     if source == "local":
-        st.caption(
-            "Resposta calculada localmente "
-            "com os dados do período."
-        )
+        st.caption("Resposta calculada localmente " "com os dados do período.")
 
     elif source == "ai":
         st.caption(
-            "Resposta gerada com IA usando "
+            "Resposta antiga gerada com IA usando "
             "o contexto calculado pelo FinanTec."
         )
 
@@ -205,17 +126,11 @@ def _render_chat_message(
         "",
     )
 
-    with st.chat_message(
-        role
-    ):
-        st.markdown(
-            content
-        )
+    with st.chat_message(role):
+        st.markdown(content)
 
         if role == "assistant":
-            _render_response_source(
-                source
-            )
+            _render_response_source(source)
 
 
 def _clear_current_conversation(
@@ -235,28 +150,19 @@ def _clear_current_conversation(
         )
 
     except RuntimeError as error:
-        st.error(
-            str(
-                error
-            )
-        )
+        st.error(str(error))
 
         return
 
     messages.clear()
 
-    messages.extend(
-        create_initial_message(
-            period
-        )
-    )
+    messages.extend(create_initial_message(period))
 
     st.rerun()
 
 
 def render_chat(
     messages: list[dict[str, str]],
-    context: str,
     user_id: str,
     period: str,
     data_mode: str,
@@ -264,7 +170,7 @@ def render_chat(
     expenses_by_category: pd.Series,
     database_path: Path = ARQUIVO_BANCO,
 ) -> None:
-    """Exibe, processa e persiste a conversa do usuário."""
+    """Exibe, processa e persiste a conversa local."""
     (
         title_column,
         action_column,
@@ -278,22 +184,13 @@ def render_chat(
     )
 
     with title_column:
-        st.subheader(
-            "Converse com o FinanTec"
-        )
+        st.subheader("Converse com o FinanTec")
 
     with action_column:
         if st.button(
             "Limpar conversa",
-            key=(
-                "clear-finantec-chat-"
-                f"{user_id}-"
-                f"{data_mode}-"
-                f"{period}"
-            ),
-            disabled=(
-                len(messages) <= 1
-            ),
+            key=("clear-finantec-chat-" f"{user_id}-" f"{data_mode}-" f"{period}"),
+            disabled=(len(messages) <= 1),
             use_container_width=True,
         ):
             _clear_current_conversation(
@@ -304,38 +201,28 @@ def render_chat(
                 database_path=database_path,
             )
 
-    persistence_warning = (
-        st.session_state.pop(
-            CHAT_PERSISTENCE_WARNING_KEY,
-            None,
-        )
+    persistence_warning = st.session_state.pop(
+        CHAT_PERSISTENCE_WARNING_KEY,
+        None,
     )
 
     if persistence_warning:
-        st.warning(
-            persistence_warning
-        )
+        st.warning(persistence_warning)
 
     st.caption(
-        "Consultas simples são respondidas pelos cálculos locais. "
-        "Perguntas explicativas usam a IA. "
+        "As respostas são calculadas localmente com os dados "
+        "do período. Nenhuma pergunta ou informação financeira "
+        "é enviada para serviços externos. "
         "O histórico é salvo neste dispositivo."
     )
 
     chat_history = st.container(
-        key=(
-            "finantec-chat-history-"
-            f"{user_id}-"
-            f"{data_mode}-"
-            f"{period}"
-        ),
+        key=("finantec-chat-history-" f"{user_id}-" f"{data_mode}-" f"{period}"),
     )
 
     with chat_history:
         for message in messages:
-            _render_chat_message(
-                message
-            )
+            _render_chat_message(message)
 
     user_question = st.chat_input(
         "Digite sua pergunta sobre organização financeira",
@@ -352,81 +239,20 @@ def render_chat(
     }
 
     with chat_history:
-        _render_chat_message(
-            user_message
-        )
+        _render_chat_message(user_message)
 
-        with st.chat_message(
-            "assistant"
-        ):
-            local_response = (
-                build_local_financial_response(
-                    question=user_question,
-                    summary=summary,
-                    expenses_by_category=(
-                        expenses_by_category
-                    ),
-                )
+        with st.chat_message("assistant"):
+            response = build_local_financial_response(
+                question=user_question,
+                summary=summary,
+                expenses_by_category=(expenses_by_category),
             )
 
-            if local_response is not None:
-                response = (
-                    local_response
-                )
+            response_source = "local"
 
-                response_source = (
-                    "local"
-                )
+            st.markdown(response)
 
-                st.markdown(
-                    response
-                )
-
-                _render_response_source(
-                    response_source
-                )
-
-            else:
-                with st.spinner(
-                    "Analisando os dados disponíveis..."
-                ):
-                    try:
-                        response = (
-                            generate_finantec_response(
-                                pergunta_usuario=(
-                                    user_question
-                                ),
-                                contexto=context,
-                                historico_conversa=(
-                                    messages
-                                ),
-                            )
-                        )
-
-                        response_source = (
-                            "ai"
-                        )
-
-                        st.markdown(
-                            response
-                        )
-
-                        _render_response_source(
-                            response_source
-                        )
-
-                    except RuntimeError as error:
-                        response = str(
-                            error
-                        )
-
-                        response_source = (
-                            "error"
-                        )
-
-                        st.error(
-                            response
-                        )
+            _render_response_source(response_source)
 
     assistant_message = {
         "role": "assistant",
@@ -449,14 +275,8 @@ def render_chat(
             data_mode=data_mode,
             question=user_question,
             response=response,
-            response_source=(
-                response_source
-            ),
+            response_source=(response_source),
         )
 
     except RuntimeError as error:
-        st.warning(
-            str(
-                error
-            )
-        )
+        st.warning(str(error))

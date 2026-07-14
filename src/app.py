@@ -10,14 +10,12 @@ import streamlit as st
 from analytics import (
     calcular_gastos_por_categoria as calculate_expenses_by_category,
     calcular_resumo_financeiro as calculate_financial_summary,
-    calcular_simulacoes_de_metas as calculate_goal_simulations,
 )
 from components.charts import (
     render_expenses_by_category,
     render_monthly_evolution,
 )
 from components.chat import (
-    build_period_context,
     get_period_messages,
     render_chat,
 )
@@ -42,10 +40,7 @@ from components.tables import (
     render_period_transactions,
 )
 from data_loader import (
-    carregar_conceitos_financeiros as load_financial_concepts,
-    carregar_historico_atendimento as load_service_history,
     carregar_perfil_usuario as load_user_profile,
-    carregar_produtos_financeiros as load_financial_products,
     carregar_rejeicoes as load_rejections,
     carregar_transacoes as load_transactions,
 )
@@ -85,9 +80,6 @@ def load_data(
     dict[str, Any],
     pd.DataFrame,
     pd.DataFrame,
-    dict[str, Any],
-    dict[str, Any],
-    pd.DataFrame,
 ]:
     """Carrega e mantém em cache os dados utilizados pela interface."""
     return (
@@ -96,9 +88,6 @@ def load_data(
             user_id=user_id,
             data_mode=data_mode,
         ),
-        load_service_history(),
-        load_financial_concepts(),
-        load_financial_products(),
         load_rejections(),
     )
 
@@ -434,9 +423,6 @@ def main() -> None:
     (
         user_profile,
         transactions,
-        service_history,
-        financial_concepts,
-        financial_products,
         rejections,
     ) = load_data(
         current_user_id,
@@ -524,23 +510,6 @@ def main() -> None:
         )
     )
 
-    goal_simulations = (
-        calculate_goal_simulations(
-            user_profile
-        )
-    )
-
-    context = build_period_context(
-        period=period,
-        user_profile=user_profile,
-        summary=summary,
-        expenses_by_category=expenses_by_category,
-        goal_simulations=goal_simulations,
-        service_history=service_history,
-        financial_concepts=financial_concepts,
-        financial_products=financial_products,
-    )
-
     messages = get_period_messages(
         user_id=current_user_id,
         period=period,
@@ -577,7 +546,6 @@ def main() -> None:
     with ai_tab:
         render_chat(
             messages=messages,
-            context=context,
             user_id=current_user_id,
             period=period,
             data_mode=data_mode,

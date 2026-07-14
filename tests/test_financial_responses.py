@@ -43,8 +43,6 @@ def test_balance_question_uses_local_summary():
         )
     )
 
-    assert response is not None
-
     assert (
         "7.424,70"
         in response
@@ -69,8 +67,6 @@ def test_income_question_uses_local_summary():
         )
     )
 
-    assert response is not None
-
     assert (
         "10.200,00"
         in response
@@ -90,8 +86,6 @@ def test_expenses_question_uses_local_summary():
         )
     )
 
-    assert response is not None
-
     assert (
         "2.775,30"
         in response
@@ -110,8 +104,6 @@ def test_reserve_question_uses_local_summary():
             ),
         )
     )
-
-    assert response is not None
 
     assert (
         "520,00"
@@ -136,8 +128,6 @@ def test_top_category_response():
             ),
         )
     )
-
-    assert response is not None
 
     assert (
         "Serviços"
@@ -171,8 +161,6 @@ def test_top_category_response_handles_tie():
         )
     )
 
-    assert response is not None
-
     assert (
         "empate"
         in response.lower()
@@ -202,8 +190,6 @@ def test_period_summary_contains_main_values():
         )
     )
 
-    assert response is not None
-
     assert (
         "10.200,00"
         in response
@@ -230,7 +216,7 @@ def test_period_summary_contains_main_values():
     )
 
 
-def test_unknown_question_returns_none():
+def test_unknown_question_returns_safe_local_response():
     response = (
         build_local_financial_response(
             question=(
@@ -243,10 +229,18 @@ def test_unknown_question_returns_none():
         )
     )
 
-    assert response is None
+    assert (
+        "ainda não é atendida"
+        in response.lower()
+    )
+
+    assert (
+        "não será enviada"
+        in response.lower()
+    )
 
 
-def test_concept_question_remains_for_ai():
+def test_concept_question_returns_safe_local_response():
     response = (
         build_local_financial_response(
             question=(
@@ -259,10 +253,18 @@ def test_concept_question_remains_for_ai():
         )
     )
 
-    assert response is None
+    assert (
+        "cálculos locais"
+        in response.lower()
+    )
+
+    assert (
+        "serviço externo"
+        in response.lower()
+    )
 
 
-def test_product_question_remains_for_ai():
+def test_product_question_returns_safe_local_response():
     response = (
         build_local_financial_response(
             question=(
@@ -275,4 +277,7 @@ def test_product_question_remains_for_ai():
         )
     )
 
-    assert response is None
+    assert (
+        "não será enviada"
+        in response.lower()
+    )
