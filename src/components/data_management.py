@@ -447,7 +447,8 @@ def _render_reset_action(
 def render_data_management() -> None:
     """Exibe a área de gerenciamento dos dados."""
     st.subheader(
-        "Dados e privacidade"
+        "Dados e privacidade",
+        anchor="dados-e-privacidade",
     )
 
     st.caption(

@@ -425,7 +425,8 @@ def render_user_profile(
 ) -> None:
     """Exibe e permite editar o perfil financeiro."""
     st.subheader(
-        "Meu perfil"
+        "Meu perfil",
+        anchor="meu-perfil",
     )
 
     st.caption(

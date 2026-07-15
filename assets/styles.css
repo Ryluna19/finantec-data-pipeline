@@ -2316,6 +2316,50 @@ hr {
         padding: 4rem 0.8rem 2.5rem;
     }
 
+    .finantec-brand-header {
+        margin-bottom: 0.55rem;
+    }
+
+    .finantec-brand-title-row {
+        gap: 0.65rem;
+    }
+
+    .finantec-brand-icon {
+        width: 40px;
+        height: 40px;
+
+        border-radius: 11px;
+    }
+
+    .finantec-brand-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .finantec-brand-eyebrow,
+    .finantec-brand-description {
+        display: none;
+    }
+
+    .finantec-brand-title-row h1 {
+        font-size: 1.65rem;
+    }
+
+    .finantec-brand-header::after {
+        width: 34px;
+        margin-top: 0.55rem;
+    }
+
+    .finantec-alert {
+        margin: 0.5rem 0;
+        padding: 0.65rem 0.75rem;
+
+        border-radius: 10px !important;
+
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
     h1 {
         font-size: 2rem;
     }
@@ -2353,35 +2397,6 @@ hr {
 
     .finantec-table-panel {
         overflow-x: auto;
-    }
-      .finantec-brand-title-row {
-        gap: 0.75rem;
-    }
-
-    .finantec-brand-icon {
-        width: 42px;
-        height: 42px;
-
-        border-radius: 12px;
-    }
-
-    .finantec-brand-icon svg {
-        width: 24px;
-        height: 24px;
-    }
-
-    .finantec-brand-eyebrow {
-        font-size: 0.66rem;
-    }
-
-    .finantec-brand-title-row h1 {
-        font-size: 1.85rem;
-    }
-
-    .finantec-brand-description {
-        margin-top: 0.7rem;
-
-        font-size: 0.86rem !important;
     }
       .finantec-goal-grid {
         grid-template-columns: 1fr;
