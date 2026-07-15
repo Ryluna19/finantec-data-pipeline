@@ -147,7 +147,7 @@ def preparar_transacoes_para_salvar(
 def validar_transacoes_editadas(
     transacoes: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Valida as transações usando as regras do ETL."""
+    """Valida as transações usando as regras compartilhadas."""
     return validate_manual_transactions(
         transacoes
     )
@@ -1032,8 +1032,8 @@ def exibir_editor_transacoes_manuais() -> bool:
             )
 
     st.info(
-        "As transações são salvas diretamente no SQLite. "
-        "Não é necessário executar o pipeline ETL."
+        "As transações são salvas no banco local "
+        "e aparecem automaticamente no painel."
     )
 
     return False

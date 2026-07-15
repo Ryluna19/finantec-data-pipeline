@@ -309,78 +309,42 @@ def render_data_validation(
     valid_count: int,
     rejections: pd.DataFrame,
 ) -> None:
-    """Exibe a situação dos dados processados pelo ETL."""
-    with st.container(
-        border=True,
-        key="data-validation-card",
+    """Exibe somente transações que precisam de correção."""
+    if rejections.empty:
+        return
+
+    rejected_count = len(
+        rejections
+    )
+
+    rejection_label = (
+        "transação precisa"
+        if rejected_count == 1
+        else "transações precisam"
+    )
+
+    usage_label = (
+        "ser usada"
+        if rejected_count == 1
+        else "serem usadas"
+    )
+
+    st.warning(
+        f"{rejected_count} {rejection_label} de correção "
+        f"antes de {usage_label} no painel."
+    )
+
+    with st.expander(
+        "Ver transações que precisam de correção"
     ):
-        st.markdown(
-            "### Validação dos dados"
+        st.dataframe(
+            rejections,
+            use_container_width=True,
+            hide_index=True,
+            height=calculate_table_height(
+                len(rejections),
+            ),
         )
-
-        st.caption(
-            "Resumo das linhas aceitas e rejeitadas "
-            "pelo pipeline ETL."
-        )
-
-        rejected_count = len(
-            rejections
-        )
-
-        rejected_metric_key = (
-            "validation-rejected-metric-error"
-            if rejected_count > 0
-            else "validation-rejected-metric-neutral"
-        )
-
-        valid_column, rejected_column = (
-            st.columns(
-                2,
-                gap="small",
-            )
-        )
-
-        with valid_column:
-            with st.container(
-                key="validation-valid-metric",
-            ):
-                st.metric(
-                    "Válidas no período",
-                    valid_count,
-                )
-
-        with rejected_column:
-            with st.container(
-                key=rejected_metric_key,
-            ):
-                st.metric(
-                    "Rejeitadas no último ETL",
-                    rejected_count,
-                )
-
-        if rejections.empty:
-            st.success(
-                "Nenhuma transação foi rejeitada "
-                "no último processamento."
-            )
-            return
-
-        st.warning(
-            "Existem transações rejeitadas. "
-            "Consulte a tabela para conferir os motivos."
-        )
-
-        with st.expander(
-            "Ver transações rejeitadas"
-        ):
-            st.dataframe(
-                rejections,
-                use_container_width=True,
-                hide_index=True,
-                height=calculate_table_height(
-                    len(rejections),
-                ),
-            )
 
 
 def filter_transactions_table(

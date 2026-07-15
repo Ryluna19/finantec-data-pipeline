@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-
 from scripts.etl_transacoes import (
     run_etl_with_summary,
 )
@@ -12,14 +11,14 @@ from src.data_reset import (
     reset_user_transaction_data,
     summarize_user_transaction_data,
 )
-from src.user_context import (
-    get_current_user_id,
-)
 from src.transaction_editor import (
     MANUAL_DRAFT_KEY,
     MANUAL_EDIT_INDEX_KEY,
     MANUAL_FEEDBACK_KEY,
     MANUAL_FORM_VERSION_KEY,
+)
+from src.user_context import (
+    get_current_user_id,
 )
 
 
@@ -66,14 +65,20 @@ def _show_feedback() -> None:
     ]
 
     if message_type == "success":
-        st.success(message)
+        st.success(
+            message
+        )
         return
 
     if message_type == "warning":
-        st.warning(message)
+        st.warning(
+            message
+        )
         return
 
-    st.error(message)
+    st.error(
+        message
+    )
 
 
 def _clear_manual_session_state() -> None:
@@ -100,28 +105,28 @@ def _refresh_application_data() -> None:
 
 
 def _render_current_mode() -> None:
-    """Exibe o modo escolhido durante a sessão atual."""
+    """Exibe a fonte selecionada durante a sessão."""
     current_mode = st.session_state.get(
         DATA_MODE_KEY
     )
 
     mode_labels = {
-        "user": "Dados do usuário",
-        "demo": "Dados de demonstração",
-        "empty": "Dashboard vazio",
+        "user": "Meus dados",
+        "demo": "Demonstração",
+        "empty": "Sem transações",
     }
 
     if current_mode not in mode_labels:
         return
 
     st.info(
-        "Modo atual desta sessão: "
+        "Exibindo no painel: "
         f"**{mode_labels[current_mode]}**"
     )
 
 
 def _render_data_summary() -> dict[str, int | bool]:
-    """Exibe um resumo visual dos dados transacionais encontrados."""
+    """Exibe um resumo dos dados transacionais locais."""
     current_user_id = (
         get_current_user_id()
     )
@@ -130,6 +135,14 @@ def _render_data_summary() -> dict[str, int | bool]:
         summarize_user_transaction_data(
             user_id=current_user_id,
         )
+    )
+
+    source_files = int(
+        summary["source_files"]
+    )
+
+    processed_files = int(
+        summary["processed_files"]
     )
 
     transaction_rows = int(
@@ -144,9 +157,10 @@ def _render_data_summary() -> dict[str, int | bool]:
 
     heading_html = (
         '<div class="finantec-section-heading">'
-        "<h3>Resumo local</h3>"
+        "<h3>Resumo dos dados locais</h3>"
         "<p>"
-        "Situação dos arquivos e das transações usadas pelo dashboard."
+        "Informações transacionais armazenadas "
+        "neste dispositivo para o usuário atual."
         "</p>"
         "</div>"
     )
@@ -156,37 +170,37 @@ def _render_data_summary() -> dict[str, int | bool]:
 
         '<div class="finantec-data-summary-card">'
         '<span class="finantec-data-summary-label">'
-        "Fontes do usuário"
+        "Arquivos importados"
         "</span>"
         '<strong class="finantec-data-summary-value">'
-        f'{summary["source_files"]}'
+        f"{source_files}"
         "</strong>"
         '<span class="finantec-data-summary-description">'
-        "Arquivos encontrados em data/raw."
+        "Arquivos usados para adicionar transações."
         "</span>"
         "</div>"
 
         '<div class="finantec-data-summary-card">'
         '<span class="finantec-data-summary-label">'
-        "Arquivos processados"
+        "Arquivos auxiliares"
         "</span>"
         '<strong class="finantec-data-summary-value">'
-        f'{summary["processed_files"]}'
+        f"{processed_files}"
         "</strong>"
         '<span class="finantec-data-summary-description">'
-        "Saídas geradas pelo pipeline ETL."
+        "Arquivos locais gerados durante o processamento."
         "</span>"
         "</div>"
 
         '<div class="finantec-data-summary-card">'
         '<span class="finantec-data-summary-label">'
-        "Transações no banco"
+        "Transações salvas"
         "</span>"
         f'<strong class="{transaction_value_class}">'
         f"{transaction_rows}"
         "</strong>"
         '<span class="finantec-data-summary-description">'
-        "Registros reais do usuário atual."
+        "Registros pessoais disponíveis no banco local."
         "</span>"
         "</div>"
 
@@ -205,10 +219,11 @@ def _render_data_summary() -> dict[str, int | bool]:
 
     return summary
 
+
 def _render_user_data_action(
     summary: dict[str, int | bool],
 ) -> None:
-    """Permite voltar para as transações reais do usuário."""
+    """Permite voltar às transações pessoais do usuário."""
     with st.container(
         border=True,
         key="user-data-action-card",
@@ -218,25 +233,26 @@ def _render_user_data_action(
         )
 
         st.caption(
-            "Carrega as transações reais do usuário "
-            "diretamente do banco local."
+            "Mostra no painel as transações pessoais "
+            "armazenadas no banco local."
         )
 
         has_user_transactions = (
-            summary["transaction_rows"] > 0
+            int(
+                summary["transaction_rows"]
+            )
+            > 0
         )
 
         if not has_user_transactions:
             st.info(
-                "Nenhuma transação do usuário "
-                "foi encontrada no banco."
+                "Nenhuma transação pessoal foi encontrada."
             )
 
         if st.button(
             "Usar meus dados",
             key="use-user-data",
             disabled=not has_user_transactions,
-            use_container_width=False,
         ):
             st.session_state[
                 DATA_MODE_KEY
@@ -245,7 +261,7 @@ def _render_user_data_action(
             _set_feedback(
                 "success",
                 (
-                    "Dados do usuário carregados. "
+                    "Dados pessoais carregados. "
                     f"{summary['transaction_rows']} "
                     "transação(ões) disponível(is)."
                 ),
@@ -262,18 +278,18 @@ def _render_demo_action() -> None:
         key="demo-data-action-card",
     ):
         st.markdown(
-            "#### Dados de demonstração"
+            "#### Demonstração"
         )
 
         st.caption(
-            "Preenche o dashboard com dados simulados. "
-            "Os arquivos pessoais não são apagados."
+            "Exibe dados simulados para apresentar o projeto. "
+            "Seus dados pessoais permanecem armazenados."
         )
 
         demo_confirmation = st.checkbox(
             (
-                "Entendo que o dashboard atual será "
-                "temporariamente substituído pela demonstração."
+                "Entendo que o painel mostrará "
+                "temporariamente os dados simulados."
             ),
             key="confirm_demo_data",
         )
@@ -282,7 +298,6 @@ def _render_demo_action() -> None:
             "Carregar demonstração",
             key="load-demo-data",
             disabled=not demo_confirmation,
-            use_container_width=False,
         ):
             try:
                 result = run_etl_with_summary(
@@ -320,13 +335,24 @@ def _render_demo_action() -> None:
 def _render_reset_action(
     summary: dict[str, int | bool],
 ) -> None:
-    """Exibe a limpeza das transações reais do usuário."""
+    """Exibe a exclusão das transações pessoais."""
     has_transaction_data = any(
         [
-            summary["source_files"] > 0,
-            summary["processed_files"] > 0,
-            summary["transaction_rows"] > 0,
-            summary["log_exists"],
+            int(
+                summary["source_files"]
+            )
+            > 0,
+            int(
+                summary["processed_files"]
+            )
+            > 0,
+            int(
+                summary["transaction_rows"]
+            )
+            > 0,
+            bool(
+                summary["log_exists"]
+            ),
         ]
     )
 
@@ -338,11 +364,13 @@ def _render_reset_action(
             expanded=False,
         ):
             st.error(
-                "Exclusão permanente: esta ação remove "
-                "as transações reais, arquivos importados, "
-                "fontes manuais e saídas do ETL. "
-                "O perfil, as metas, o histórico do chat, "
-                "o banco SQLite e a demonstração serão preservados."
+                "Será apagado permanentemente: suas transações "
+                "pessoais, os arquivos usados para adicioná-las, "
+                "as cópias locais geradas a partir delas e o "
+                "registro técnico das importações. "
+                "Será preservado: seu perfil, suas metas, o "
+                "histórico de conversas, os dados de demonstração "
+                "e o arquivo do banco local."
             )
 
             confirmation = st.text_input(
@@ -366,8 +394,8 @@ def _render_reset_action(
             )
 
             if st.button(
-                "Apagar transações do usuário",
-                key="delete-all-user-data",
+                "Apagar minhas transações",
+                key="delete-user-transactions",
                 type="primary",
                 disabled=not delete_enabled,
                 use_container_width=True,
@@ -390,14 +418,14 @@ def _render_reset_action(
                     _set_feedback(
                         "success",
                         (
-                            "Transações reais apagadas. "
+                            "Transações pessoais apagadas. "
                             "Linhas removidas do banco: "
                             f"{result['transaction_rows_removed']} | "
-                            "Fontes removidas: "
+                            "Arquivos importados removidos: "
                             f"{result['source_files_removed']} | "
-                            "Arquivos processados removidos: "
+                            "Arquivos auxiliares removidos: "
                             f"{result['processed_files_removed']}. "
-                            "Perfil, metas e chat foram preservados."
+                            "Perfil, metas e conversas foram preservados."
                         ),
                     )
 
@@ -419,12 +447,12 @@ def _render_reset_action(
 def render_data_management() -> None:
     """Exibe a área de gerenciamento dos dados."""
     st.subheader(
-        "Gerenciar dados"
+        "Dados e privacidade"
     )
 
     st.caption(
-        "Escolha entre seus dados reais e a base "
-        "simulada usada para demonstração do projeto."
+        "Escolha quais dados serão exibidos e controle "
+        "as transações armazenadas localmente."
     )
 
     _show_feedback()

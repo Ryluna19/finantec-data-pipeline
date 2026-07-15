@@ -40,6 +40,8 @@ class FakeStreamlit:
 
         self.info_messages: list[str] = []
 
+        self.download_calls: list[dict] = []
+
     def columns(
         self,
         *args,
@@ -70,6 +72,25 @@ class FakeStreamlit:
         **kwargs,
     ) -> None:
         return None
+
+    def subheader(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        return None
+
+    def divider(self) -> None:
+        return None
+
+    def download_button(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        self.download_calls.append(
+            kwargs
+        )
 
     def info(
         self,
@@ -487,6 +508,7 @@ def test_all_matching_rows_prevent_empty_import(
         in fake_streamlit.info_messages
     )
 
+
 def test_matching_rows_require_explicit_strategy(
     monkeypatch,
 ):
@@ -559,3 +581,157 @@ def test_matching_rows_require_explicit_strategy(
         for message
         in fake_streamlit.info_messages
     )
+
+
+def test_transaction_downloads_exports_only_received_period(
+    monkeypatch,
+):
+    fake_streamlit = configure_component(
+        monkeypatch,
+        button_result=False,
+    )
+
+    period_transactions = (
+        build_imported_transactions()
+        .head(
+            1
+        )
+        .copy()
+    )
+
+    captured: dict = {}
+
+    monkeypatch.setattr(
+        file_transfer,
+        "create_excel_template",
+        lambda: b"template",
+    )
+
+    def fake_export(
+        transactions,
+    ):
+        captured[
+            "transactions"
+        ] = transactions.copy()
+
+        return b"export"
+
+    monkeypatch.setattr(
+        file_transfer,
+        "export_transactions_to_excel",
+        fake_export,
+    )
+
+    file_transfer.render_transaction_downloads(
+        period_transactions
+    )
+
+    assert captured[
+        "transactions"
+    ].equals(
+        period_transactions
+    )
+
+    assert len(
+        fake_streamlit.download_calls
+    ) == 2
+
+
+def test_transaction_import_renders_feedback_and_controls(
+    monkeypatch,
+):
+    configure_component(
+        monkeypatch,
+        button_result=False,
+    )
+
+    calls: list[str] = []
+
+    monkeypatch.setattr(
+        file_transfer,
+        "render_import_result",
+        lambda: calls.append(
+            "feedback"
+        ),
+    )
+
+    monkeypatch.setattr(
+        file_transfer,
+        "_render_transaction_import_controls",
+        lambda transactions: (
+            calls.append(
+                "controls"
+            )
+            or True
+        ),
+    )
+
+    result = (
+        file_transfer
+        .render_transaction_import(
+            build_imported_transactions()
+        )
+    )
+
+    assert result is True
+    assert calls == [
+        "feedback",
+        "controls",
+    ]
+
+
+def test_transaction_file_tools_remains_compatible_wrapper(
+    monkeypatch,
+):
+    configure_component(
+        monkeypatch,
+        button_result=False,
+    )
+
+    calls: list[str] = []
+
+    monkeypatch.setattr(
+        file_transfer,
+        "render_import_result",
+        lambda: calls.append(
+            "feedback"
+        ),
+    )
+
+    monkeypatch.setattr(
+        file_transfer,
+        "render_transaction_downloads",
+        lambda transactions: calls.append(
+            "downloads"
+        ),
+    )
+
+    monkeypatch.setattr(
+        file_transfer,
+        "_render_transaction_import_controls",
+        lambda transactions: (
+            calls.append(
+                "import"
+            )
+            or True
+        ),
+    )
+
+    result = (
+        file_transfer
+        .render_transaction_file_tools(
+            period_transactions=(
+                build_imported_transactions()
+            ),
+            existing_transactions=(
+                build_imported_transactions()
+            ),
+        )
+    )
+
+    assert result is True
+    assert calls == [
+        "feedback",
+        "downloads",
+        "import",
+    ]

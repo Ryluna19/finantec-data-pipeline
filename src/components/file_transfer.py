@@ -45,6 +45,7 @@ IMPORT_WIDGET_VERSION_KEY = (
     "transaction_import_widget_version"
 )
 
+
 def _get_import_widget_version() -> int:
     """Retorna a versão atual dos widgets de importação."""
     if (
@@ -138,8 +139,8 @@ def render_import_result() -> None:
     )
 
 
-def render_file_downloads(
-    transactions: pd.DataFrame,
+def render_transaction_downloads(
+    period_transactions: pd.DataFrame,
 ) -> None:
     """Exibe downloads do modelo e do período atual."""
     with st.container(
@@ -171,7 +172,7 @@ def render_file_downloads(
             )
 
         with export_column:
-            if transactions.empty:
+            if period_transactions.empty:
                 st.info(
                     "Não há transações no período "
                     "atual para exportar."
@@ -181,7 +182,7 @@ def render_file_downloads(
                 st.download_button(
                     label="Exportar período atual",
                     data=export_transactions_to_excel(
-                        transactions
+                        period_transactions
                     ),
                     file_name=(
                         "finantec_transacoes_periodo.xlsx"
@@ -613,28 +614,10 @@ def render_uploaded_file_preview(
     )
 
 
-def render_transaction_file_tools(
-    period_transactions: pd.DataFrame,
+def _render_transaction_import_controls(
     existing_transactions: pd.DataFrame,
 ) -> bool:
-    """Exibe download, prévia e confirmação de importação."""
-    st.subheader(
-        "Importação e exportação"
-    )
-
-    render_import_result()
-
-    st.caption(
-        "Baixe o modelo, exporte os dados atuais "
-        "ou importe um novo lote de transações."
-    )
-
-    render_file_downloads(
-        period_transactions
-    )
-
-    st.divider()
-
+    """Exibe o seletor e a prévia do arquivo importado."""
     widget_version = (
         _get_import_widget_version()
     )
@@ -651,8 +634,8 @@ def render_transaction_file_tools(
             f"{widget_version}"
         ),
         help=(
-            "O arquivo deve seguir o contrato "
-            "de dados do FinanTec."
+            "O arquivo deve usar as colunas "
+            "do modelo do FinanTec."
         ),
     )
 
@@ -664,4 +647,47 @@ def render_transaction_file_tools(
         existing_transactions=(
             existing_transactions
         ),
+    )
+
+
+def render_transaction_import(
+    existing_transactions: pd.DataFrame,
+) -> bool:
+    """Exibe feedback, seleção e confirmação da importação."""
+    render_import_result()
+
+    st.caption(
+        "Envie um arquivo CSV ou Excel para adicionar "
+        "um novo lote de transações."
+    )
+
+    return _render_transaction_import_controls(
+        existing_transactions
+    )
+
+
+def render_transaction_file_tools(
+    period_transactions: pd.DataFrame,
+    existing_transactions: pd.DataFrame,
+) -> bool:
+    """Mantém o fluxo combinado de arquivos por compatibilidade."""
+    st.subheader(
+        "Importação e exportação"
+    )
+
+    render_import_result()
+
+    st.caption(
+        "Baixe o modelo, exporte os dados atuais "
+        "ou importe um novo lote de transações."
+    )
+
+    render_transaction_downloads(
+        period_transactions
+    )
+
+    st.divider()
+
+    return _render_transaction_import_controls(
+        existing_transactions
     )

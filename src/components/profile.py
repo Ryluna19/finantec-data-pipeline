@@ -90,6 +90,12 @@ def income_sources_to_dataframe(
         [],
     )
 
+    if not isinstance(
+        sources,
+        list,
+    ):
+        sources = []
+
     rows = []
 
     for source in sources:
@@ -118,6 +124,32 @@ def income_sources_to_dataframe(
                 ),
             }
         )
+
+    if not rows:
+        saved_income = pd.to_numeric(
+            profile.get(
+                "renda_mensal_principal",
+                0,
+            ),
+            errors="coerce",
+        )
+
+        if (
+            not pd.isna(
+                saved_income
+            )
+            and float(
+                saved_income
+            ) > 0
+        ):
+            rows.append(
+                {
+                    "Tipo": "Renda principal",
+                    "Valor mensal": float(
+                        saved_income
+                    ),
+                }
+            )
 
     return pd.DataFrame(
         rows,
@@ -195,6 +227,27 @@ def prepare_income_sources(
     return sources
 
 
+def calculate_monthly_income(
+    table: pd.DataFrame,
+) -> float:
+    """Soma os valores mensais das fontes de renda."""
+    sources = prepare_income_sources(
+        table
+    )
+
+    return round(
+        sum(
+            float(
+                source[
+                    "valor_mensal"
+                ]
+            )
+            for source in sources
+        ),
+        2,
+    )
+
+
 def _render_profile_summary(
     profile: dict[str, Any],
 ) -> None:
@@ -261,7 +314,7 @@ def _render_profile_summary(
 
     with income_column:
         st.metric(
-            "Renda principal",
+            "Renda mensal total",
             format_currency(
                 monthly_income
             ),
@@ -311,7 +364,6 @@ def _build_profile_payload(
     name: str,
     age: int,
     occupation: str,
-    monthly_income: float,
     income_sources: pd.DataFrame,
     has_debts: bool,
     uses_credit_card: bool,
@@ -319,6 +371,26 @@ def _build_profile_payload(
     existing_preferences: dict[str, Any],
 ) -> dict[str, Any]:
     """Monta o perfil recebido pelo repositório."""
+    normalized_income_sources = (
+        prepare_income_sources(
+            income_sources
+        )
+    )
+
+    monthly_income = round(
+        sum(
+            float(
+                source[
+                    "valor_mensal"
+                ]
+            )
+            for source in (
+                normalized_income_sources
+            )
+        ),
+        2,
+    )
+
     return {
         "nome": name,
         "idade": (
@@ -331,9 +403,7 @@ def _build_profile_payload(
             monthly_income
         ),
         "fontes_de_renda": (
-            prepare_income_sources(
-                income_sources
-            )
+            normalized_income_sources
         ),
         "situacao_atual": {
             "possui_dividas": has_debts,
@@ -484,27 +554,14 @@ def render_user_profile(
             ),
         )
 
-        monthly_income = st.number_input(
-            "Renda mensal principal",
-            min_value=0.0,
-            value=float(
-                profile.get(
-                    "renda_mensal_principal",
-                    0,
-                )
-                or 0
-            ),
-            step=100.0,
-            format="%.2f",
-        )
-
         st.markdown(
             "#### Fontes de renda"
         )
 
         st.caption(
-            "Detalhe a composição da renda. "
-            "Adicione ou remova linhas conforme necessário."
+            "A renda mensal total será calculada "
+            "automaticamente pela soma das fontes "
+            "informadas."
         )
 
         income_sources = st.data_editor(
@@ -629,9 +686,6 @@ def render_user_profile(
                     age
                 ),
                 occupation=occupation,
-                monthly_income=float(
-                    monthly_income
-                ),
                 income_sources=(
                     income_sources
                 ),

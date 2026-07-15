@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from components.profile import (
+    calculate_monthly_income,
     income_sources_to_dataframe,
     prepare_income_sources,
 )
@@ -42,6 +43,28 @@ def test_income_sources_to_dataframe():
             "Tipo": "Freelance",
             "Valor mensal": 400.0,
         },
+    ]
+
+
+def test_income_sources_to_dataframe_uses_saved_income_as_fallback():
+    profile = {
+        "renda_mensal_principal": 1800.0,
+        "fontes_de_renda": [],
+    }
+
+    result = (
+        income_sources_to_dataframe(
+            profile
+        )
+    )
+
+    assert result.to_dict(
+        orient="records"
+    ) == [
+        {
+            "Tipo": "Renda principal",
+            "Valor mensal": 1800.0,
+        }
     ]
 
 
@@ -107,3 +130,39 @@ def test_prepare_income_sources_rejects_negative_value():
         prepare_income_sources(
             table
         )
+
+
+def test_calculate_monthly_income_sums_sources():
+    table = pd.DataFrame(
+        [
+            {
+                "Tipo": "Estágio",
+                "Valor mensal": 1600.0,
+            },
+            {
+                "Tipo": "Freelance",
+                "Valor mensal": 400.0,
+            },
+        ]
+    )
+
+    result = calculate_monthly_income(
+        table
+    )
+
+    assert result == 2000.0
+
+
+def test_calculate_monthly_income_returns_zero_for_empty_table():
+    table = pd.DataFrame(
+        columns=[
+            "Tipo",
+            "Valor mensal",
+        ]
+    )
+
+    result = calculate_monthly_income(
+        table
+    )
+
+    assert result == 0.0
