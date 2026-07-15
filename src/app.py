@@ -106,7 +106,9 @@ def load_data(
 ]:
     """Carrega e mantém em cache os dados utilizados pela interface."""
     return (
-        load_user_profile(),
+        load_user_profile(
+            user_id=user_id,
+        ),
         load_transactions(
             user_id=user_id,
             data_mode=data_mode,
@@ -619,7 +621,8 @@ def main() -> None:
         render_header()
 
         render_user_profile(
-            user_profile
+            user_profile,
+            user_id=current_user_id,
         )
 
         return
@@ -672,6 +675,7 @@ def main() -> None:
                 summary={
                     "saldo_disponivel": 0.0,
                 },
+                user_id=current_user_id,
             )
         return
 
@@ -706,6 +710,7 @@ def main() -> None:
         render_goal_simulator(
             user_profile=user_profile,
             summary=summary,
+            user_id=current_user_id,
         )
 
 if __name__ == "__main__":

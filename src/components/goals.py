@@ -20,7 +20,6 @@ from src.goal_repository import (
     delete_financial_goal,
     update_financial_goal,
 )
-from src.user_context import LOCAL_USER_ID
 from ui_components import render_html
 
 GOAL_FORM_OPEN_KEY = "financial_goal_form_open"
@@ -285,6 +284,7 @@ def _find_goal(
 
 def _render_goal_form(
     goals: list[dict[str, Any]],
+    user_id: str,
 ) -> None:
     """Exibe o formulário de criação ou edição."""
     if not st.session_state.get(
@@ -455,7 +455,7 @@ def _render_goal_form(
         if is_editing:
             update_financial_goal(
                 database_path=ARQUIVO_BANCO,
-                user_id=LOCAL_USER_ID,
+                user_id=user_id,
                 goal_id=str(editing_goal["goal_id"]),
                 goal=goal_payload,
             )
@@ -465,7 +465,7 @@ def _render_goal_form(
         else:
             create_financial_goal(
                 database_path=ARQUIVO_BANCO,
-                user_id=LOCAL_USER_ID,
+                user_id=user_id,
                 goal=goal_payload,
             )
 
@@ -494,12 +494,13 @@ def _render_goal_form(
 
 def _delete_goal(
     goal_id: str,
+    user_id: str,
 ) -> None:
     """Exclui uma meta após confirmação."""
     try:
         deleted = delete_financial_goal(
             database_path=ARQUIVO_BANCO,
-            user_id=LOCAL_USER_ID,
+            user_id=user_id,
             goal_id=goal_id,
         )
 
@@ -532,6 +533,7 @@ def _delete_goal(
 
 def _render_goal_management_cards(
     goals: list[dict[str, Any]],
+    user_id: str,
 ) -> None:
     """Exibe as metas cadastradas e suas ações."""
     if not goals:
@@ -701,7 +703,10 @@ def _render_goal_management_cards(
                         type="primary",
                         use_container_width=True,
                     ):
-                        _delete_goal(goal_id)
+                        _delete_goal(
+                            goal_id,
+                            user_id,
+                        )
 
                 with cancel_column:
                     if st.button(
@@ -716,6 +721,7 @@ def _render_goal_management_cards(
 
 def _render_goal_management_view(
     goals: list[dict[str, Any]],
+    user_id: str,
 ) -> None:
     """Exibe a consulta e as ações das metas salvas."""
     title_column, action_column = st.columns(
@@ -744,9 +750,15 @@ def _render_goal_management_view(
             _open_goal_form()
             st.rerun()
 
-    _render_goal_form(goals)
+    _render_goal_form(
+        goals,
+        user_id,
+    )
 
-    _render_goal_management_cards(goals)
+    _render_goal_management_cards(
+        goals,
+        user_id,
+    )
 
 
 def _render_goal_summary(
@@ -1118,6 +1130,7 @@ def _render_goal_simulator_view(
 def render_goal_simulator(
     user_profile: dict[str, Any],
     summary: dict[str, Any],
+    user_id: str,
 ) -> None:
     """Exibe gerenciamento e simulação das metas financeiras."""
     st.subheader("Metas")
@@ -1150,4 +1163,7 @@ def render_goal_simulator(
 
         return
 
-    _render_goal_management_view(goals)
+    _render_goal_management_view(
+        goals,
+        user_id,
+    )

@@ -14,9 +14,6 @@ from data_loader import ARQUIVO_BANCO
 from src.profile_repository import (
     save_user_profile,
 )
-from src.user_context import (
-    LOCAL_USER_ID,
-)
 
 
 PROFILE_FEEDBACK_KEY = (
@@ -422,6 +419,7 @@ def _build_profile_payload(
 
 def render_user_profile(
     profile: dict[str, Any],
+    user_id: str,
 ) -> None:
     """Exibe e permite editar o perfil financeiro."""
     st.subheader(
@@ -705,7 +703,7 @@ def render_user_profile(
             database_path=(
                 ARQUIVO_BANCO
             ),
-            user_id=LOCAL_USER_ID,
+            user_id=user_id,
             profile=profile_payload,
         )
 

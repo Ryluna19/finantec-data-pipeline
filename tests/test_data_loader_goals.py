@@ -7,6 +7,9 @@ import data_loader
 from src.goal_repository import (
     delete_financial_goal,
 )
+from src.profile_repository import (
+    save_user_profile,
+)
 
 
 def build_seed_profile() -> dict:
@@ -55,7 +58,11 @@ def test_profile_loads_goals_from_database(
 
     profile = (
         data_loader
-        .carregar_perfil_usuario()
+        .carregar_perfil_usuario(
+            user_id=(
+                data_loader.LOCAL_USER_ID
+            ),
+        )
     )
 
     goals = profile[
@@ -65,6 +72,13 @@ def test_profile_loads_goals_from_database(
     assert len(
         goals
     ) == 2
+
+    assert (
+        profile["user_id"]
+        == data_loader.LOCAL_USER_ID
+    )
+
+    assert profile["nome"] == "Marina"
 
     assert all(
         "goal_id" in goal
@@ -95,7 +109,11 @@ def test_deleted_goals_are_not_seeded_again(
 
     first_profile = (
         data_loader
-        .carregar_perfil_usuario()
+        .carregar_perfil_usuario(
+            user_id=(
+                data_loader.LOCAL_USER_ID
+            ),
+        )
     )
 
     for goal in first_profile[
@@ -111,7 +129,11 @@ def test_deleted_goals_are_not_seeded_again(
 
     second_profile = (
         data_loader
-        .carregar_perfil_usuario()
+        .carregar_perfil_usuario(
+            user_id=(
+                data_loader.LOCAL_USER_ID
+            ),
+        )
     )
 
     assert (
@@ -120,6 +142,106 @@ def test_deleted_goals_are_not_seeded_again(
         ]
         == []
     )
+
+
+def test_profile_and_goals_use_received_user_id(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    database_path = (
+        tmp_path
+        / "finantec.db"
+    )
+
+    monkeypatch.setattr(
+        data_loader,
+        "ARQUIVO_BANCO",
+        database_path,
+    )
+
+    monkeypatch.setattr(
+        data_loader,
+        "carregar_json",
+        lambda _: build_seed_profile(),
+    )
+
+    first_user = (
+        data_loader
+        .carregar_perfil_usuario(
+            user_id="user-1",
+        )
+    )
+
+    second_user = (
+        data_loader
+        .carregar_perfil_usuario(
+            user_id="user-2",
+        )
+    )
+
+    first_user["nome"] = "Perfil 1"
+
+    save_user_profile(
+        database_path=database_path,
+        user_id="user-1",
+        profile=first_user,
+    )
+
+    delete_financial_goal(
+        database_path=database_path,
+        user_id="user-1",
+        goal_id=(
+            first_user[
+                "objetivos_financeiros"
+            ][0]["goal_id"]
+        ),
+    )
+
+    reloaded_first_user = (
+        data_loader
+        .carregar_perfil_usuario(
+            user_id="user-1",
+        )
+    )
+
+    reloaded_second_user = (
+        data_loader
+        .carregar_perfil_usuario(
+            user_id="user-2",
+        )
+    )
+
+    assert (
+        reloaded_first_user["user_id"]
+        == "user-1"
+    )
+
+    assert (
+        reloaded_second_user["user_id"]
+        == "user-2"
+    )
+
+    assert (
+        reloaded_first_user["nome"]
+        == "Perfil 1"
+    )
+
+    assert (
+        reloaded_second_user["nome"]
+        == "Marina"
+    )
+
+    assert len(
+        reloaded_first_user[
+            "objetivos_financeiros"
+        ]
+    ) == 1
+
+    assert len(
+        reloaded_second_user[
+            "objetivos_financeiros"
+        ]
+    ) == 2
 
 
 def test_merge_profile_with_goals_does_not_mutate_profile():

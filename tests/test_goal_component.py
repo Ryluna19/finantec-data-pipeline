@@ -114,7 +114,9 @@ def configure_goal_views(
     monkeypatch.setattr(
         goals_module,
         "_render_goal_management_view",
-        lambda goals: events.append("management"),
+        lambda goals, user_id: events.append(
+            f"management:{user_id}"
+        ),
     )
 
     monkeypatch.setattr(
@@ -246,9 +248,10 @@ def test_goal_screen_starts_with_saved_goals(
             "objetivos_financeiros": [],
         },
         summary={},
+        user_id="user-1",
     )
 
-    assert events == ["management"]
+    assert events == ["management:user-1"]
 
     assert fake_streamlit.session_state[
         goals_module.GOAL_VIEW_KEY
@@ -273,6 +276,7 @@ def test_goal_screen_switches_to_simulator(
             "objetivos_financeiros": [],
         },
         summary={},
+        user_id="user-1",
     )
 
     assert events == ["simulator"]

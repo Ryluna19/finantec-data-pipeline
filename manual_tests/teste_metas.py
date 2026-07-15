@@ -11,6 +11,7 @@ import _path_setup  # noqa: F401
 
 from analytics import calcular_meta_mensal, formatar_moeda
 from data_loader import carregar_perfil_usuario
+from src.user_context import get_current_user_id
 
 
 def exibir_simulacao_meta(meta: dict) -> None:
@@ -44,7 +45,9 @@ def main() -> None:
     """
     Executa o teste manual de metas financeiras.
     """
-    perfil = carregar_perfil_usuario()
+    perfil = carregar_perfil_usuario(
+        user_id=get_current_user_id(),
+    )
     metas = perfil["objetivos_financeiros"]
 
     print("=== SIMULAÇÃO DE METAS ===")

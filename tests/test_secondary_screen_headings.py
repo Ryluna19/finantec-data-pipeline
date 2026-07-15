@@ -72,7 +72,10 @@ def test_profile_heading_uses_a_stable_anchor(
         lambda _profile: None,
     )
 
-    profile_module.render_user_profile({})
+    profile_module.render_user_profile(
+        {},
+        user_id="user-1",
+    )
 
     assert fake_streamlit.subheaders == [
         (

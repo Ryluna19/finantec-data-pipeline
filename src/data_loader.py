@@ -140,7 +140,9 @@ def merge_profile_with_legacy_goals(
     )
 
 
-def carregar_perfil_usuario() -> dict:
+def carregar_perfil_usuario(
+    user_id: str,
+) -> dict:
     """Carrega o perfil e as metas financeiras persistidas."""
     seed_profile = carregar_json(
         "perfil_usuario.json"
@@ -151,14 +153,14 @@ def carregar_perfil_usuario() -> dict:
             database_path=(
                 ARQUIVO_BANCO
             ),
-            user_id=LOCAL_USER_ID,
+            user_id=user_id,
             seed_profile=seed_profile,
         )
     )
 
     seed_financial_goals_if_needed(
         database_path=ARQUIVO_BANCO,
-        user_id=LOCAL_USER_ID,
+        user_id=user_id,
         seed_goals=list(
             seed_profile.get(
                 "objetivos_financeiros",
@@ -170,7 +172,7 @@ def carregar_perfil_usuario() -> dict:
     persisted_goals = (
         list_financial_goals(
             database_path=ARQUIVO_BANCO,
-            user_id=LOCAL_USER_ID,
+            user_id=user_id,
         )
     )
 
