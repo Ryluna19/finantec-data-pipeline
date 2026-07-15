@@ -8,6 +8,8 @@ os resultados de forma contextualizada.
 
 from __future__ import annotations
 
+import unicodedata
+
 from typing import Any
 
 import pandas as pd
@@ -238,3 +240,210 @@ def filtrar_transacoes_por_mes(
     transacoes = garantir_coluna_ano_mes(transacoes)
 
     return transacoes[transacoes["ano_mes"] == ano_mes].copy()
+
+def _normalizar_chave_categoria(
+    categoria: object,
+) -> str:
+    """Cria uma chave comparável para categorias financeiras."""
+    texto = " ".join(
+        str(
+            categoria
+            if categoria is not None
+            else ""
+        )
+        .strip()
+        .split()
+    )
+
+    texto_sem_acentos = unicodedata.normalize(
+        "NFKD",
+        texto,
+    )
+
+    return "".join(
+        caractere
+        for caractere in texto_sem_acentos
+        if not unicodedata.combining(
+            caractere
+        )
+    ).casefold()
+
+
+def calcular_acompanhamento_orcamento(
+    transacoes: pd.DataFrame,
+    orcamentos: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Compara valores planejados com os gastos reais por categoria.
+
+    As transações recebidas já devem representar o período desejado.
+    Categorias sem orçamento não entram no resultado.
+    """
+    gastos_por_categoria = (
+        calcular_gastos_por_categoria(
+            transacoes
+        )
+    )
+
+    gastos_normalizados: dict[str, float] = {}
+
+    for (
+        categoria,
+        valor_gasto,
+    ) in gastos_por_categoria.items():
+        chave_categoria = (
+            _normalizar_chave_categoria(
+                categoria
+            )
+        )
+
+        gastos_normalizados[
+            chave_categoria
+        ] = (
+            gastos_normalizados.get(
+                chave_categoria,
+                0.0,
+            )
+            + float(
+                valor_gasto
+            )
+        )
+
+    acompanhamento: list[
+        dict[str, Any]
+    ] = []
+
+    for orcamento in orcamentos:
+        categoria = " ".join(
+            str(
+                orcamento.get(
+                    "category",
+                    "",
+                )
+            )
+            .strip()
+            .split()
+        )
+
+        valor_planejado = float(
+            orcamento.get(
+                "planned_amount",
+                0.0,
+            )
+        )
+
+        if valor_planejado <= 0:
+            raise ValueError(
+                "O valor planejado deve ser "
+                "maior que zero."
+            )
+
+        chave_categoria = (
+            _normalizar_chave_categoria(
+                categoria
+            )
+        )
+
+        valor_gasto = float(
+            gastos_normalizados.get(
+                chave_categoria,
+                0.0,
+            )
+        )
+
+        valor_restante = (
+            valor_planejado
+            - valor_gasto
+        )
+
+        percentual_utilizado = (
+            valor_gasto
+            / valor_planejado
+            * 100
+        )
+
+        if percentual_utilizado > 100:
+            status = "over_limit"
+
+        elif percentual_utilizado >= 80:
+            status = "near_limit"
+
+        else:
+            status = "within_limit"
+
+        acompanhamento.append(
+            {
+                "budget_id": orcamento.get(
+                    "budget_id"
+                ),
+                "period": orcamento.get(
+                    "period"
+                ),
+                "category": categoria,
+                "planned_amount": (
+                    valor_planejado
+                ),
+                "spent_amount": valor_gasto,
+                "remaining_amount": (
+                    valor_restante
+                ),
+                "usage_percentage": (
+                    percentual_utilizado
+                ),
+                "status": status,
+            }
+        )
+
+    return acompanhamento
+
+
+def calcular_resumo_orcamento(
+    acompanhamento: list[
+        dict[str, Any]
+    ],
+) -> dict[str, float | int]:
+    """Resume o acompanhamento das categorias planejadas."""
+    total_planejado = sum(
+        float(
+            item[
+                "planned_amount"
+            ]
+        )
+        for item in acompanhamento
+    )
+
+    total_gasto = sum(
+        float(
+            item[
+                "spent_amount"
+            ]
+        )
+        for item in acompanhamento
+    )
+
+    categorias_acima_do_limite = sum(
+        1
+        for item in acompanhamento
+        if item.get(
+            "status"
+        ) == "over_limit"
+    )
+
+    return {
+        "total_planned": float(
+            total_planejado
+        ),
+        "total_spent": float(
+            total_gasto
+        ),
+        "total_remaining": float(
+            total_planejado
+            - total_gasto
+        ),
+        "planned_categories": len(
+            acompanhamento
+        ),
+        "categories_over_limit": (
+            categorias_acima_do_limite
+        ),
+    }
