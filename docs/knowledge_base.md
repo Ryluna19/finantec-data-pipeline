@@ -11,7 +11,7 @@
 
 A base de conhecimento do FinanTec Data Pipeline reúne os dados simulados que
 acompanham o repositório e registra como eles foram usados nas diferentes fases
-do projeto.
+do projeto. Ela não é uma dependência ativa dos fluxos financeiros principais.
 
 A base combina arquivos de transações, perfil fictício da pessoa usuária, histórico de dúvidas, conceitos financeiros e produtos financeiros informativos.
 
@@ -27,16 +27,17 @@ O projeto não utiliza dados bancários reais.
 
 | Fonte | Formato | Finalidade |
 |---|---|---|
-| `data/raw/` | CSV | Armazena arquivos mensais brutos de transações financeiras simuladas. |
+| `data/demo/` | CSV | Armazena os arquivos versionados de transações financeiras simuladas. |
+| `data/raw/` | CSV | Recebe arquivos locais de compatibilidade e lotes importados pela interface. |
 | `data/processed/transacoes_processadas.csv` | CSV | Base tratada gerada pelo pipeline ETL. |
 | `data/processed/transacoes_rejeitadas.csv` | CSV | Relatório local de linhas rejeitadas e seus motivos, gerado apenas quando há dados inválidos. |
-| `database/finantec.db` | SQLite | Base local gerada pelo ETL para consulta estruturada dos dados. |
-| `data/perfil_usuario.json` | JSON | Contém o perfil fictício da pessoa usuária e suas metas financeiras. |
-| `data/historico_atendimento.csv` | CSV | Registra dúvidas anteriores simuladas e respostas resumidas. |
-| `data/conceitos_financeiros.json` | JSON | Contém explicações básicas sobre organização financeira. |
-| `data/produtos_financeiros.json` | JSON | Contém produtos financeiros informativos e simulados. |
+| `database/finantec.db` | SQLite | Fonte principal local, atualizada pela interface e também pelo ETL explícito. |
+| `data/perfil_usuario.json` | JSON | Seed inicial do perfil fictício e das metas; os valores ativos são persistidos no SQLite. |
+| `data/historico_atendimento.csv` | CSV | Registro simulado preservado da fase histórica de consultas financeiras. |
+| `data/conceitos_financeiros.json` | JSON | Conteúdo educativo preservado da fase histórica de Insights. |
+| `data/produtos_financeiros.json` | JSON | Conteúdo informativo e simulado preservado da fase histórica de Insights. |
 | `data/templates/transacoes_template.csv` | CSV | Modelo de preenchimento para novas transações. |
-| `data/raw/transacoes_manuais.csv` | CSV | Arquivo local criado pelo editor manual de transações no dashboard. |
+| `data/raw/transacoes_manuais.csv` | CSV | Arquivo legado de instalações anteriores à persistência manual direta no SQLite. |
 
 Os arquivos gerados em `data/processed/`, `database/` e `logs/` são locais e não são versionados no GitHub.
 
@@ -60,9 +61,9 @@ O uso de uma pessoa fictícia permite demonstrar o fluxo técnico sem utilizar d
 ## Transações Financeiras
 
 Os arquivos de transações representam receitas e despesas mensais.
-Além dos arquivos mensais simulados, o projeto também pode usar o arquivo `data/raw/transacoes_manuais.csv`, criado pela entrada manual de transações no dashboard.
-
-Esse arquivo é local, ignorado pelo Git e processado pelo mesmo pipeline ETL.
+As transações cadastradas pela interface são validadas e gravadas diretamente
+no SQLite. O arquivo `data/raw/transacoes_manuais.csv` permanece apenas como
+compatibilidade com instalações antigas e não é criado pelo fluxo atual.
 
 Cada arquivo bruto deve seguir o padrão definido em:
 
@@ -135,12 +136,17 @@ O pipeline ETL utiliza os dados da seguinte forma:
 | Transform | Valida colunas, limpa textos, converte datas e valores, separa linhas válidas e rejeitadas, e cria `ano_mes`. |
 | Load | Salva os dados tratados em `data/processed/` e em SQLite. |
 
-A aplicação usa o SQLite como fonte principal quando o banco existe. Caso contrário, utiliza o CSV processado ou o CSV original como fallback.
+A aplicação usa o SQLite como fonte principal. Antes da criação da tabela
+particionada, existe somente um fallback de compatibilidade para o CSV
+processado do usuário local; arquivos brutos não são processados
+automaticamente ao abrir o aplicativo.
 
 Fluxo simplificado:
 
 ```text
-CSV bruto → ETL → CSV processado → SQLite → Dashboard
+Entrada manual ou importação → validação → SQLite → dashboard
+
+CSV de demonstração → ETL explícito → CSV processado → SQLite
 ```
 
 ---
@@ -181,7 +187,7 @@ O dashboard em Streamlit utiliza a base tratada para exibir:
 
 - período analisado;
 - quantidade de transações válidas;
-- quantidade de transações rejeitadas no último ETL;
+- rejeições disponíveis no processamento ou na importação atual;
 - receitas do período;
 - gasto de consumo;
 - valor separado para reserva;
@@ -208,7 +214,10 @@ src/app.py
 
 ## Registro Histórico: Uso dos Dados pela IA
 
-A IA generativa não calcula os valores financeiros principais.
+Todo o conteúdo desta seção descreve a integração externa descontinuada. A
+execução atual não monta nem envia esse contexto para serviços externos.
+
+A IA generativa não calculava os valores financeiros principais.
 
 Antes de enviar uma pergunta ao modelo, a aplicação monta um contexto com:
 
@@ -222,7 +231,7 @@ Antes de enviar uma pergunta ao modelo, a aplicação monta um contexto com:
 - produtos financeiros informativos;
 - limitações do projeto.
 
-A IA usa esse contexto para explicar os resultados de forma mais clara e acessível.
+A IA usava esse contexto para explicar os resultados de forma mais clara e acessível.
 
 A separação principal do projeto é:
 
@@ -246,7 +255,8 @@ contém informações educativas e simuladas sobre produtos financeiros.
 
 Esses dados não representam consulta em tempo real, ranking de mercado, recomendação personalizada ou comparação atualizada entre bancos.
 
-A IA pode explicar conceitos usando esses dados, mas não deve afirmar que um produto é o melhor disponível no mercado.
+Na integração histórica, a IA podia explicar conceitos usando esses dados, mas
+não deveria afirmar que um produto era o melhor disponível no mercado.
 
 Perguntas como:
 
@@ -273,7 +283,9 @@ A base de conhecimento não contém:
 - integração com instituições financeiras;
 - informações externas consultadas pela IA em tempo real.
 
-Quando uma pergunta depende de informações externas ou ausentes, o assistente deve informar que não possui dados suficientes para responder com segurança.
+Na fase histórica, perguntas dependentes de informações externas ou ausentes
+deveriam receber uma limitação clara. Atualmente o recurso está congelado fora
+da navegação principal.
 
 ---
 

@@ -8,13 +8,21 @@
 > contexto financeiro e pessoal a um serviço externo. Consulte a
 > [decisão arquitetural](decisions/001-remove-gemini-integration.md).
 
-## Visão Geral
+## Visão Geral Histórica
 
-O FinanTec Data Pipeline utiliza IA generativa para explicar indicadores financeiros calculados pela aplicação.
+O FinanTec Data Pipeline utilizava IA generativa para explicar indicadores financeiros calculados pela aplicação.
 
-A IA não é responsável por calcular receitas, gastos, saldo ou metas. Esses valores são calculados previamente em Python e enviados como contexto estruturado para o modelo.
+A IA não era responsável por calcular receitas, gastos, saldo ou metas. Esses
+valores eram calculados previamente em Python e enviados como contexto
+estruturado para o modelo.
 
-A responsabilidade da IA é interpretar a pergunta da pessoa usuária e transformar os dados disponíveis em uma explicação clara, educativa e contextualizada.
+A responsabilidade da IA era interpretar a pergunta da pessoa usuária e
+transformar os dados disponíveis em uma explicação clara, educativa e
+contextualizada.
+
+Atualmente, nenhuma dessas informações é enviada externamente. A classificação
+e as respostas locais foram preservadas, mas o recurso está congelado fora da
+navegação principal.
 
 ---
 
@@ -52,9 +60,9 @@ O módulo:
 src/financial_responses.py
 ```
 
-## Papel da IA
+## Papel Histórico da IA
 
-A IA é usada para:
+A IA era usada para:
 
 - responder perguntas sobre o período analisado;
 - explicar receitas, gastos, saldo e reserva;
@@ -77,9 +85,9 @@ A IA não deve:
 
 ---
 
-## Contexto Enviado para o Modelo
+## Contexto que Era Enviado para o Modelo
 
-Antes de enviar a pergunta para a IA, a aplicação monta um contexto com informações como:
+Antes de enviar a pergunta para a IA, a aplicação montava um contexto com informações como:
 
 - perfil fictício da pessoa usuária;
 - período analisado;
@@ -148,9 +156,11 @@ IA:
 
 ---
 
-## Histórico por Período
+## Evolução Histórica da Persistência
 
-O dashboard mantém um histórico de conversa separado por período analisado.
+O dashboard inicialmente manteve um histórico de conversa separado por período
+apenas na sessão do Streamlit. Em uma etapa posterior, o histórico passou a ser
+persistido localmente no SQLite e isolado por usuário, período e modo de dados.
 
 Isso evita misturar perguntas de meses diferentes.
 
@@ -161,7 +171,8 @@ Exemplo:
 2026-07 → conversa própria
 ```
 
-Essa separação é feita na sessão do Streamlit. O histórico ainda não é salvo em banco de dados.
+Essa persistência local foi preservada após a remoção do Gemini, embora o
+recurso tenha saído da navegação principal.
 
 ---
 
@@ -277,15 +288,15 @@ Essa etapa:
 
 ---
 
-## Configuração da IA
+## Configuração Histórica da IA
 
-A integração com IA depende de uma chave da Gemini API configurada no arquivo:
+A integração com IA dependia de uma chave da Gemini API configurada no arquivo:
 
 ```text
 .env
 ```
 
-O projeto possui um arquivo modelo:
+O projeto possuía um arquivo modelo:
 
 ```text
 .env.example
@@ -299,7 +310,8 @@ GEMINI_API_KEY=SUA_CHAVE_DA_GEMINI_AQUI
 
 O arquivo `.env` não deve ser enviado para o GitHub.
 
-Quando o `.env` não existe ou a variável `GEMINI_API_KEY` está vazia, o projeto exibe uma mensagem de erro mais clara para orientar a configuração.
+O arquivo `.env.example`, a dependência externa e essa configuração foram
+removidos junto com a integração.
 
 ---
 
@@ -313,12 +325,12 @@ A persistência está em:
 src/chat_repository.py
 ```
 
-## Contexto Conversacional Recente
+## Contexto Conversacional Recente na Integração Histórica
 
-Além de persistir o histórico no SQLite, o FinanTec envia uma pequena parte
-da conversa recente para a IA quando a pergunta precisa do modelo generativo.
+Além de persistir o histórico no SQLite, o FinanTec enviava uma pequena parte
+da conversa recente para a IA quando a pergunta precisava do modelo generativo.
 
-São enviadas no máximo seis mensagens anteriores, excluindo a mensagem inicial
+Eram enviadas no máximo seis mensagens anteriores, excluindo a mensagem inicial
 do sistema.
 
 Cada mensagem também possui um limite de caracteres para impedir que o prompt
@@ -353,14 +365,14 @@ Esses pontos podem ser evoluídos no futuro, mas não são necessários para a v
 
 ---
 
-## Direção Recomendada
+## Decisão Atual
 
-A direção recomendada para a IA no projeto é manter o papel de explicadora dos dados.
-
-O foco deve continuar sendo:
+Durante a fase com Gemini, a direção recomendada era:
 
 ```text
 dados organizados → cálculos em Python → explicação com IA
 ```
 
-Isso mantém o projeto mais confiável, simples de entender e tecnicamente defensável.
+Essa direção foi substituída pela decisão de manter o produto totalmente local.
+O código determinístico e o histórico permanecem como registro técnico, sem
+retomar chamadas externas ou apresentar Insights como prioridade do produto.

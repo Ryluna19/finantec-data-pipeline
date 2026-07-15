@@ -259,9 +259,9 @@ A evolução deve continuar incremental:
 ```text
 fluxos locais estáveis
         ↓
-revisão global de UX e responsividade
+separação consistente entre dados pessoais e demonstração
         ↓
-documentação alinhada
+limpeza segura de compatibilidades antigas
         ↓
 deploy e mudanças estruturais somente se ainda fizerem sentido
 ```
@@ -278,5 +278,8 @@ O FinanTec possui os principais fluxos financeiros estabilizados, navegação
 focada em Visão geral, Transações e Metas, persistência local em SQLite e suíte
 automatizada cobrindo as regras de maior risco.
 
-O foco atual é consolidar a documentação e realizar uma revisão global da
-experiência antes de considerar deploy ou expansão de arquitetura.
+A primeira revisão global da experiência foi concluída em celular, notebook e
+widescreen. O capítulo seguinte deve esclarecer o contexto do usuário, os seeds
+de demonstração e o primeiro uso antes de aprovar mudanças de comportamento.
+Exclusão coordenada, autenticação e expansão de arquitetura continuam como
+decisões futuras em aberto.

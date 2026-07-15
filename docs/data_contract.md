@@ -512,7 +512,9 @@ Compra no mercado — R$ 250,00
 
 não são consideradas iguais.
 
-Essa comparação não representa uma edição da transação anterior. Uma edição real dependerá futuramente de identificadores estáveis e operações CRUD no banco de dados.
+Essa comparação não representa uma edição da transação anterior. As
+transações persistidas já recebem identificadores estáveis, e a edição ou
+exclusão individual usa esses identificadores no SQLite.
 
 ---
 
@@ -627,7 +629,7 @@ Arquivos `.gitkeep` podem permanecer versionados para preservar a estrutura das 
 O modelo CSV do projeto está disponível em:
 
 ```text
-templates/transacoes_template.csv
+data/templates/transacoes_template.csv
 ```
 
 Ele pode ser copiado para `data/raw/` e renomeado seguindo o padrão recomendado:
@@ -707,7 +709,7 @@ As regras de prevenção de duplicatas continuam sendo aplicadas normalmente.
 ## Exemplo de Fluxo com CSV
 
 ```text
-1. Copiar templates/transacoes_template.csv
+1. Copiar data/templates/transacoes_template.csv
 2. Renomear para data/raw/transacoes_2026_08.csv
 3. Preencher as transações do mês
 4. Executar python main.py etl

@@ -286,13 +286,15 @@ data/processed/transacoes_processadas.csv
 data/processed/transacoes_rejeitadas.csv
 database/finantec.db
 logs/etl_transacoes.log
-data/raw/transacoes_manuais.csv
 ```
 
 Esses arquivos são gerados localmente e não precisam ser versionados no GitHub.
 
 O arquivo `transacoes_rejeitadas.csv` só é criado quando existem linhas inválidas nos arquivos de entrada.
-O arquivo `data/raw/transacoes_manuais.csv` é criado pelo editor manual de transações e representa dados locais inseridos pela interface. Ele não deve ser versionado no GitHub.
+O arquivo legado `data/raw/transacoes_manuais.csv` pode existir em instalações
+antigas, mas a entrada manual atual grava diretamente no SQLite. Esse arquivo
+continua sendo local e não deve ser versionado no GitHub.
+
 ---
 
 ## Integração Externa Descontinuada
@@ -381,10 +383,12 @@ O FinanTec Data Pipeline não:
 
 Algumas melhorias possíveis:
 
-- restaurar somente o perfil padrão mediante confirmação;
+- revisar o primeiro uso do perfil sem transformar dados simulados em dados
+  pessoais;
 - planejar a exclusão coordenada de todos os dados locais;
-- revisar a experiência em mobile, notebook e widescreen;
-- atualizar documentos históricos restantes;
+- manter a experiência em mobile, notebook e widescreen protegida contra
+  regressões;
+- limpar compatibilidades antigas somente quando houver migração segura;
 - ampliar relatórios somente quando responderem a necessidades reais;
 - avaliar deploy, autenticação e PostgreSQL depois da estabilização local.
 
@@ -408,4 +412,5 @@ Visão geral → Transações → Metas
 
 O ETL continua disponível para demonstração, compatibilidade e execução
 explícita. O mecanismo local de Insights está congelado fora da navegação
-principal.
+principal. A primeira revisão global de responsividade foi concluída e a
+documentação descreve o estado atual e o histórico das decisões do produto.

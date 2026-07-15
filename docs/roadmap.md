@@ -75,6 +75,14 @@ congelado fora da navegação principal. Consulte a
 - recurso retirado da navegação principal;
 - evolução funcional congelada por não ser prioridade do produto.
 
+### UX e responsividade
+
+- navegação principal conferida em celular, notebook e widescreen;
+- largura máxima centralizada preservada em telas amplas;
+- cabeçalho móvel compactado sem remover os avisos de uso local;
+- títulos das telas secundárias com âncoras estáveis;
+- fluxos principais sem rolagem horizontal global no celular.
+
 ### Documentação
 
 - README, visão geral e roadmap alinhados ao produto local;
@@ -86,54 +94,21 @@ congelado fora da navegação principal. Consulte a
 
 ## Próximas Prioridades
 
-### 1. Revisão global de UX e responsividade
+### 1. Consolidar identidade e separação de dados
 
-Testar pelo menos em:
+Antes de alterar o comportamento do primeiro uso:
 
-- celular;
-- notebook;
-- desktop comum;
-- monitor widescreen.
+- auditar como `user_id` é propagado entre perfil e metas;
+- mapear quando o perfil fictício e suas metas são usados como seed;
+- diferenciar dados pessoais, demonstração e compatibilidade;
+- preservar registros existentes durante qualquer mudança futura;
+- aprovar e implementar uma alteração pequena por vez.
 
-Avaliar:
+Perfil vazio, remoção de campos e exclusão coordenada de dados ainda dependem
+de decisões próprias. Dados simulados não devem ser transformados
+silenciosamente em dados pessoais.
 
-- largura máxima e espaços vazios;
-- rolagem vertical;
-- tabelas no celular;
-- navegação principal;
-- hierarquia entre consulta e ações;
-- consistência de títulos, textos e estados vazios;
-- tema preto e laranja sem excesso de efeitos.
-
-Essa etapa deve ser global. Microajustes isolados só devem ser feitos quando
-corrigirem um problema funcional ou uma inconsistência evidente.
-
-### 2. Completar perfil e privacidade
-
-#### Restaurar perfil padrão
-
-A ação deve:
-
-- mostrar quais campos serão restaurados;
-- exigir confirmação;
-- substituir somente os dados do perfil;
-- preservar transações, metas e conversas.
-
-#### Apagar todos os dados locais
-
-Essa ação só deve existir quando houver um serviço coordenado capaz de apagar:
-
-- transações;
-- perfil;
-- metas;
-- histórico de conversas;
-- arquivos relacionados;
-- estados de sessão.
-
-Também será necessário impedir a recriação silenciosa pelo seed. A ação não
-deve ser chamada de “Excluir conta”, pois não existe autenticação real.
-
-### 3. Limpeza de compatibilidade
+### 2. Limpeza de compatibilidade
 
 Depois da estabilização:
 
@@ -143,7 +118,7 @@ Depois da estabilização:
 - manter migrações seguras para bancos locais existentes;
 - evitar refatorações apenas para reduzir linhas.
 
-### 4. Deploy e evolução estrutural
+### 3. Deploy e evolução estrutural
 
 Somente depois de produto, UX e documentação estarem coerentes:
 
@@ -152,6 +127,20 @@ Somente depois de produto, UX e documentação estarem coerentes:
 - considerar PostgreSQL apenas se houver necessidade de concorrência ou
   multiusuário;
 - preservar SQLite se o uso continuar pessoal e local.
+
+### Decisões futuras em aberto
+
+Ainda precisam de avaliação separada:
+
+- comportamento do perfil no primeiro uso;
+- manutenção ou remoção de campos do perfil;
+- planejador orçamentário;
+- exclusão coordenada de todos os dados locais;
+- autenticação e exclusão de conta;
+- deploy e eventual uso de PostgreSQL.
+
+Esses itens não representam funcionalidades aprovadas nem uma única etapa de
+implementação.
 
 ---
 

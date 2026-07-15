@@ -216,7 +216,7 @@ seções seguintes.
 
 ## Registro Histórico: Validação da IA
 
-A IA é validada manualmente porque depende de fatores externos:
+A IA era validada manualmente porque dependia de fatores externos:
 
 - chave da Gemini API;
 - conexão com a internet;
@@ -224,7 +224,7 @@ A IA é validada manualmente porque depende de fatores externos:
 - variação natural das respostas do modelo;
 - limites de uso da API.
 
-Os testes manuais verificam se o assistente:
+Os testes manuais verificavam se o assistente:
 
 - usa os dados do período selecionado;
 - não inventa valores;
@@ -233,9 +233,11 @@ Os testes manuais verificam se o assistente:
 - explica os indicadores de forma clara;
 - respeita as limitações definidas no prompt.
 
-Os cálculos financeiros não são delegados à IA.
+Os cálculos financeiros não eram delegados à IA.
 
-A aplicação calcula os valores em Python e envia os resultados prontos no contexto. O papel da IA é explicar os indicadores, não recalcular ou criar valores novos.
+A aplicação calculava os valores em Python e enviava os resultados prontos no
+contexto. O papel da IA era explicar os indicadores, não recalcular ou criar
+valores novos.
 
 ---
 
@@ -298,12 +300,14 @@ O pipeline passou a gerar um relatório de rejeições com o motivo de cada linh
 
 ### Registro histórico da configuração da chave
 
-O app depende de uma chave da Gemini API para usar o chat com IA.
+O app dependia de uma chave da Gemini API para usar o chat com IA.
 
 Ajuste aplicado:
 
 ```text
-O projeto passou a usar .env.example como modelo e mensagens de erro mais claras quando o .env ou a GEMINI_API_KEY estão ausentes.
+O projeto passou a usar `.env.example` como modelo e mensagens de erro mais
+claras quando o `.env` ou a `GEMINI_API_KEY` estavam ausentes. Esses arquivos e
+essa configuração foram removidos com a integração externa.
 ```
 
 ---
