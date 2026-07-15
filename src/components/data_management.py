@@ -21,6 +21,11 @@ from src.user_context import (
     get_current_user_id,
 )
 
+from components.navigation import (
+    APP_SECTION_KEY,
+    MAIN_SECTION,
+)
+
 
 DATA_MANAGEMENT_FEEDBACK_KEY = (
     "data_management_feedback"
@@ -250,24 +255,28 @@ def _render_user_data_action(
             )
 
         if st.button(
-            "Usar meus dados",
-            key="use-user-data",
-        ):
-            st.session_state[
-                DATA_MODE_KEY
-            ] = "user"
+                "Usar meus dados",
+                key="use-user-data",
+            ):
+                st.session_state[
+                    DATA_MODE_KEY
+                ] = "user"
 
-            _set_feedback(
-                "success",
-                (
-                    "Dados pessoais carregados. "
-                    f"{summary['transaction_rows']} "
-                    "transação(ões) disponível(is)."
-                ),
-            )
+                st.session_state[
+                    APP_SECTION_KEY
+                ] = MAIN_SECTION
 
-            _refresh_application_data()
-            st.rerun()
+                _set_feedback(
+                    "success",
+                    (
+                        "Dados pessoais carregados. "
+                        f"{summary['transaction_rows']} "
+                        "transação(ões) disponível(is)."
+                    ),
+                )
+
+                _refresh_application_data()
+                st.rerun()
 
 
 def _render_demo_action() -> None:
