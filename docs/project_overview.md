@@ -80,7 +80,15 @@ Gravação direta no SQLite
 Consulta, indicadores e metas
 ```
 
+Um contexto pessoal sem perfil ou metas é válido e não recebe dados fictícios
+automaticamente. O primeiro salvamento cria o perfil, enquanto a primeira meta
+pode ser criada mesmo sem perfil configurado. Metas pessoais ausentes são
+apresentadas como uma lista vazia. Registros existentes continuam preservados
+e isolados por `user_id`.
+
 ### Demonstração e compatibilidade
+
+As transações de demonstração seguem o fluxo persistido:
 
 ```text
 Arquivos CSV de demonstração
@@ -93,6 +101,19 @@ Carga da partição de demonstração no SQLite
         ↓
 Dashboard em modo de demonstração
 ```
+
+O Perfil e as Metas fictícias seguem um fluxo separado:
+
+```text
+Fonte fictícia existente
+        ↓
+Composição em memória
+        ↓
+Perfil e Metas somente leitura
+```
+
+Esses dados não são gravados nas tabelas pessoais nem substituem registros
+existentes.
 
 ---
 
@@ -120,21 +141,28 @@ Dashboard em modo de demonstração
 
 - visualizações separadas para metas salvas e simulador;
 - criação e edição sob demanda;
+- lista pessoal vazia como estado válido;
+- criação da primeira meta sem exigir perfil configurado;
 - progresso, valor atual, restante e contribuição mensal;
 - estado de conclusão;
 - confirmação antes da exclusão;
-- persistência isolada por usuário.
+- persistência pessoal isolada por usuário;
+- metas de demonstração compostas em memória e somente leitura.
 
 ### Perfil
 
+- ausência de perfil como estado válido no primeiro uso;
+- criação do perfil no primeiro salvamento, sem seed automático;
 - resumo antes do formulário de edição;
 - fontes de renda editáveis;
 - renda mensal calculada pela soma das fontes;
+- perfil de demonstração composto em memória e somente leitura;
 - preservação interna de campos antigos por compatibilidade.
 
 ### Dados e privacidade
 
 - alternância entre dados pessoais e demonstração;
+- retorno aos dados pessoais mesmo quando não existem transações;
 - resumo dos dados armazenados localmente;
 - exclusão somente das transações pessoais e arquivos relacionados;
 - preservação de perfil, metas, conversas, demonstração e banco SQLite.
@@ -170,9 +198,10 @@ privacidade, documentada em
 ### Persistência
 
 - SQLite como fonte principal;
-- repositórios para transações, perfil, metas e conversas;
+- repositórios para transações, perfil, metas e conversas pessoais;
 - isolamento interno por `user_id`;
 - separação entre dados pessoais e demonstração;
+- Perfil e Metas de demonstração mantidos fora das tabelas pessoais;
 - identificadores estáveis gerados pela aplicação.
 
 ### Qualidade
@@ -259,7 +288,7 @@ A evolução deve continuar incremental:
 ```text
 fluxos locais estáveis
         ↓
-separação consistente entre dados pessoais e demonstração
+manutenção do isolamento entre dados pessoais e demonstração
         ↓
 limpeza segura de compatibilidades antigas
         ↓
@@ -279,7 +308,7 @@ focada em Visão geral, Transações e Metas, persistência local em SQLite e su
 automatizada cobrindo as regras de maior risco.
 
 A primeira revisão global da experiência foi concluída em celular, notebook e
-widescreen. O capítulo seguinte deve esclarecer o contexto do usuário, os seeds
-de demonstração e o primeiro uso antes de aprovar mudanças de comportamento.
-Exclusão coordenada, autenticação e expansão de arquitetura continuam como
-decisões futuras em aberto.
+widescreen. O contexto de usuário é propagado para Perfil e Metas, o primeiro
+uso pessoal não recebe seeds automáticos e os equivalentes fictícios permanecem
+isolados no modo de demonstração. Exclusão coordenada, autenticação e expansão
+de arquitetura continuam como decisões futuras em aberto.

@@ -22,8 +22,11 @@ Já estão implementados:
 - exportação por período;
 - separação entre dados pessoais e demonstração;
 - perfil com renda calculada pelas fontes cadastradas;
+- contexto de usuário propagado explicitamente para Perfil e Metas;
+- primeiro uso pessoal sem perfil ou metas automáticos;
 - gerenciamento seguro das transações pessoais;
 - metas persistentes e simulador separado;
+- Perfil e Metas de demonstração isolados e somente leitura;
 - navegação principal com Visão geral, Transações e Metas;
 - testes automatizados dos principais repositórios e regras;
 - ETL mantido para demonstração e compatibilidade.
@@ -48,6 +51,7 @@ congelado fora da navegação principal. Consulte a
 ### Dados e privacidade
 
 - distinção clara entre dados pessoais e demonstração;
+- retorno ao contexto pessoal permitido mesmo sem transações;
 - resumo dos dados locais;
 - ação limitada a apagar somente transações pessoais;
 - preservação explícita de perfil, metas, conversas, demonstração e banco.
@@ -67,6 +71,15 @@ congelado fora da navegação principal. Consulte a
 - cartões com progresso, restante e contribuição mensal;
 - prioridade removida da interface e preservada internamente;
 - edição e exclusão sob demanda.
+
+### Identidade, primeiro uso e demonstração
+
+- `user_id` propagado explicitamente para os fluxos de Perfil e Metas;
+- perfil e metas fictícios retirados do carregamento pessoal normal;
+- primeiro uso pessoal mantido sem perfil ou metas automáticos;
+- Perfil e Metas fictícios compostos sem persistência pessoal;
+- interface demonstrativa de Perfil e Metas mantida somente para leitura;
+- retorno ao contexto pessoal permitido mesmo com zero transações.
 
 ### Insights
 
@@ -94,21 +107,7 @@ congelado fora da navegação principal. Consulte a
 
 ## Próximas Prioridades
 
-### 1. Consolidar identidade e separação de dados
-
-Antes de alterar o comportamento do primeiro uso:
-
-- auditar como `user_id` é propagado entre perfil e metas;
-- mapear quando o perfil fictício e suas metas são usados como seed;
-- diferenciar dados pessoais, demonstração e compatibilidade;
-- preservar registros existentes durante qualquer mudança futura;
-- aprovar e implementar uma alteração pequena por vez.
-
-Perfil vazio, remoção de campos e exclusão coordenada de dados ainda dependem
-de decisões próprias. Dados simulados não devem ser transformados
-silenciosamente em dados pessoais.
-
-### 2. Limpeza de compatibilidade
+### 1. Limpeza de compatibilidade
 
 Depois da estabilização:
 
@@ -118,7 +117,7 @@ Depois da estabilização:
 - manter migrações seguras para bancos locais existentes;
 - evitar refatorações apenas para reduzir linhas.
 
-### 3. Deploy e evolução estrutural
+### 2. Deploy e evolução estrutural
 
 Somente depois de produto, UX e documentação estarem coerentes:
 
@@ -132,9 +131,8 @@ Somente depois de produto, UX e documentação estarem coerentes:
 
 Ainda precisam de avaliação separada:
 
-- comportamento do perfil no primeiro uso;
-- manutenção ou remoção de campos do perfil;
-- planejador orçamentário;
+- reavaliação dos campos do perfil;
+- planejador orçamentário como candidato futuro, sujeito a avaliação;
 - exclusão coordenada de todos os dados locais;
 - autenticação e exclusão de conta;
 - deploy e eventual uso de PostgreSQL.

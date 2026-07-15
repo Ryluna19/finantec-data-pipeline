@@ -11,7 +11,9 @@
 
 A base de conhecimento do FinanTec Data Pipeline reúne os dados simulados que
 acompanham o repositório e registra como eles foram usados nas diferentes fases
-do projeto. Ela não é uma dependência ativa dos fluxos financeiros principais.
+do projeto. Entre essas fontes, o perfil fictício e suas metas são usados
+ativamente somente no contexto de demonstração; as fontes da antiga integração
+externa permanecem como registro histórico.
 
 A base combina arquivos de transações, perfil fictício da pessoa usuária, histórico de dúvidas, conceitos financeiros e produtos financeiros informativos.
 
@@ -32,7 +34,7 @@ O projeto não utiliza dados bancários reais.
 | `data/processed/transacoes_processadas.csv` | CSV | Base tratada gerada pelo pipeline ETL. |
 | `data/processed/transacoes_rejeitadas.csv` | CSV | Relatório local de linhas rejeitadas e seus motivos, gerado apenas quando há dados inválidos. |
 | `database/finantec.db` | SQLite | Fonte principal local, atualizada pela interface e também pelo ETL explícito. |
-| `data/perfil_usuario.json` | JSON | Seed inicial do perfil fictício e das metas; os valores ativos são persistidos no SQLite. |
+| `data/perfil_usuario.json` | JSON | Fonte do Perfil e das Metas fictícias da demonstração, compostos em memória e sem persistência nas tabelas pessoais. |
 | `data/historico_atendimento.csv` | CSV | Registro simulado preservado da fase histórica de consultas financeiras. |
 | `data/conceitos_financeiros.json` | JSON | Conteúdo educativo preservado da fase histórica de Insights. |
 | `data/produtos_financeiros.json` | JSON | Conteúdo informativo e simulado preservado da fase histórica de Insights. |
@@ -55,6 +57,10 @@ As metas principais cadastradas são:
 - comprar um notebook.
 
 O uso de uma pessoa fictícia permite demonstrar o fluxo técnico sem utilizar dados pessoais ou bancários reais.
+
+No contexto demonstrativo, o Perfil e as Metas de Marina são apresentados
+somente para leitura. Eles não são copiados para o perfil ou para as metas
+pessoais.
 
 ---
 
@@ -147,6 +153,8 @@ Fluxo simplificado:
 Entrada manual ou importação → validação → SQLite → dashboard
 
 CSV de demonstração → ETL explícito → CSV processado → SQLite
+
+Perfil e metas fictícios → composição em memória → interface somente leitura
 ```
 
 ---
@@ -196,7 +204,8 @@ O dashboard em Streamlit utiliza a base tratada para exibir:
 - gráfico de gastos por categoria;
 - simulação de metas financeiras;
 - consulta e gerenciamento das transações;
-- acompanhamento de metas persistentes.
+- acompanhamento de metas pessoais persistentes e metas fictícias somente
+  para leitura.
 
 Os cálculos são feitos em Python, principalmente no arquivo:
 

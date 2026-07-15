@@ -209,7 +209,13 @@ Os dados incluem:
 - conceitos financeiros básicos;
 - produtos financeiros apenas informativos.
 
-Os arquivos em `data/raw/` representam transações mensais brutas. O pipeline processa esses arquivos e gera uma base tratada para análise.
+Os arquivos versionados em `data/demo/` representam as transações mensais
+da demonstração. O pipeline processa esses arquivos e gera uma base tratada
+para análise.
+
+Um uso pessoal novo pode começar sem perfil e sem metas. A demonstração não
+preenche esses dados pessoais: o Perfil e as Metas fictícias são apresentados
+somente no contexto demonstrativo e em modo de leitura.
 
 ---
 
@@ -383,8 +389,6 @@ O FinanTec Data Pipeline não:
 
 Algumas melhorias possíveis:
 
-- revisar o primeiro uso do perfil sem transformar dados simulados em dados
-  pessoais;
 - planejar a exclusão coordenada de todos os dados locais;
 - manter a experiência em mobile, notebook e widescreen protegida contra
   regressões;
