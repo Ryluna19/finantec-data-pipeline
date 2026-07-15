@@ -252,7 +252,6 @@ def _render_user_data_action(
         if st.button(
             "Usar meus dados",
             key="use-user-data",
-            disabled=not has_user_transactions,
         ):
             st.session_state[
                 DATA_MODE_KEY
