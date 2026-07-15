@@ -71,6 +71,7 @@ def _open_section(
 
 def render_user_navigation(
     profile: dict[str, Any],
+    data_mode: str,
 ) -> str:
     """Exibe o menu compacto do usuário na sidebar."""
     active_section = (
@@ -110,7 +111,12 @@ def render_user_navigation(
             _open_section(
                 selected_section
             )
-            
+
+        if data_mode == "demo":
+            st.caption(
+                "Modo demonstração"
+            )
+
         st.divider()
 
     return active_section

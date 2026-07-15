@@ -53,18 +53,66 @@ class FakeStreamlit:
     ) -> None:
         return None
 
+    def info(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        return None
+
     def columns(
         self,
         count,
         *args,
         **kwargs,
     ):
+        column_count = (
+            len(
+                count
+            )
+            if isinstance(
+                count,
+                list,
+            )
+            else int(
+                count
+            )
+        )
+
         return tuple(
             DummyContext()
             for _ in range(
-                int(count)
+                column_count
             )
         )
+
+    def container(
+        self,
+        *args,
+        **kwargs,
+    ):
+        return DummyContext()
+
+    def markdown(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        return None
+
+    def metric(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        return None
+
+    def success(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        return None
 
     def button(
         self,
@@ -114,8 +162,8 @@ def configure_goal_views(
     monkeypatch.setattr(
         goals_module,
         "_render_goal_management_view",
-        lambda goals, user_id: events.append(
-            f"management:{user_id}"
+        lambda goals, user_id, read_only=False: events.append(
+            f"management:{user_id}:{read_only}"
         ),
     )
 
@@ -249,9 +297,12 @@ def test_goal_screen_starts_with_saved_goals(
         },
         summary={},
         user_id="user-1",
+        data_mode="user",
     )
 
-    assert events == ["management:user-1"]
+    assert events == [
+        "management:user-1:False"
+    ]
 
     assert fake_streamlit.session_state[
         goals_module.GOAL_VIEW_KEY
@@ -277,6 +328,7 @@ def test_goal_screen_switches_to_simulator(
         },
         summary={},
         user_id="user-1",
+        data_mode="user",
     )
 
     assert events == ["simulator"]
@@ -284,3 +336,125 @@ def test_goal_screen_switches_to_simulator(
     assert fake_streamlit.session_state[
         goals_module.GOAL_VIEW_KEY
     ] == goals_module.GOAL_VIEW_SIMULATOR
+
+
+def test_demo_goal_management_is_read_only(
+    monkeypatch,
+) -> None:
+    fake_streamlit, events = configure_goal_views(
+        monkeypatch
+    )
+
+    goals_module.render_goal_simulator(
+        user_profile={
+            "objetivos_financeiros": [],
+        },
+        summary={},
+        user_id="user-1",
+        data_mode="demo",
+    )
+
+    assert events == [
+        "management:user-1:True"
+    ]
+
+    assert fake_streamlit.buttons == [
+        ("Minhas metas", "primary"),
+        ("Simulador", "secondary"),
+    ]
+
+
+def test_demo_goal_simulator_remains_available(
+    monkeypatch,
+) -> None:
+    _, events = configure_goal_views(
+        monkeypatch,
+        clicked_label="Simulador",
+    )
+
+    goals_module.render_goal_simulator(
+        user_profile={
+            "objetivos_financeiros": [],
+        },
+        summary={},
+        user_id="user-1",
+        data_mode="demo",
+    )
+
+    assert events == [
+        "simulator",
+    ]
+
+
+def test_demo_goal_management_hides_create_form(
+    monkeypatch,
+) -> None:
+    fake_streamlit = FakeStreamlit()
+    events: list[str] = []
+
+    monkeypatch.setattr(
+        goals_module,
+        "st",
+        fake_streamlit,
+    )
+    monkeypatch.setattr(
+        goals_module,
+        "_render_goal_form",
+        lambda *args, **kwargs: events.append(
+            "form"
+        ),
+    )
+    monkeypatch.setattr(
+        goals_module,
+        "_render_goal_management_cards",
+        lambda goals, user_id, read_only=False: events.append(
+            f"cards:{read_only}"
+        ),
+    )
+
+    goals_module._render_goal_management_view(
+        [],
+        "user-1",
+        read_only=True,
+    )
+
+    assert events == [
+        "cards:True",
+    ]
+    assert fake_streamlit.buttons == []
+
+
+def test_demo_goal_cards_hide_edit_and_delete_actions(
+    monkeypatch,
+) -> None:
+    fake_streamlit = FakeStreamlit()
+    fake_streamlit.session_state[
+        goals_module.GOAL_DELETE_ID_KEY
+    ] = "demo-goal-1"
+
+    monkeypatch.setattr(
+        goals_module,
+        "st",
+        fake_streamlit,
+    )
+    monkeypatch.setattr(
+        goals_module,
+        "render_html",
+        lambda _html: None,
+    )
+
+    goals_module._render_goal_management_cards(
+        [
+            {
+                "goal_id": "demo-goal-1",
+                "nome": "Reserva",
+                "valor_meta": 1500.0,
+                "valor_atual": 500.0,
+                "prazo_meses": 10,
+            }
+        ],
+        "user-1",
+        read_only=True,
+    )
+
+    assert fake_streamlit.buttons == []

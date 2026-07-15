@@ -534,6 +534,7 @@ def _delete_goal(
 def _render_goal_management_cards(
     goals: list[dict[str, Any]],
     user_id: str,
+    read_only: bool = False,
 ) -> None:
     """Exibe as metas cadastradas e suas ações."""
     if not goals:
@@ -655,75 +656,93 @@ def _render_goal_management_cards(
                 </div>
                 """)
 
-            (
-                edit_column,
-                delete_column,
-            ) = st.columns(
-                2,
-                gap="small",
-            )
-
-            with edit_column:
-                if st.button(
-                    "Editar",
-                    key=("edit-financial-goal-" f"{goal_id}"),
-                    use_container_width=True,
-                ):
-                    _open_goal_form(goal_id)
-
-                    st.rerun()
-
-            with delete_column:
-                if st.button(
-                    "Excluir",
-                    key=("delete-financial-goal-" f"{goal_id}"),
-                    use_container_width=True,
-                ):
-                    st.session_state[GOAL_DELETE_ID_KEY] = goal_id
-
-                    st.rerun()
-
-            if pending_delete_id == goal_id:
-                st.markdown(
-                    f"**Excluir a meta “{name}”?** " "Essa ação não pode ser desfeita."
-                )
-
+            if not read_only:
                 (
-                    confirm_column,
-                    cancel_column,
+                    edit_column,
+                    delete_column,
                 ) = st.columns(
                     2,
                     gap="small",
                 )
 
-                with confirm_column:
+                with edit_column:
                     if st.button(
-                        "Sim, excluir",
-                        key=("confirm-delete-goal-" f"{goal_id}"),
-                        type="primary",
+                        "Editar",
+                        key=("edit-financial-goal-" f"{goal_id}"),
                         use_container_width=True,
                     ):
-                        _delete_goal(
-                            goal_id,
-                            user_id,
-                        )
-
-                with cancel_column:
-                    if st.button(
-                        "Manter meta",
-                        key=("cancel-delete-goal-" f"{goal_id}"),
-                        use_container_width=True,
-                    ):
-                        st.session_state[GOAL_DELETE_ID_KEY] = None
+                        _open_goal_form(goal_id)
 
                         st.rerun()
+
+                with delete_column:
+                    if st.button(
+                        "Excluir",
+                        key=("delete-financial-goal-" f"{goal_id}"),
+                        use_container_width=True,
+                    ):
+                        st.session_state[GOAL_DELETE_ID_KEY] = goal_id
+
+                        st.rerun()
+
+                if pending_delete_id == goal_id:
+                    st.markdown(
+                        f"**Excluir a meta “{name}”?** "
+                        "Essa ação não pode ser desfeita."
+                    )
+
+                    (
+                        confirm_column,
+                        cancel_column,
+                    ) = st.columns(
+                        2,
+                        gap="small",
+                    )
+
+                    with confirm_column:
+                        if st.button(
+                            "Sim, excluir",
+                            key=("confirm-delete-goal-" f"{goal_id}"),
+                            type="primary",
+                            use_container_width=True,
+                        ):
+                            _delete_goal(
+                                goal_id,
+                                user_id,
+                            )
+
+                    with cancel_column:
+                        if st.button(
+                            "Manter meta",
+                            key=("cancel-delete-goal-" f"{goal_id}"),
+                            use_container_width=True,
+                        ):
+                            st.session_state[GOAL_DELETE_ID_KEY] = None
+
+                            st.rerun()
 
 
 def _render_goal_management_view(
     goals: list[dict[str, Any]],
     user_id: str,
+    read_only: bool = False,
 ) -> None:
     """Exibe a consulta e as ações das metas salvas."""
+    if read_only:
+        st.markdown("### Metas de demonstração")
+
+        st.caption(
+            "Acompanhe as metas fictícias ou use o simulador."
+        )
+
+        _render_goal_management_cards(
+            goals,
+            user_id,
+            read_only=True,
+        )
+
+        return
+
     title_column, action_column = st.columns(
         [
             3,
@@ -1131,6 +1150,7 @@ def render_goal_simulator(
     user_profile: dict[str, Any],
     summary: dict[str, Any],
     user_id: str,
+    data_mode: str,
 ) -> None:
     """Exibe gerenciamento e simulação das metas financeiras."""
     st.subheader("Metas")
@@ -1141,6 +1161,14 @@ def render_goal_simulator(
     )
 
     _show_goal_feedback()
+
+    is_demo = data_mode == "demo"
+
+    if is_demo:
+        st.info(
+            "Metas de demonstração. "
+            "Os dados são fictícios e somente leitura."
+        )
 
     goals = list(
         user_profile.get(
@@ -1166,4 +1194,5 @@ def render_goal_simulator(
     _render_goal_management_view(
         goals,
         user_id,
+        read_only=is_demo,
     )

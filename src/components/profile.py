@@ -420,6 +420,7 @@ def _build_profile_payload(
 def render_user_profile(
     profile: dict[str, Any],
     user_id: str,
+    data_mode: str,
 ) -> None:
     """Exibe e permite editar o perfil financeiro."""
     st.subheader(
@@ -434,14 +435,23 @@ def render_user_profile(
 
     _show_profile_feedback()
 
-    is_editing = bool(
-        st.session_state.get(
-            PROFILE_EDIT_MODE_KEY,
-            False,
-        )
+    is_demo = data_mode == "demo"
+    is_configured = bool(
+        str(
+            profile.get(
+                "nome",
+                "",
+            )
+            or ""
+        ).strip()
     )
 
-    if not is_editing:
+    if is_demo:
+        st.info(
+            "Perfil de demonstração. "
+            "Estas informações são fictícias e somente leitura."
+        )
+
         with st.container(
             border=True,
             key="profile-summary-card",
@@ -450,8 +460,45 @@ def render_user_profile(
                 profile
             )
 
+        return
+
+    is_editing = bool(
+        st.session_state.get(
+            PROFILE_EDIT_MODE_KEY,
+            False,
+        )
+    )
+
+    if not is_editing:
+        if is_configured:
+            with st.container(
+                border=True,
+                key="profile-summary-card",
+            ):
+                _render_profile_summary(
+                    profile
+                )
+
+        else:
+            with st.container(
+                border=True,
+                key="profile-empty-card",
+            ):
+                st.markdown(
+                    "### Perfil não configurado"
+                )
+
+                st.caption(
+                    "Preencha suas informações para "
+                    "configurar o perfil financeiro."
+                )
+
         if st.button(
-            "Editar perfil",
+            (
+                "Editar perfil"
+                if is_configured
+                else "Configurar perfil"
+            ),
             key="start-profile-edit",
             type="primary",
         ):
@@ -464,7 +511,11 @@ def render_user_profile(
         return
 
     st.markdown(
-        "### Editar perfil"
+        (
+            "### Editar perfil"
+            if is_configured
+            else "### Configurar perfil"
+        )
     )
 
     situation = profile.get(
@@ -725,7 +776,11 @@ def render_user_profile(
 
     _set_profile_feedback(
         "success",
-        "Perfil atualizado com sucesso.",
+        (
+            "Perfil atualizado com sucesso."
+            if is_configured
+            else "Perfil configurado com sucesso."
+        ),
     )
 
     st.cache_data.clear()

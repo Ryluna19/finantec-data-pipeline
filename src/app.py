@@ -101,14 +101,28 @@ def load_data(
     data_mode: str,
 ) -> tuple[
     dict[str, Any],
+    dict[str, Any],
     pd.DataFrame,
     pd.DataFrame,
 ]:
     """Carrega e mantém em cache os dados utilizados pela interface."""
-    return (
+    active_profile = load_user_profile(
+        user_id=user_id,
+        data_mode=data_mode,
+    )
+
+    personal_profile = (
         load_user_profile(
             user_id=user_id,
-        ),
+            data_mode="user",
+        )
+        if data_mode == "demo"
+        else active_profile
+    )
+
+    return (
+        personal_profile,
+        active_profile,
         load_transactions(
             user_id=user_id,
             data_mode=data_mode,
@@ -604,6 +618,7 @@ def main() -> None:
         load_data.clear()
 
     (
+        personal_profile,
         user_profile,
         transactions,
         rejections,
@@ -613,7 +628,8 @@ def main() -> None:
     )
     active_section = (
         render_user_navigation(
-            user_profile
+            personal_profile,
+            data_mode=data_mode,
         )
     )
 
@@ -623,6 +639,7 @@ def main() -> None:
         render_user_profile(
             user_profile,
             user_id=current_user_id,
+            data_mode=data_mode,
         )
 
         return
@@ -676,6 +693,7 @@ def main() -> None:
                     "saldo_disponivel": 0.0,
                 },
                 user_id=current_user_id,
+                data_mode=data_mode,
             )
         return
 
@@ -711,6 +729,7 @@ def main() -> None:
             user_profile=user_profile,
             summary=summary,
             user_id=current_user_id,
+            data_mode=data_mode,
         )
 
 if __name__ == "__main__":

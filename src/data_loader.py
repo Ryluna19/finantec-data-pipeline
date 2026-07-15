@@ -13,15 +13,16 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
 
 import pandas as pd
 
 from src.goal_repository import (
     list_financial_goals,
-    seed_financial_goals_if_needed,
+    normalize_financial_goal,
 )
 from src.profile_repository import (
-    seed_user_profile_if_missing,
+    load_user_profile,
 )
 from src.transaction_repository import (
     load_transactions,
@@ -140,33 +141,90 @@ def merge_profile_with_legacy_goals(
     )
 
 
+def build_demo_financial_goals(
+    seed_profile: dict,
+) -> list[dict]:
+    """Prepara metas fictícias estáveis sem persistir registros."""
+    seed_goals = seed_profile.get(
+        "objetivos_financeiros",
+        [],
+    )
+
+    if not isinstance(
+        seed_goals,
+        list,
+    ):
+        raise ValueError(
+            "As metas de demonstração devem ser uma lista."
+        )
+
+    demo_goals: list[dict] = []
+
+    for index, seed_goal in enumerate(
+        seed_goals
+    ):
+        normalized_goal = (
+            normalize_financial_goal(
+                seed_goal
+            )
+        )
+
+        stable_goal_id = str(
+            uuid5(
+                NAMESPACE_URL,
+                (
+                    "finantec-demo-goal:"
+                    f"{index}:"
+                    f"{normalized_goal['name_key']}"
+                ),
+            )
+        )
+
+        demo_goals.append(
+            {
+                "goal_id": stable_goal_id,
+                **normalized_goal,
+            }
+        )
+
+    return demo_goals
+
+
 def carregar_perfil_usuario(
     user_id: str,
+    data_mode: str = "user",
 ) -> dict:
-    """Carrega o perfil e as metas financeiras persistidas."""
-    seed_profile = carregar_json(
-        "perfil_usuario.json"
-    )
+    """Carrega perfil e metas conforme o contexto de dados atual."""
+    normalized_data_mode = str(
+        data_mode
+    ).strip().lower()
 
-    persisted_profile = (
-        seed_user_profile_if_missing(
-            database_path=(
-                ARQUIVO_BANCO
-            ),
-            user_id=user_id,
-            seed_profile=seed_profile,
+    if normalized_data_mode == "demo":
+        demo_profile = carregar_json(
+            "perfil_usuario.json"
         )
-    )
 
-    seed_financial_goals_if_needed(
+        return merge_profile_with_goals(
+            profile=demo_profile,
+            goals=(
+                build_demo_financial_goals(
+                    demo_profile
+                )
+            ),
+        )
+
+    if normalized_data_mode not in {
+        "user",
+        "empty",
+    }:
+        raise ValueError(
+            "O modo do perfil deve ser "
+            "'user', 'demo' ou 'empty'."
+        )
+
+    persisted_profile = load_user_profile(
         database_path=ARQUIVO_BANCO,
         user_id=user_id,
-        seed_goals=list(
-            seed_profile.get(
-                "objetivos_financeiros",
-                [],
-            )
-        ),
     )
 
     persisted_goals = (
@@ -177,7 +235,13 @@ def carregar_perfil_usuario(
     )
 
     return merge_profile_with_goals(
-        profile=persisted_profile,
+        profile=(
+            persisted_profile
+            if persisted_profile is not None
+            else {
+                "user_id": user_id,
+            }
+        ),
         goals=persisted_goals,
     )
 

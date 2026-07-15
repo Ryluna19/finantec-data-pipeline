@@ -8,6 +8,41 @@ import app as app_module
 import components.header as header_module
 
 
+class TabContext:
+    """Simula uma aba do Streamlit."""
+
+    def __enter__(
+        self,
+    ):
+        return self
+
+    def __exit__(
+        self,
+        exception_type,
+        exception_value,
+        traceback,
+    ) -> bool:
+        return False
+
+
+class MainStreamlit:
+    """Oferece o estado mínimo usado pela composição principal."""
+
+    def __init__(
+        self,
+    ) -> None:
+        self.session_state: dict = {}
+
+    def tabs(
+        self,
+        labels,
+    ):
+        return tuple(
+            TabContext()
+            for _ in labels
+        )
+
+
 def test_main_navigation_contains_only_primary_financial_flows():
     assert app_module.MAIN_TAB_LABELS == (
         "Visão geral",
@@ -20,16 +55,23 @@ def test_load_data_passes_received_user_context(
     monkeypatch,
 ) -> None:
     calls: dict[str, object] = {}
+    profile_calls: list[
+        tuple[str, str]
+    ] = []
 
     monkeypatch.setattr(
         app_module,
         "load_user_profile",
-        lambda *, user_id: (
-            calls.update(
-                profile_user_id=user_id
+        lambda *, user_id, data_mode: (
+            profile_calls.append(
+                (
+                    user_id,
+                    data_mode,
+                )
             )
             or {
                 "user_id": user_id,
+                "data_mode": data_mode,
             }
         ),
     )
@@ -52,7 +94,12 @@ def test_load_data_passes_received_user_context(
         pd.DataFrame,
     )
 
-    profile, transactions, rejections = (
+    (
+        personal_profile,
+        active_profile,
+        transactions,
+        rejections,
+    ) = (
         app_module.load_data.__wrapped__(
             "user-1",
             "demo",
@@ -60,13 +107,29 @@ def test_load_data_passes_received_user_context(
     )
 
     assert calls == {
-        "profile_user_id": "user-1",
         "transaction_user_id": "user-1",
         "data_mode": "demo",
     }
 
-    assert profile == {
+    assert profile_calls == [
+        (
+            "user-1",
+            "demo",
+        ),
+        (
+            "user-1",
+            "user",
+        ),
+    ]
+
+    assert personal_profile == {
         "user_id": "user-1",
+        "data_mode": "user",
+    }
+
+    assert active_profile == {
+        "user_id": "user-1",
+        "data_mode": "demo",
     }
 
     assert transactions.empty
@@ -114,4 +177,92 @@ def test_header_presents_finantec_as_local_application(
             "Período analisado: Julho/2026",
             "info",
         ),
+    ]
+
+
+def test_main_flows_render_without_configured_profile(
+    monkeypatch,
+) -> None:
+    fake_streamlit = MainStreamlit()
+    events: list[str] = []
+    empty_transactions = pd.DataFrame()
+
+    monkeypatch.setattr(
+        app_module,
+        "st",
+        fake_streamlit,
+    )
+    monkeypatch.setattr(
+        app_module,
+        "apply_visual_styles",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        app_module,
+        "get_current_user_id",
+        lambda: "user-1",
+    )
+    monkeypatch.setattr(
+        app_module,
+        "load_data",
+        lambda user_id, data_mode: (
+            {
+                "user_id": user_id,
+                "objetivos_financeiros": [],
+            },
+            {
+                "user_id": user_id,
+                "objetivos_financeiros": [],
+            },
+            empty_transactions,
+            pd.DataFrame(),
+        ),
+    )
+    monkeypatch.setattr(
+        app_module,
+        "render_user_navigation",
+        lambda profile, data_mode: "main",
+    )
+    monkeypatch.setattr(
+        app_module,
+        "select_period",
+        lambda transactions: (
+            0,
+            "Sem dados",
+            transactions,
+        ),
+    )
+    monkeypatch.setattr(
+        app_module,
+        "render_header",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        app_module,
+        "render_empty_dashboard",
+        lambda: events.append(
+            "dashboard"
+        ),
+    )
+    monkeypatch.setattr(
+        app_module,
+        "render_transactions_tab",
+        lambda **kwargs: events.append(
+            "transactions"
+        ),
+    )
+    monkeypatch.setattr(
+        app_module,
+        "render_goal_simulator",
+        lambda **kwargs: events.append(
+            "goals"
+        ),
+    )
+
+    app_module.main()
+
+    assert events == [
+        "dashboard",
+        "transactions",
+        "goals",
     ]
