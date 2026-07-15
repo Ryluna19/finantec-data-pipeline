@@ -29,12 +29,14 @@ GOAL_DELETE_ID_KEY = "financial_goal_delete_id"
 GOAL_FORM_VERSION_KEY = "financial_goal_form_version"
 GOAL_FEEDBACK_KEY = "financial_goal_feedback"
 SELECTED_GOAL_KEY = "selected_financial_goal"
+GOAL_VIEW_KEY = "financial_goal_view"
 
-PRIORITY_OPTIONS = [
-    "baixa",
-    "média",
-    "alta",
-]
+GOAL_VIEW_MANAGEMENT = "Minhas metas"
+GOAL_VIEW_SIMULATOR = "Simulador"
+VALID_GOAL_VIEWS = {
+    GOAL_VIEW_MANAGEMENT,
+    GOAL_VIEW_SIMULATOR,
+}
 
 SIMULATION_MODE_DEADLINE = "Prazo desejado"
 SIMULATION_MODE_MONTHLY = "Valor mensal disponível"
@@ -57,6 +59,39 @@ def calculate_goal_progress(
             100.0,
         ),
     )
+
+
+def calculate_goal_overview(
+    *,
+    target_amount: float,
+    current_amount: float,
+    deadline_months: int,
+) -> dict[str, float | bool]:
+    """Resume os valores exibidos no cartão de uma meta salva."""
+    simulation = calculate_monthly_goal(
+        valor_meta=target_amount,
+        prazo_meses=deadline_months,
+        valor_ja_reservado=current_amount,
+    )
+
+    remaining_amount = float(
+        simulation["valor_restante"]
+    )
+
+    monthly_amount = float(
+        simulation["valor_mensal_necessario"]
+        or 0.0
+    )
+
+    return {
+        "progress": calculate_goal_progress(
+            current_value=current_amount,
+            goal_value=target_amount,
+        ),
+        "remaining_amount": remaining_amount,
+        "monthly_amount": monthly_amount,
+        "completed": remaining_amount <= 0,
+    }
 
 
 def calculate_estimated_months(
@@ -99,6 +134,69 @@ def format_currency_markdown(
         "$",
         r"\$",
     )
+
+
+def _get_goal_view() -> str:
+    """Retorna a visualização ativa da tela de metas."""
+    selected_view = st.session_state.get(
+        GOAL_VIEW_KEY,
+        GOAL_VIEW_MANAGEMENT,
+    )
+
+    if selected_view not in VALID_GOAL_VIEWS:
+        selected_view = GOAL_VIEW_MANAGEMENT
+
+    st.session_state[GOAL_VIEW_KEY] = selected_view
+
+    return str(selected_view)
+
+
+def _set_goal_view(
+    selected_view: str,
+) -> None:
+    """Ativa uma das visualizações disponíveis para metas."""
+    if selected_view not in VALID_GOAL_VIEWS:
+        selected_view = GOAL_VIEW_MANAGEMENT
+
+    st.session_state[GOAL_VIEW_KEY] = selected_view
+
+
+def _render_goal_view_selector(
+    active_view: str,
+) -> None:
+    """Exibe os comandos para alternar entre metas e simulador."""
+    management_column, simulator_column = st.columns(
+        2,
+        gap="small",
+    )
+
+    with management_column:
+        st.button(
+            GOAL_VIEW_MANAGEMENT,
+            key="show-financial-goals",
+            type=(
+                "primary"
+                if active_view == GOAL_VIEW_MANAGEMENT
+                else "secondary"
+            ),
+            use_container_width=True,
+            on_click=_set_goal_view,
+            args=(GOAL_VIEW_MANAGEMENT,),
+        )
+
+    with simulator_column:
+        st.button(
+            GOAL_VIEW_SIMULATOR,
+            key="show-goal-simulator",
+            type=(
+                "primary"
+                if active_view == GOAL_VIEW_SIMULATOR
+                else "secondary"
+            ),
+            use_container_width=True,
+            on_click=_set_goal_view,
+            args=(GOAL_VIEW_SIMULATOR,),
+        )
 
 
 def _get_form_version() -> int:
@@ -266,12 +364,6 @@ def _render_goal_form(
         else "média"
     )
 
-    priority_index = (
-        PRIORITY_OPTIONS.index(default_priority)
-        if default_priority in PRIORITY_OPTIONS
-        else 1
-    )
-
     title = "Editar meta" if is_editing else "Nova meta"
 
     st.markdown(f"### {title}")
@@ -315,30 +407,13 @@ def _render_goal_form(
                 format="%.2f",
             )
 
-        (
-            deadline_column,
-            priority_column,
-        ) = st.columns(
-            2,
-            gap="medium",
+        deadline_months = st.number_input(
+            "Prazo em meses",
+            min_value=1,
+            max_value=600,
+            value=default_deadline,
+            step=1,
         )
-
-        with deadline_column:
-            deadline_months = st.number_input(
-                "Prazo em meses",
-                min_value=1,
-                max_value=600,
-                value=default_deadline,
-                step=1,
-            )
-
-        with priority_column:
-            priority = st.selectbox(
-                "Prioridade",
-                options=PRIORITY_OPTIONS,
-                index=priority_index,
-                format_func=(lambda value: (value.capitalize())),
-            )
 
         (
             save_column,
@@ -373,7 +448,7 @@ def _render_goal_form(
         target_amount=target_amount,
         current_amount=current_amount,
         deadline_months=(int(deadline_months)),
-        priority=priority,
+        priority=default_priority,
     )
 
     try:
@@ -459,8 +534,6 @@ def _render_goal_management_cards(
     goals: list[dict[str, Any]],
 ) -> None:
     """Exibe as metas cadastradas e suas ações."""
-    st.markdown("### Metas cadastradas")
-
     if not goals:
         st.info(
             "Nenhuma meta financeira foi cadastrada. "
@@ -482,17 +555,23 @@ def _render_goal_management_cards(
 
         deadline_months = int(goal["prazo_meses"])
 
-        priority = str(goal["prioridade"]).capitalize()
-
-        progress = calculate_goal_progress(
-            current_value=current_amount,
-            goal_value=target_amount,
+        overview = calculate_goal_overview(
+            target_amount=target_amount,
+            current_amount=current_amount,
+            deadline_months=deadline_months,
         )
 
-        remaining = max(
-            target_amount - current_amount,
-            0.0,
+        progress = float(overview["progress"])
+
+        remaining_amount = float(
+            overview["remaining_amount"]
         )
+
+        monthly_amount = float(
+            overview["monthly_amount"]
+        )
+
+        completed = bool(overview["completed"])
 
         with st.container(
             border=True,
@@ -513,39 +592,66 @@ def _render_goal_management_cards(
                 st.markdown(f"### {name}")
 
                 st.caption(
-                    f"Prioridade {priority} · " f"Prazo de {deadline_months} meses"
-                )
-
-                st.markdown(
-                    "Guardado: "
-                    f"**{format_currency_markdown(current_amount)}** "
-                    "de "
-                    f"**{format_currency_markdown(target_amount)}**"
+                    "Meta: "
+                    f"{format_currency_markdown(target_amount)} · "
+                    f"Prazo: {deadline_months} meses"
                 )
 
             with progress_column:
+                if completed:
+                    st.success("Meta concluída")
+
+                else:
+                    st.caption("Em andamento")
+
+            (
+                current_column,
+                remaining_column,
+                monthly_column,
+            ) = st.columns(
+                3,
+                gap="small",
+            )
+
+            with current_column:
                 st.metric(
-                    "Falta guardar",
-                    format_currency(remaining),
+                    "Valor guardado",
+                    format_currency(current_amount),
                 )
 
-                st.caption(f"{progress:.1f}% concluído")
+            with remaining_column:
+                st.metric(
+                    "Falta guardar",
+                    format_currency(remaining_amount),
+                )
 
-                render_html(f"""
+            with monthly_column:
+                st.metric(
+                    "Necessário por mês",
+                    format_currency(monthly_amount),
+                )
+
+            st.caption(
+                "Meta concluída"
+                if completed
+                else f"{progress:.1f}% concluído"
+            )
+
+            render_html(f"""
+                <div
+                    class="finantec-goal-progress-track"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="{progress:.1f}"
+                >
                     <div
-                        class="finantec-goal-progress-track"
-                        role="progressbar"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-valuenow="{progress:.1f}"
+                        class="finantec-goal-progress-fill"
+                        style="width: {progress:.1f}%;"
                     >
-                        <div
-                            class="finantec-goal-progress-fill"
-                            style="width: {progress:.1f}%;"
-                        >
-                        </div>
                     </div>
-                    """)
+                </div>
+                """)
 
             (
                 edit_column,
@@ -606,6 +712,41 @@ def _render_goal_management_cards(
                         st.session_state[GOAL_DELETE_ID_KEY] = None
 
                         st.rerun()
+
+
+def _render_goal_management_view(
+    goals: list[dict[str, Any]],
+) -> None:
+    """Exibe a consulta e as ações das metas salvas."""
+    title_column, action_column = st.columns(
+        [
+            3,
+            1,
+        ],
+        gap="small",
+    )
+
+    with title_column:
+        st.markdown("### Minhas metas")
+
+        st.caption(
+            "Acompanhe o progresso e atualize "
+            "suas metas quando precisar."
+        )
+
+    with action_column:
+        if st.button(
+            "Nova meta",
+            key="open-new-financial-goal",
+            type="primary",
+            use_container_width=True,
+        ):
+            _open_goal_form()
+            st.rerun()
+
+    _render_goal_form(goals)
+
+    _render_goal_management_cards(goals)
 
 
 def _render_goal_summary(
@@ -917,60 +1058,25 @@ def _render_goal_simulation(
     )
 
 
-def render_goal_simulator(
-    user_profile: dict[str, Any],
+def _render_goal_simulator_view(
+    goals: list[dict[str, Any]],
     summary: dict[str, Any],
 ) -> None:
-    """Exibe gerenciamento e simulação das metas financeiras."""
-    (
-        title_column,
-        action_column,
-    ) = st.columns(
-        [
-            3,
-            1,
-        ],
-        gap="small",
-    )
-
-    with title_column:
-        st.subheader("Metas financeiras")
-
-        st.caption(
-            "Crie objetivos, acompanhe o progresso " "e simule diferentes cenários."
-        )
-
-    with action_column:
-        if st.button(
-            "Nova meta",
-            key="open-new-financial-goal",
-            type="primary",
-            use_container_width=True,
-        ):
-            _open_goal_form()
-            st.rerun()
-
-    _show_goal_feedback()
-
-    goals = list(
-        user_profile.get(
-            "objetivos_financeiros",
-            [],
-        )
-    )
-
-    _render_goal_form(goals)
-
-    _render_goal_management_cards(goals)
-
-    if not goals:
-        return
-
-    st.divider()
-
+    """Exibe o simulador separado do gerenciamento de metas."""
     st.markdown("### Simulador")
 
-    st.caption("Selecione uma meta e ajuste o prazo " "ou o valor mensal disponível.")
+    st.caption(
+        "Selecione uma meta e ajuste o prazo "
+        "ou o valor mensal disponível."
+    )
+
+    if not goals:
+        st.info(
+            "Crie uma meta em Minhas metas "
+            "antes de iniciar uma simulação."
+        )
+
+        return
 
     goal_ids = [str(goal["goal_id"]) for goal in goals]
 
@@ -1007,3 +1113,41 @@ def render_goal_simulator(
         goal=selected_goal,
         summary=summary,
     )
+
+
+def render_goal_simulator(
+    user_profile: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    """Exibe gerenciamento e simulação das metas financeiras."""
+    st.subheader("Metas")
+
+    st.caption(
+        "Acompanhe seus objetivos ou simule "
+        "diferentes formas de alcançá-los."
+    )
+
+    _show_goal_feedback()
+
+    goals = list(
+        user_profile.get(
+            "objetivos_financeiros",
+            [],
+        )
+    )
+
+    active_view = _get_goal_view()
+
+    _render_goal_view_selector(active_view)
+
+    active_view = _get_goal_view()
+
+    if active_view == GOAL_VIEW_SIMULATOR:
+        _render_goal_simulator_view(
+            goals,
+            summary,
+        )
+
+        return
+
+    _render_goal_management_view(goals)
