@@ -441,68 +441,54 @@ def normalize_user_profile(
         maximum_length=120,
     )
 
-    normalized_profile: dict[
-        str,
-        Any,
-    ] = {
-        "nome": name,
-    }
-
-    if "idade" in profile:
-        normalized_profile[
+    age = _normalize_age(
+        profile.get(
             "idade"
-        ] = _normalize_age(
-            profile[
-                "idade"
-            ]
         )
+    )
 
-    if "ocupacao" in profile:
-        normalized_profile[
-            "ocupacao"
-        ] = _normalize_text(
-            profile[
-                "ocupacao"
-            ],
-            "A ocupação",
-            maximum_length=150,
-        )
+    occupation = _normalize_text(
+        profile.get(
+            "ocupacao",
+            "",
+        ),
+        "A ocupação",
+        maximum_length=150,
+    )
 
-    if "renda_mensal_principal" in profile:
-        normalized_profile[
-            "renda_mensal_principal"
-        ] = _normalize_non_negative_amount(
-            profile[
-                "renda_mensal_principal"
-            ],
+    monthly_income = (
+        _normalize_non_negative_amount(
+            profile.get(
+                "renda_mensal_principal",
+                0,
+            ),
             "A renda mensal principal",
         )
+    )
 
-    if "fontes_de_renda" in profile:
-        normalized_profile[
-            "fontes_de_renda"
-        ] = _normalize_income_sources(
-            profile
-        )
-
-    if "situacao_atual" in profile:
-        normalized_profile[
-            "situacao_atual"
-        ] = _normalize_current_situation(
-            profile
-        )
-
-    if (
-        "preferencias_de_comunicacao"
-        in profile
-    ):
-        normalized_profile[
-            "preferencias_de_comunicacao"
-        ] = _normalize_preferences(
-            profile
-        )
-
-    return normalized_profile
+    return {
+        "nome": name,
+        "idade": age,
+        "ocupacao": occupation,
+        "renda_mensal_principal": (
+            monthly_income
+        ),
+        "fontes_de_renda": (
+            _normalize_income_sources(
+                profile
+            )
+        ),
+        "situacao_atual": (
+            _normalize_current_situation(
+                profile
+            )
+        ),
+        "preferencias_de_comunicacao": (
+            _normalize_preferences(
+                profile
+            )
+        ),
+    }
 
 
 def load_user_profile(
@@ -590,99 +576,21 @@ def save_user_profile(
         )
     )
 
+    serialized_profile = json.dumps(
+        normalized_profile,
+        ensure_ascii=False,
+        separators=(
+            ",",
+            ":",
+        ),
+    )
+
     try:
         with _connect(
             database_path
         ) as connection:
             _ensure_profile_table(
                 connection
-            )
-
-            existing_row = connection.execute(
-                f"""
-                SELECT
-                    occupation,
-                    monthly_income,
-                    profile_data
-                FROM {PROFILE_TABLE_NAME}
-                WHERE user_id = ?
-                """,
-                (
-                    normalized_user_id,
-                ),
-            ).fetchone()
-
-            if existing_row is None:
-                stored_profile = dict(
-                    normalized_profile
-                )
-                stored_occupation = (
-                    normalized_profile.get(
-                        "ocupacao",
-                        "",
-                    )
-                )
-                stored_monthly_income = (
-                    normalized_profile.get(
-                        "renda_mensal_principal",
-                        0,
-                    )
-                )
-
-            else:
-                try:
-                    existing_profile = json.loads(
-                        existing_row[
-                            "profile_data"
-                        ]
-                    )
-
-                except (
-                    json.JSONDecodeError,
-                    TypeError,
-                ) as error:
-                    raise RuntimeError(
-                        "O perfil armazenado possui "
-                        "um formato inválido."
-                    ) from error
-
-                if not isinstance(
-                    existing_profile,
-                    dict,
-                ):
-                    raise RuntimeError(
-                        "O perfil armazenado possui "
-                        "um formato inválido."
-                    )
-
-                stored_profile = {
-                    **existing_profile,
-                    **normalized_profile,
-                }
-                stored_occupation = (
-                    normalized_profile.get(
-                        "ocupacao",
-                        existing_row[
-                            "occupation"
-                        ],
-                    )
-                )
-                stored_monthly_income = (
-                    normalized_profile.get(
-                        "renda_mensal_principal",
-                        existing_row[
-                            "monthly_income"
-                        ],
-                    )
-                )
-
-            serialized_profile = json.dumps(
-                stored_profile,
-                ensure_ascii=False,
-                separators=(
-                    ",",
-                    ":",
-                ),
             )
 
             connection.execute(
@@ -706,11 +614,15 @@ def save_user_profile(
                 """,
                 (
                     normalized_user_id,
-                    stored_profile[
+                    normalized_profile[
                         "nome"
                     ],
-                    stored_occupation,
-                    stored_monthly_income,
+                    normalized_profile[
+                        "ocupacao"
+                    ],
+                    normalized_profile[
+                        "renda_mensal_principal"
+                    ],
                     serialized_profile,
                 ),
             )
@@ -723,7 +635,7 @@ def save_user_profile(
 
     return {
         "user_id": normalized_user_id,
-        **stored_profile,
+        **normalized_profile,
     }
 
 

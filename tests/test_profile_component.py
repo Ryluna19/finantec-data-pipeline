@@ -182,10 +182,6 @@ class ProfileRenderStreamlit:
         self.markdowns: list[str] = []
         self.infos: list[str] = []
         self.buttons: list[str] = []
-        self.captions: list[str] = []
-        self.metrics: list[
-            tuple[str, object]
-        ] = []
 
     def subheader(
         self,
@@ -196,12 +192,10 @@ class ProfileRenderStreamlit:
 
     def caption(
         self,
-        message: str,
+        *_args,
         **_kwargs,
     ) -> None:
-        self.captions.append(
-            message
-        )
+        return None
 
     def info(
         self,
@@ -235,162 +229,6 @@ class ProfileRenderStreamlit:
             label
         )
         return False
-
-    def metric(
-        self,
-        label: str,
-        value: object,
-        **_kwargs,
-    ) -> None:
-        self.metrics.append(
-            (
-                label,
-                value,
-            )
-        )
-
-
-class ProfileCacheData:
-    """Registra a limpeza do cache após salvar o perfil."""
-
-    def __init__(
-        self,
-    ) -> None:
-        self.clear_calls = 0
-
-    def clear(
-        self,
-    ) -> None:
-        self.clear_calls += 1
-
-
-class ProfileEditStreamlit(
-    ProfileRenderStreamlit
-):
-    """Simula o formulário público reduzido do perfil."""
-
-    def __init__(
-        self,
-    ) -> None:
-        super().__init__()
-        self.session_state[
-            profile_module.PROFILE_EDIT_MODE_KEY
-        ] = True
-        self.cache_data = (
-            ProfileCacheData()
-        )
-        self.text_inputs: list[str] = []
-        self.text_input_limits: list[
-            int | None
-        ] = []
-        self.legacy_controls: list[str] = []
-        self.rerun_calls = 0
-        self.errors: list[str] = []
-
-    def form(
-        self,
-        *_args,
-        **_kwargs,
-    ):
-        return nullcontext()
-
-    def columns(
-        self,
-        specification,
-        **_kwargs,
-    ):
-        column_count = (
-            specification
-            if isinstance(
-                specification,
-                int,
-            )
-            else len(
-                specification
-            )
-        )
-
-        return tuple(
-            nullcontext()
-            for _ in range(
-                column_count
-            )
-        )
-
-    def text_input(
-        self,
-        label: str,
-        **_kwargs,
-    ) -> str:
-        self.text_inputs.append(
-            label
-        )
-        self.text_input_limits.append(
-            _kwargs.get(
-                "max_chars"
-            )
-        )
-        return "Ryan atualizado"
-
-    def form_submit_button(
-        self,
-        label: str,
-        **_kwargs,
-    ) -> bool:
-        return label == "Salvar alterações"
-
-    def number_input(
-        self,
-        label: str,
-        **_kwargs,
-    ) -> int:
-        self.legacy_controls.append(
-            label
-        )
-        return 0
-
-    def data_editor(
-        self,
-        *_args,
-        **_kwargs,
-    ):
-        self.legacy_controls.append(
-            "Fontes de renda"
-        )
-        return pd.DataFrame()
-
-    def checkbox(
-        self,
-        label: str,
-        **_kwargs,
-    ) -> bool:
-        self.legacy_controls.append(
-            label
-        )
-        return False
-
-    def text_area(
-        self,
-        label: str,
-        **_kwargs,
-    ) -> str:
-        self.legacy_controls.append(
-            label
-        )
-        return ""
-
-    def error(
-        self,
-        message: str,
-    ) -> None:
-        self.errors.append(
-            message
-        )
-
-    def rerun(
-        self,
-    ) -> None:
-        self.rerun_calls += 1
 
 
 def test_unconfigured_profile_has_dedicated_state_without_summary_metrics(
@@ -435,111 +273,6 @@ def test_unconfigured_profile_has_dedicated_state_without_summary_metrics(
     assert rendered_summaries == []
 
 
-def test_profile_summary_renders_only_display_name(
-    monkeypatch,
-) -> None:
-    fake_streamlit = (
-        ProfileRenderStreamlit()
-    )
-
-    monkeypatch.setattr(
-        profile_module,
-        "st",
-        fake_streamlit,
-    )
-
-    profile_module._render_profile_summary(
-        {
-            "nome": "Ryan",
-            "idade": 24,
-            "ocupacao": "Desenvolvedor",
-            "renda_mensal_principal": 2500.0,
-            "situacao_atual": {
-                "possui_dividas": True,
-                "utiliza_cartao_de_credito": True,
-                "observacao": "Texto legado",
-            },
-        }
-    )
-
-    assert fake_streamlit.markdowns == [
-        "### Ryan",
-    ]
-    assert fake_streamlit.captions == []
-    assert fake_streamlit.metrics == []
-    assert fake_streamlit.infos == []
-
-
-def test_profile_form_saves_only_display_name(
-    monkeypatch,
-) -> None:
-    fake_streamlit = (
-        ProfileEditStreamlit()
-    )
-    save_calls: list[dict] = []
-
-    monkeypatch.setattr(
-        profile_module,
-        "st",
-        fake_streamlit,
-    )
-    monkeypatch.setattr(
-        profile_module,
-        "save_user_profile",
-        lambda **kwargs: save_calls.append(
-            kwargs
-        ),
-    )
-
-    profile_module.render_user_profile(
-        {
-            "user_id": "user-1",
-            "nome": "Ryan",
-            "idade": 24,
-            "ocupacao": "Desenvolvedor",
-            "fontes_de_renda": [
-                {
-                    "tipo": "Trabalho",
-                    "valor_mensal": 2500.0,
-                }
-            ],
-            "situacao_atual": {
-                "possui_dividas": True,
-                "utiliza_cartao_de_credito": True,
-                "observacao": "Texto legado",
-            },
-            "objetivos_financeiros": [],
-        },
-        user_id="user-1",
-        data_mode="user",
-    )
-
-    assert fake_streamlit.text_inputs == [
-        "Como quer ser chamado?",
-    ]
-    assert fake_streamlit.text_input_limits == [
-        120,
-    ]
-    assert fake_streamlit.legacy_controls == []
-    assert save_calls == [
-        {
-            "database_path": (
-                profile_module.ARQUIVO_BANCO
-            ),
-            "user_id": "user-1",
-            "profile": {
-                "nome": "Ryan atualizado",
-            },
-        }
-    ]
-    assert (
-        fake_streamlit.cache_data.clear_calls
-        == 1
-    )
-    assert fake_streamlit.rerun_calls == 1
-    assert fake_streamlit.errors == []
-
-
 def test_demo_profile_is_read_only_even_with_edit_mode_pending(
     monkeypatch,
 ) -> None:
@@ -549,6 +282,8 @@ def test_demo_profile_is_read_only_even_with_edit_mode_pending(
     fake_streamlit.session_state[
         profile_module.PROFILE_EDIT_MODE_KEY
     ] = True
+
+    rendered_summaries: list[dict] = []
 
     monkeypatch.setattr(
         profile_module,
@@ -560,16 +295,14 @@ def test_demo_profile_is_read_only_even_with_edit_mode_pending(
         "_show_profile_feedback",
         lambda: None,
     )
+    monkeypatch.setattr(
+        profile_module,
+        "_render_profile_summary",
+        rendered_summaries.append,
+    )
+
     demo_profile = {
         "nome": "Marina Costa",
-        "idade": 21,
-        "ocupacao": "Estudante e estagiária",
-        "renda_mensal_principal": 1600.0,
-        "situacao_atual": {
-            "possui_dividas": False,
-            "utiliza_cartao_de_credito": True,
-            "observacao": "Texto da persona",
-        },
         "objetivos_financeiros": [],
     }
 
@@ -579,14 +312,10 @@ def test_demo_profile_is_read_only_even_with_edit_mode_pending(
         data_mode="demo",
     )
 
-    assert fake_streamlit.markdowns == [
-        "### Marina Costa",
+    assert rendered_summaries == [
+        demo_profile,
     ]
-    assert fake_streamlit.metrics == []
     assert fake_streamlit.buttons == []
-    assert fake_streamlit.captions == [
-        "Consulte e atualize como você quer ser chamado.",
-    ]
     assert fake_streamlit.infos == [
         "Perfil de demonstração. "
         "Estas informações são fictícias e somente leitura.",

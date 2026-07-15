@@ -7,6 +7,9 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from analytics import (
+    formatar_moeda as format_currency,
+)
 from data_loader import ARQUIVO_BANCO
 from src.profile_repository import (
     save_user_profile,
@@ -246,6 +249,11 @@ def _render_profile_summary(
     profile: dict[str, Any],
 ) -> None:
     """Exibe um resumo do perfil atual."""
+    situation = profile.get(
+        "situacao_atual",
+        {},
+    )
+
     name = str(
         profile.get(
             "nome",
@@ -253,9 +261,99 @@ def _render_profile_summary(
         )
     )
 
+    occupation = str(
+        profile.get(
+            "ocupacao",
+            "",
+        )
+        or "Ocupação não informada"
+    )
+
+    age = profile.get(
+        "idade"
+    )
+
+    monthly_income = float(
+        profile.get(
+            "renda_mensal_principal",
+            0,
+        )
+        or 0
+    )
+
+    profile_details = [
+        occupation,
+    ]
+
+    if age:
+        profile_details.append(
+            f"{int(age)} anos"
+        )
+
     st.markdown(
         f"### {name}"
     )
+
+    st.caption(
+        " • ".join(
+            profile_details
+        )
+    )
+
+    (
+        income_column,
+        debt_column,
+        card_column,
+    ) = st.columns(
+        3,
+        gap="small",
+    )
+
+    with income_column:
+        st.metric(
+            "Renda mensal total",
+            format_currency(
+                monthly_income
+            ),
+        )
+
+    with debt_column:
+        st.metric(
+            "Possui dívidas",
+            (
+                "Sim"
+                if situation.get(
+                    "possui_dividas",
+                    False,
+                )
+                else "Não"
+            ),
+        )
+
+    with card_column:
+        st.metric(
+            "Usa cartão de crédito",
+            (
+                "Sim"
+                if situation.get(
+                    "utiliza_cartao_de_credito",
+                    False,
+                )
+                else "Não"
+            ),
+        )
+
+    observation = str(
+        situation.get(
+            "observacao",
+            "",
+        )
+    ).strip()
+
+    if observation:
+        st.info(
+            observation
+        )
 
 
 def _build_profile_payload(
@@ -331,8 +429,8 @@ def render_user_profile(
     )
 
     st.caption(
-        "Consulte e atualize como você quer "
-        "ser chamado."
+        "Consulte e atualize suas informações "
+        "financeiras pessoais."
     )
 
     _show_profile_feedback()
@@ -391,8 +489,8 @@ def render_user_profile(
                 )
 
                 st.caption(
-                    "Informe como quer ser chamado "
-                    "para configurar o perfil."
+                    "Preencha suas informações para "
+                    "configurar o perfil financeiro."
                 )
 
         if st.button(
@@ -420,19 +518,179 @@ def render_user_profile(
         )
     )
 
+    situation = profile.get(
+        "situacao_atual",
+        {},
+    )
+
+    existing_preferences = profile.get(
+        "preferencias_de_comunicacao",
+        {},
+    )
+
+    if not isinstance(
+        existing_preferences,
+        dict,
+    ):
+        existing_preferences = {}
+
+    current_age = profile.get(
+        "idade"
+    )
+
+    age_value = (
+        int(current_age)
+        if current_age is not None
+        else 0
+    )
+
+    current_income_sources = (
+        income_sources_to_dataframe(
+            profile
+        )
+    )
+
     with st.form(
         "user-profile-form",
         border=True,
     ):
-        name = st.text_input(
-            "Como quer ser chamado?",
+        (
+            name_column,
+            age_column,
+        ) = st.columns(
+            [
+                3,
+                1,
+            ],
+            gap="medium",
+        )
+
+        with name_column:
+            name = st.text_input(
+                "Nome",
+                value=str(
+                    profile.get(
+                        "nome",
+                        "",
+                    )
+                ),
+                max_chars=120,
+            )
+
+        with age_column:
+            age = st.number_input(
+                "Idade",
+                min_value=0,
+                max_value=130,
+                value=age_value,
+                step=1,
+                help=(
+                    "Use 0 para deixar "
+                    "a idade não informada."
+                ),
+            )
+
+        occupation = st.text_input(
+            "Ocupação",
             value=str(
                 profile.get(
-                    "nome",
+                    "ocupacao",
                     "",
                 )
             ),
-            max_chars=120,
+            max_chars=150,
+            placeholder=(
+                "Ex.: estudante, estagiário, desenvolvedor"
+            ),
+        )
+
+        st.markdown(
+            "#### Fontes de renda"
+        )
+
+        st.caption(
+            "A renda mensal total será calculada "
+            "automaticamente pela soma das fontes "
+            "informadas."
+        )
+
+        income_sources = st.data_editor(
+            current_income_sources,
+            key="profile-income-sources",
+            num_rows="dynamic",
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Tipo": (
+                    st.column_config.TextColumn(
+                        "Tipo",
+                        required=True,
+                        width="large",
+                        help=(
+                            "Ex.: salário, estágio, "
+                            "freelance ou benefício."
+                        ),
+                    )
+                ),
+                "Valor mensal": (
+                    st.column_config.NumberColumn(
+                        "Valor mensal",
+                        min_value=0.0,
+                        step=50.0,
+                        format="R$ %.2f",
+                        width="medium",
+                    )
+                ),
+            },
+        )
+
+        st.markdown(
+            "#### Situação financeira"
+        )
+
+        (
+            debt_column,
+            card_column,
+        ) = st.columns(
+            2,
+            gap="medium",
+        )
+
+        with debt_column:
+            has_debts = st.checkbox(
+                "Possuo dívidas atualmente",
+                value=bool(
+                    situation.get(
+                        "possui_dividas",
+                        False,
+                    )
+                ),
+            )
+
+        with card_column:
+            uses_credit_card = st.checkbox(
+                "Utilizo cartão de crédito",
+                value=bool(
+                    situation.get(
+                        "utiliza_cartao_de_credito",
+                        False,
+                    )
+                ),
+            )
+
+        observation = st.text_area(
+            "Observação pessoal",
+            value=str(
+                situation.get(
+                    "observacao",
+                    "",
+                )
+            ),
+            max_chars=1000,
+            placeholder=(
+                "Ex.: quero reduzir gastos por impulso "
+                "e guardar dinheiro todos os meses."
+            ),
         )
 
         (
@@ -471,14 +729,33 @@ def render_user_profile(
         return
 
     try:
+        profile_payload = (
+            _build_profile_payload(
+                name=name,
+                age=int(
+                    age
+                ),
+                occupation=occupation,
+                income_sources=(
+                    income_sources
+                ),
+                has_debts=has_debts,
+                uses_credit_card=(
+                    uses_credit_card
+                ),
+                observation=observation,
+                existing_preferences=(
+                    existing_preferences
+                ),
+            )
+        )
+
         save_user_profile(
             database_path=(
                 ARQUIVO_BANCO
             ),
             user_id=user_id,
-            profile={
-                "nome": name,
-            },
+            profile=profile_payload,
         )
 
     except (
