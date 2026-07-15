@@ -29,7 +29,8 @@ from components.data_management import (
     render_data_management,
 )
 from components.file_transfer import (
-    render_transaction_file_tools,
+    render_transaction_downloads,
+    render_transaction_import,
 )
 from components.goals import render_goal_simulator
 from components.header import render_header
@@ -75,6 +76,21 @@ st.set_page_config(
     page_icon=":material/account_balance_wallet:",
     layout="wide",
 )
+
+
+TRANSACTION_ACTION_KEY = (
+    "active_transaction_action"
+)
+
+TRANSACTION_ACTION_NEW = "new"
+TRANSACTION_ACTION_IMPORT = "import"
+TRANSACTION_ACTION_EXPORT = "export"
+
+VALID_TRANSACTION_ACTIONS = {
+    TRANSACTION_ACTION_NEW,
+    TRANSACTION_ACTION_IMPORT,
+    TRANSACTION_ACTION_EXPORT,
+}
 
 
 @st.cache_data
@@ -328,55 +344,220 @@ def render_dashboard_tab(
             transactions
         )
 
+def _get_active_transaction_action() -> str | None:
+    """Retorna a ação ativa e recupera painéis com feedback."""
+    if "resultado_etl" in st.session_state:
+        active_action = (
+            TRANSACTION_ACTION_NEW
+        )
+
+    elif "file_import_result" in st.session_state:
+        active_action = (
+            TRANSACTION_ACTION_IMPORT
+        )
+
+    else:
+        active_action = (
+            st.session_state.get(
+                TRANSACTION_ACTION_KEY
+            )
+        )
+
+    if active_action not in VALID_TRANSACTION_ACTIONS:
+        st.session_state.pop(
+            TRANSACTION_ACTION_KEY,
+            None,
+        )
+
+        return None
+
+    st.session_state[
+        TRANSACTION_ACTION_KEY
+    ] = active_action
+
+    return str(
+        active_action
+    )
+
+
+def _toggle_transaction_action(
+    selected_action: str,
+) -> None:
+    """Alterna o único painel secundário visível."""
+    current_action = (
+        _get_active_transaction_action()
+    )
+
+    st.session_state[
+        TRANSACTION_ACTION_KEY
+    ] = (
+        None
+        if current_action == selected_action
+        else selected_action
+    )
+
+
+def _render_transaction_action_bar() -> str | None:
+    """Exibe os comandos da tela e retorna a ação ativa."""
+    active_action = (
+        _get_active_transaction_action()
+    )
+
+    (
+        new_column,
+        import_column,
+        export_column,
+    ) = st.columns(
+        3,
+        gap="small",
+    )
+
+    with new_column:
+        st.button(
+            "Nova transação",
+            key="open-new-transaction",
+            type=(
+                "primary"
+                if active_action
+                == TRANSACTION_ACTION_NEW
+                else "secondary"
+            ),
+            use_container_width=True,
+            on_click=(
+                _toggle_transaction_action
+            ),
+            args=(
+                TRANSACTION_ACTION_NEW,
+            ),
+        )
+
+    with import_column:
+        st.button(
+            "Importar",
+            key="open-transaction-import",
+            type=(
+                "primary"
+                if active_action
+                == TRANSACTION_ACTION_IMPORT
+                else "secondary"
+            ),
+            use_container_width=True,
+            on_click=(
+                _toggle_transaction_action
+            ),
+            args=(
+                TRANSACTION_ACTION_IMPORT,
+            ),
+        )
+
+    with export_column:
+        st.button(
+            "Exportar",
+            key="open-transaction-export",
+            type=(
+                "primary"
+                if active_action
+                == TRANSACTION_ACTION_EXPORT
+                else "secondary"
+            ),
+            use_container_width=True,
+            on_click=(
+                _toggle_transaction_action
+            ),
+            args=(
+                TRANSACTION_ACTION_EXPORT,
+            ),
+        )
+
+    return _get_active_transaction_action()
+
+
+def _render_transaction_action_panel(
+    active_action: str | None,
+    period_transactions: pd.DataFrame,
+    all_transactions: pd.DataFrame,
+) -> bool:
+    """Exibe somente o fluxo secundário solicitado."""
+    if active_action is None:
+        return False
+
+    with st.container(
+        border=True,
+        key=(
+            "transaction-action-panel-"
+            f"{active_action}"
+        ),
+    ):
+        if (
+            active_action
+            == TRANSACTION_ACTION_NEW
+        ):
+            render_manual_transaction_editor()
+            return False
+
+        if (
+            active_action
+            == TRANSACTION_ACTION_IMPORT
+        ):
+            st.markdown(
+                "### Importar transações"
+            )
+
+            return render_transaction_import(
+                all_transactions
+            )
+
+        st.markdown(
+            "### Exportar transações"
+        )
+
+        st.caption(
+            "Baixe o modelo ou exporte somente "
+            "as transações do período selecionado."
+        )
+
+        render_transaction_downloads(
+            period_transactions
+        )
+
+    return False
+
+
 def render_transactions_tab(
     period_transactions: pd.DataFrame,
     all_transactions: pd.DataFrame,
     rejections: pd.DataFrame,
 ) -> None:
-    """Compõe entrada, arquivos, validação e consulta de transações."""
-    should_expand_editor = (
-        "resultado_etl"
-        in st.session_state
+    """Compõe consulta e ações secundárias de transações."""
+    st.subheader(
+        "Transações"
     )
 
-    with st.expander(
-        "Entrada manual de transações",
-        expanded=should_expand_editor,
-    ):
-        render_manual_transaction_editor()
-
-    should_expand_files = (
-        "file_import_result"
-        in st.session_state
+    st.caption(
+        "Consulte seus lançamentos ou use as ações "
+        "para adicionar, importar e exportar dados."
     )
 
-    with st.expander(
-        "Importar ou exportar transações",
-        expanded=should_expand_files,
-    ):
-        file_import_executed = (
-            render_transaction_file_tools(
-                period_transactions=period_transactions,
-                existing_transactions=all_transactions,
-            )
+    active_action = (
+        _render_transaction_action_bar()
+    )
+
+    file_import_executed = (
+        _render_transaction_action_panel(
+            active_action=active_action,
+            period_transactions=(
+                period_transactions
+            ),
+            all_transactions=(
+                all_transactions
+            ),
         )
+    )
 
     if file_import_executed:
         load_data.clear()
         st.rerun()
-
-    st.caption(
-        "Transações manuais e importadas são salvas "
-        "diretamente no banco e aparecem nos indicadores."
-    )
-
-    with st.container(
-        key="transactions-validation-section",
-    ):
-        render_data_validation(
-            len(period_transactions),
-            rejections,
-        )
+        return
 
     with st.container(
         key="transactions-period-section",
@@ -389,6 +570,14 @@ def render_transactions_tab(
 
         render_persisted_transaction_management(
             visible_transactions
+        )
+
+    with st.container(
+        key="transactions-validation-section",
+    ):
+        render_data_validation(
+            len(period_transactions),
+            rejections,
         )
 
 
