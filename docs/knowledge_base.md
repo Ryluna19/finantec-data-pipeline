@@ -1,12 +1,23 @@
 # Knowledge Base — FinanTec Data Pipeline
 
+> [!NOTE]
+> Este documento preserva a organização da base usada durante a fase com
+> Gemini. As seções sobre envio de contexto e respostas com IA são históricas
+> e não representam a execução atual. Consulte a
+> [visão geral atual](project_overview.md) e a
+> [decisão de remover a integração externa](decisions/001-remove-gemini-integration.md).
+
 ## Visão Geral
 
-A base de conhecimento do FinanTec Data Pipeline reúne dados simulados usados para análise financeira, geração de indicadores e respostas contextualizadas do assistente com IA.
+A base de conhecimento do FinanTec Data Pipeline reúne os dados simulados que
+acompanham o repositório e registra como eles foram usados nas diferentes fases
+do projeto.
 
 A base combina arquivos de transações, perfil fictício da pessoa usuária, histórico de dúvidas, conceitos financeiros e produtos financeiros informativos.
 
-O objetivo é permitir que o assistente responda com base em dados organizados, evitando respostas genéricas, cálculos inventados ou informações que não estejam no contexto do projeto.
+O objetivo atual é documentar as fontes da demonstração, o pipeline e as
+decisões de cálculo. O uso dessas fontes pela antiga integração externa está
+preservado como contexto histórico.
 
 O projeto não utiliza dados bancários reais.
 
@@ -129,7 +140,7 @@ A aplicação usa o SQLite como fonte principal quando o banco existe. Caso cont
 Fluxo simplificado:
 
 ```text
-CSV bruto → ETL → CSV processado → SQLite → Dashboard → IA explicando indicadores
+CSV bruto → ETL → CSV processado → SQLite → Dashboard
 ```
 
 ---
@@ -178,7 +189,8 @@ O dashboard em Streamlit utiliza a base tratada para exibir:
 - maior categoria de consumo;
 - gráfico de gastos por categoria;
 - simulação de metas financeiras;
-- chat com IA generativa.
+- consulta e gerenciamento das transações;
+- acompanhamento de metas persistentes.
 
 Os cálculos são feitos em Python, principalmente no arquivo:
 
@@ -194,7 +206,7 @@ src/app.py
 
 ---
 
-## Uso dos Dados pela IA
+## Registro Histórico: Uso dos Dados pela IA
 
 A IA generativa não calcula os valores financeiros principais.
 
@@ -287,7 +299,7 @@ Para rodar os testes automatizados:
 python main.py test
 ```
 
-Para rodar o ETL e abrir o dashboard em seguida:
+Para abrir o dashboard sem executar o ETL antes:
 
 ```bash
 python main.py dev
@@ -308,7 +320,6 @@ A base de conhecimento pode evoluir com:
 - exportação em Excel ou PDF;
 - armazenamento em PostgreSQL;
 - automações simples de arquivos;
-- histórico persistente de conversas;
 - fluxo mais próximo de um controlador financeiro pessoal/local.
 
 A direção futura mais coerente é permitir que a pessoa registre ou importe seus próprios dados em uma experiência parecida com uma planilha simples de gastos.

@@ -1,30 +1,38 @@
 # FinanTec Data Pipeline
 
-Aplicação de organização financeira com Python, pandas, SQLite, Streamlit e insights calculados localmente.
+Aplicação local de organização financeira com Python, pandas, SQLite e
+Streamlit.
 
-O projeto organiza transações financeiras, valida dados, salva as informações em SQLite, exibe indicadores em um dashboard e responde consultas financeiras por meio de cálculos locais.
+O projeto organiza transações financeiras, valida dados, salva as informações
+em SQLite e exibe indicadores em um dashboard local.
 
-O FinanTec Data Pipeline não utiliza dados bancários reais. Todos os dados são simulados.
+O repositório inclui uma base de demonstração simulada. A aplicação também
+permite registrar dados pessoais localmente, mas não acessa contas bancárias,
+Open Finance ou instituições financeiras.
 
 ---
 
 ## Sobre o Projeto
 
-O FinanTec Data Pipeline transforma arquivos brutos de transações financeiras em uma base organizada para análise.
+O FinanTec começou como um pipeline para transformar arquivos brutos de
+transações em uma base organizada. Hoje, o SQLite é a fonte principal dos dados
+da aplicação, enquanto o ETL permanece disponível para demonstração,
+compatibilidade e processamento explícito de arquivos.
 
 A proposta é demonstrar um fluxo completo de dados aplicado a um contexto financeiro pessoal:
 
 ```text
-CSV bruto → ETL → SQLite → dashboard → insights financeiros locais
+Entrada manual ou importação → validação → SQLite → dashboard
 ```
 
-A ideia atual é manter o projeto como uma ferramenta local/pessoal de gestão financeira simulada, sem login, múltiplos usuários ou integração bancária real.
+A direção atual é manter o projeto como uma ferramenta local e pessoal, sem
+login, múltiplos usuários reais ou integração bancária.
 
 ---
 
 ## Objetivo
 
-Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
+Demonstrar um fluxo de dados aplicado a uma ferramenta financeira local:
 
 - leitura de múltiplos arquivos CSV;
 - validação da estrutura dos dados;
@@ -34,7 +42,8 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - carga dos dados processados em SQLite;
 - análise por período;
 - visualização em Streamlit;
-- consultas e explicações financeiras calculadas localmente.
+- persistência e isolamento local dos principais dados;
+- testes automatizados das regras e fluxos de maior risco.
 
 ---
 
@@ -52,15 +61,15 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - dashboard com filtro por período;
 - resumo de receitas, gastos, reserva e saldo;
 - gráfico de gastos por categoria;
-- simulador de metas financeiras;
+- criação, acompanhamento e simulação de metas financeiras;
 - resumo da validação dos dados no dashboard;
-- assistente financeiro local para consultas sobre os dados do período;
-- histórico de conversa separado por período analisado;
-- processamento local das perguntas, sem envio de informações financeiras para serviços externos;
-- comando centralizado de execução com `main.py`.
+- perfil financeiro local;
+- alternância entre dados pessoais e demonstração;
+- exclusão segura somente das transações pessoais;
+- comando centralizado de execução com `main.py`;
 - entrada manual de transações pelo dashboard;
-- edição local de transações em formato de tabela com `st.data_editor`;
-- salvamento de transações manuais em `data/raw/transacoes_manuais.csv`;
+- edição e exclusão de transações persistidas;
+- importação e exportação de arquivos CSV e Excel.
 
 ---
 
@@ -71,6 +80,8 @@ Demonstrar um fluxo básico de dados aplicado a finanças pessoais simuladas:
 - Streamlit
 - SQLite
 - pytest
+- Altair
+- openpyxl
 - CSV
 - JSON
 
@@ -95,7 +106,7 @@ database/finantec.db
         ↓
 Dashboard em Streamlit
         ↓
-Consultas e insights calculados localmente
+Indicadores e metas calculados localmente
 ```
 
 ---
@@ -123,22 +134,14 @@ Esse arquivo contém as transações descartadas e uma coluna `motivo_rejeicao`,
 ```text
 finantec-data-pipeline/
 ├── assets/
+│   └── styles.css
 ├── data/
 │   ├── raw/
-│   │   ├── transacoes_2026_06.csv
-│   │   └── transacoes_2026_07.csv
 │   ├── processed/
-│   │   └── .gitkeep
-│   ├── templates/
-│   │   └── transacoes_template.csv
-│   ├── conceitos_financeiros.json
-│   ├── historico_atendimento.csv
-│   ├── perfil_usuario.json
-│   ├── produtos_financeiros.json
-│   └── transacoes.csv
+│   └── templates/
 ├── database/
-│   └── .gitkeep
 ├── docs/
+│   ├── decisions/
 │   ├── ai_prompting.md
 │   ├── data_contract.md
 │   ├── knowledge_base.md
@@ -157,15 +160,18 @@ finantec-data-pipeline/
 ├── scripts/
 │   └── etl_transacoes.py
 ├── src/
+│   ├── components/
 │   ├── analytics.py
 │   ├── app.py
 │   ├── data_loader.py
+│   ├── data_reset.py
+│   ├── goal_repository.py
+│   ├── profile_repository.py
+│   └── transaction_repository.py
 ├── tests/
-│   ├── test_analytics.py
-│   ├── test_etl_pipeline.py
-│   ├── test_rejections.py
-│   └── test_sqlite_load.py
+│   └── test_*.py
 ├── .gitignore
+├── AGENTS.md
 ├── main.py
 ├── README.md
 └── requirements.txt
@@ -182,8 +188,9 @@ A pasta `docs/` reúne a documentação técnica e de produto do projeto.
 | `docs/project_overview.md` | Visão geral do projeto, problema, solução, componentes e decisões técnicas. |
 | `docs/data_contract.md` | Contrato de dados dos arquivos CSV de transações. |
 | `docs/knowledge_base.md` | Explicação das fontes de dados usadas pelo pipeline e pelo dashboard. |
-| `docs/ai_prompting.md` | Registro da integração externa descontinuada, pendente de revisão documental. |
-| `docs/validation.md` | Estratégia de validação, testes automatizados, testes manuais e limitações. |
+| `docs/ai_prompting.md` | Registro histórico da integração externa descontinuada. |
+| `docs/decisions/001-remove-gemini-integration.md` | Decisão arquitetural de remover a integração com Gemini. |
+| `docs/validation.md` | Estratégia de validação atual e registros históricos de testes. |
 | `docs/roadmap.md` | Próximas evoluções planejadas para o projeto. |
 
 ---
@@ -288,47 +295,40 @@ O arquivo `transacoes_rejeitadas.csv` só é criado quando existem linhas invál
 O arquivo `data/raw/transacoes_manuais.csv` é criado pelo editor manual de transações e representa dados locais inseridos pela interface. Ele não deve ser versionado no GitHub.
 ---
 
-## Exemplos de Perguntas para o Assistente Local
+## Integração Externa Descontinuada
 
-```text
-Em qual categoria eu mais gastei neste período?
-```
+O projeto já utilizou Gemini para complementar consultas financeiras. A
+integração foi removida preventivamente porque poderia enviar perguntas,
+histórico e contexto financeiro a um serviço externo, um risco incompatível
+com a proposta local do produto.
 
-```text
-Qual é meu saldo neste período?
-```
+Não houve violação de dados comprovada. A remoção foi uma decisão consciente de
+minimização de dados e privacidade por concepção.
 
-```text
-Quanto entrou?
-```
+Os módulos locais de classificação, respostas determinísticas e persistência de
+conversas foram preservados como registro técnico, mas o recurso está congelado
+e não aparece na navegação principal.
 
-```text
-Quanto eu gastei?
-```
-
-```text
-Quanto eu separei para reserva neste período?
-```
-
-```text
-Me dê um resumo financeiro.
-```
-
-As respostas são calculadas localmente. Perguntas não reconhecidas não são enviadas para serviços externos.
+Consulte a
+[decisão arquitetural](docs/decisions/001-remove-gemini-integration.md) para o
+contexto completo.
 
 ---
 
 ## Testes Automatizados
 
-O projeto possui testes automatizados com `pytest` para validar partes importantes do pipeline e da lógica financeira.
+O projeto possui testes automatizados com `pytest` para validar o pipeline, as
+regras financeiras, a persistência e os principais fluxos da aplicação.
 
 | Arquivo | Finalidade |
 |---|---|
 | `tests/test_analytics.py` | Testa cálculos financeiros, separação entre consumo e reserva, metas, formatação de moeda e filtros por período. |
 | `tests/test_etl_pipeline.py` | Testa validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
-| `tests/test_rejections.py` | Testa a geração do relatório de transações rejeitadas e seus motivos. |
-| `tests/test_sqlite_load.py` | Testa a carga dos dados tratados em uma base SQLite temporária. |
-| `tests/test_transaction_editor.py` | Testa preparação, salvamento e carregamento das transações manuais. |
+| `tests/test_transaction_*.py` | Testa identidade, arquivos, repositórios, sincronização, CRUD e composição da tela de transações. |
+| `tests/test_goal_*.py` | Testa persistência, isolamento, cálculos e composição da tela de metas. |
+| `tests/test_profile_*.py` | Testa perfil, fontes de renda e persistência. |
+| `tests/test_data_reset.py` | Testa a exclusão limitada às transações pessoais e arquivos relacionados. |
+| `tests/test_financial_*.py` | Preserva testes do mecanismo local e determinístico de consultas financeiras. |
 
 Para executar os testes:
 
@@ -366,7 +366,7 @@ python manual_tests/teste_sqlite.py
 O FinanTec Data Pipeline não:
 
 - acessa contas bancárias reais;
-- utiliza dados financeiros reais de usuários;
+- envia perguntas ou contexto financeiro para serviços externos;
 - substitui orientação profissional;
 - recomenda investimentos personalizados;
 - garante rentabilidade ou resultados financeiros;
@@ -381,19 +381,12 @@ O FinanTec Data Pipeline não:
 
 Algumas melhorias possíveis:
 
-- melhorar a entrada manual de transações pela interface;
-- permitir upload de uma planilha-modelo;
-- criar uma experiência parecida com uma planilha simples de gastos;
-- adicionar validações mais detalhadas dos arquivos enviados;
-- criar relatórios em Excel ou PDF;
-- adicionar filtros por categoria;
-- carregar o dashboard com consultas mais específicas ao SQLite;
-- adicionar PostgreSQL como alternativa futura ao SQLite;
-- criar logs mais detalhados;
-- mover arquivos processados automaticamente;
-- evoluir para um fluxo simples de automação/RPA;
-- persistir histórico de conversas em banco;
-- ampliar a cobertura de testes automatizados.
+- restaurar somente o perfil padrão mediante confirmação;
+- planejar a exclusão coordenada de todos os dados locais;
+- revisar a experiência em mobile, notebook e widescreen;
+- atualizar documentos históricos restantes;
+- ampliar relatórios somente quando responderem a necessidades reais;
+- avaliar deploy, autenticação e PostgreSQL depois da estabilização local.
 
 ---
 
@@ -404,11 +397,15 @@ Projeto independente em desenvolvimento.
 Fluxo atual:
 
 ```text
-CSV bruto → ETL com pandas → CSV processado → SQLite → dashboard Streamlit → insights financeiros locais
+Entrada manual ou importação → validação → SQLite → dashboard Streamlit
 ```
 
-Direção futura:
+Navegação principal:
 
 ```text
-Controle financeiro local → validação dos dados → SQLite → dashboard → insights financeiros locais
+Visão geral → Transações → Metas
 ```
+
+O ETL continua disponível para demonstração, compatibilidade e execução
+explícita. O mecanismo local de Insights está congelado fora da navegação
+principal.

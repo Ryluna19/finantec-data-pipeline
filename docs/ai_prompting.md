@@ -1,4 +1,12 @@
-# AI Prompting — FinanTec Data Pipeline
+# AI Prompting — Registro histórico do FinanTec
+
+> [!IMPORTANT]
+> Este documento preserva a arquitetura da antiga integração com Gemini.
+> A API externa, `src/agent.py`, `src/prompts.py` e a configuração por chave
+> não fazem mais parte da execução atual. Não houve violação comprovada; a
+> integração foi removida preventivamente devido ao risco potencial de expor
+> contexto financeiro e pessoal a um serviço externo. Consulte a
+> [decisão arquitetural](decisions/001-remove-gemini-integration.md).
 
 ## Visão Geral
 

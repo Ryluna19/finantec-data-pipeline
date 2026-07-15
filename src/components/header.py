@@ -59,7 +59,7 @@ def render_header(
             </div>
 
             <p class="finantec-brand-description">
-                Assistente de organização financeira para estudantes
+                Aplicativo local de organização financeira para estudantes
                 e pessoas em início de carreira.
             </p>
         </header>
@@ -68,7 +68,7 @@ def render_header(
 
     render_alert(
         text=(
-            "Projeto educativo com dados simulados. "
+            "Projeto educativo de uso local. "
             "O FinanTec não oferece recomendação personalizada "
             "de investimento."
         ),

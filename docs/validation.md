@@ -1,17 +1,29 @@
 # Validation — FinanTec Data Pipeline
 
+> [!NOTE]
+> Este documento combina validações ainda relevantes do pipeline com o
+> registro histórico dos testes manuais da antiga integração com Gemini.
+> Atualmente não existem chamadas externas nem configuração de chave de API.
+> Consulte a
+> [decisão arquitetural](decisions/001-remove-gemini-integration.md).
+
 ## Visão Geral
 
 Este documento descreve como o FinanTec Data Pipeline é validado.
 
-A validação do projeto considera quatro camadas principais:
+A validação atual considera quatro camadas principais:
 
 1. cálculos financeiros;
-2. pipeline ETL;
-3. carga em SQLite;
-4. comportamento do assistente com IA.
+2. validação, importação e ETL;
+3. persistência e isolamento em SQLite;
+4. composição dos principais fluxos da interface.
 
-O objetivo é garantir que os dados sejam processados corretamente, os indicadores sejam calculados em Python e a IA responda com base no contexto fornecido.
+O objetivo é garantir que os dados sejam processados corretamente, os
+indicadores sejam calculados em Python e as operações locais preservem as
+regras de negócio.
+
+As seções sobre Gemini permanecem neste documento como registro histórico da
+fase anterior.
 
 ---
 
@@ -21,14 +33,13 @@ O projeto combina:
 
 - testes automatizados com `pytest`;
 - scripts manuais de apoio;
-- testes manuais do assistente com IA;
 - documentação de limitações conhecidas.
 
 Essa abordagem foi escolhida porque nem todas as partes do projeto devem ser testadas da mesma forma.
 
-Cálculos financeiros, transformação de dados e carga em banco são previsíveis, então podem ser testados automaticamente.
-
-Chamadas de IA dependem de API externa, internet, chave de acesso e variação do modelo, então são mantidas como testes manuais na versão atual.
+Cálculos, transformações, persistência, respostas locais e serviços de banco
+são previsíveis e testados automaticamente. A execução atual não depende de
+API externa, internet ou chave do Gemini.
 
 ---
 
@@ -61,6 +72,11 @@ pytest
 | `tests/test_rejections.py` | Geração do relatório de transações rejeitadas e acúmulo de motivos de rejeição. |
 | `tests/test_sqlite_load.py` | Carga dos dados tratados em SQLite usando banco temporário. |
 | `tests/test_transaction_editor.py` | Valida a camada de preparação, salvamento e carregamento das transações manuais. |
+| `tests/test_transaction_*.py` | Persistência, identidade, importação, sincronização e composição de transações. |
+| `tests/test_goal_*.py` | Persistência, cálculos e composição de metas. |
+| `tests/test_profile_*.py` | Perfil, fontes de renda e persistência. |
+| `tests/test_data_reset.py` | Exclusão limitada e preservação dos demais dados locais. |
+| `tests/test_financial_*.py` | Classificação e respostas determinísticas preservadas. |
 
 ---
 
@@ -179,8 +195,6 @@ Esses scripts não substituem os testes automatizados da pasta `tests/`, mas aju
 |---|---|
 | `manual_tests/teste_dados.py` | Verifica leitura de transações e resumo financeiro geral no terminal. |
 | `manual_tests/teste_metas.py` | Verifica cálculo das metas financeiras. |
-| `manual_tests/teste_contexto.py` | Exibe o contexto enviado para a IA. |
-| `manual_tests/teste_ia.py` | Testa uma chamada manual ao assistente com IA. |
 | `manual_tests/teste_periodos.py` | Verifica períodos disponíveis e resumo por mês. |
 | `manual_tests/teste_sqlite.py` | Consulta o banco SQLite gerado pelo ETL. |
 | `manual_tests/README.md` | Documenta o objetivo dos scripts manuais. |
@@ -191,19 +205,16 @@ Para executar os principais testes manuais:
 python manual_tests/teste_dados.py
 python manual_tests/teste_metas.py
 python manual_tests/teste_periodos.py
-python manual_tests/teste_contexto.py
 python manual_tests/teste_sqlite.py
 ```
 
-O teste manual da IA depende da chave Gemini configurada no `.env`:
-
-```bash
-python manual_tests/teste_ia.py
-```
+Os antigos scripts `teste_contexto.py` e `teste_ia.py` foram removidos junto
+com a integração externa. Seu propósito histórico permanece registrado nas
+seções seguintes.
 
 ---
 
-## Validação da IA
+## Registro Histórico: Validação da IA
 
 A IA é validada manualmente porque depende de fatores externos:
 
@@ -228,7 +239,7 @@ A aplicação calcula os valores em Python e envia os resultados prontos no cont
 
 ---
 
-## Casos de Teste da IA
+## Registro Histórico: Casos de Teste da IA
 
 | ID | Pergunta | Resultado esperado |
 |---|---|---|
@@ -285,7 +296,7 @@ Ajuste aplicado:
 O pipeline passou a gerar um relatório de rejeições com o motivo de cada linha descartada.
 ```
 
-### Configuração da chave da IA
+### Registro histórico da configuração da chave
 
 O app depende de uma chave da Gemini API para usar o chat com IA.
 
@@ -301,14 +312,10 @@ O projeto passou a usar .env.example como modelo e mensagens de erro mais claras
 
 A validação atual ainda não cobre:
 
-- testes automatizados da interface Streamlit;
-- testes automatizados da chamada com IA;
-- avaliação automática da qualidade das respostas;
-- comparação semântica entre resposta esperada e resposta gerada;
+- testes end-to-end completos da interface Streamlit;
 - testes com grandes volumes de dados;
 - testes de performance;
-- testes de múltiplos usuários;
-- testes de entrada manual de transações pela interface.
+- autenticação com múltiplos usuários reais.
 
 Esses pontos podem ser adicionados em versões futuras.
 
@@ -323,17 +330,21 @@ A versão atual possui validação automatizada para:
 - filtros por período;
 - transformação dos dados;
 - relatório de rejeições;
-- carga em SQLite.
+- carga em SQLite;
 - editor manual de transações;
-- salvamento e carregamento de transações manuais;
+- importação, duplicatas e identidade;
+- repositórios de transações, perfil, metas e conversas;
+- reset limitado das transações pessoais;
+- respostas financeiras locais preservadas;
+- composição de Transações, Metas e navegação principal.
 
 Além disso, possui testes manuais para:
 
 - leitura geral dos dados;
 - cálculo de metas;
-- contexto enviado para IA;
-- resposta do assistente;
 - consulta do banco SQLite;
 - análise por período.
 
-Essa combinação é suficiente para validar a versão atual do projeto como um protótipo funcional de pipeline de dados com dashboard e assistente de IA.
+Essa combinação valida o FinanTec como uma aplicação financeira local com ETL
+de compatibilidade, persistência em SQLite e fluxos principais cobertos por
+testes automatizados.

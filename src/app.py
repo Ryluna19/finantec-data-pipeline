@@ -15,10 +15,6 @@ from components.charts import (
     render_expenses_by_category,
     render_monthly_evolution,
 )
-from components.chat import (
-    get_period_messages,
-    render_chat,
-)
 from components.navigation import (
     DATA_SECTION,
     PROFILE_SECTION,
@@ -91,6 +87,12 @@ VALID_TRANSACTION_ACTIONS = {
     TRANSACTION_ACTION_IMPORT,
     TRANSACTION_ACTION_EXPORT,
 }
+
+MAIN_TAB_LABELS = (
+    "Visão geral",
+    "Transações",
+    "Metas",
+)
 
 
 @st.cache_data
@@ -256,24 +258,6 @@ def render_empty_dashboard() -> None:
     st.caption(
         "Os dados de demonstração são opcionais "
         "e ficam separados dos dados reais."
-    )
-
-
-def render_unavailable_feature(
-    title="Insights financeiros",
-    message=(
-        "Os insights precisam de transações "
-        "para analisar o período."
-    ),
-) -> None:
-    """Exibe um estado vazio para recursos que dependem de transações."""
-    st.header(title)
-
-    st.info(message)
-
-    st.caption(
-        "Adicione transações reais ou carregue "
-        "a demonstração em Dados e privacidade."
     )
 
 
@@ -667,14 +651,8 @@ def main() -> None:
         dashboard_tab,
         transactions_tab,
         goals_tab,
-        insights_tab,
     ) = st.tabs(
-        [
-            "Visão geral",
-            "Transações",
-            "Metas",
-            "Insights",
-        ]
+        MAIN_TAB_LABELS
     )
 
     if not has_transactions:
@@ -695,15 +673,6 @@ def main() -> None:
                     "saldo_disponivel": 0.0,
                 },
             )
-
-        with insights_tab:
-            render_unavailable_feature(
-                title="Assistente financeiro",
-                message=(
-                    "O assistente precisa de transações "
-                    "para criar o contexto financeiro do período."
-                ),
-            ),
         return
 
     summary = calculate_financial_summary(
@@ -714,12 +683,6 @@ def main() -> None:
         calculate_expenses_by_category(
             filtered_transactions
         )
-    )
-
-    messages = get_period_messages(
-        user_id=current_user_id,
-        period=period,
-        data_mode=data_mode,
     )
 
     with dashboard_tab:
@@ -744,18 +707,6 @@ def main() -> None:
             user_profile=user_profile,
             summary=summary,
         )
-    
-    with insights_tab:
-        render_chat(
-            messages=messages,
-            user_id=current_user_id,
-            period=period,
-            data_mode=data_mode,
-            summary=summary,
-            expenses_by_category=(
-                expenses_by_category
-            ),
-        )
-        
+
 if __name__ == "__main__":
     main()
