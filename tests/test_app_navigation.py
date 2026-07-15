@@ -47,6 +47,7 @@ def test_main_navigation_contains_only_primary_financial_flows():
     assert app_module.MAIN_TAB_LABELS == (
         "Visão geral",
         "Transações",
+        "Orçamento",
         "Metas",
     )
 
@@ -225,6 +226,13 @@ def test_main_flows_render_without_configured_profile(
     )
     monkeypatch.setattr(
         app_module,
+        "render_monthly_budget",
+        lambda **kwargs: events.append(
+            "budget"
+        ),
+    )
+    monkeypatch.setattr(
+        app_module,
         "select_period",
         lambda transactions: (
             0,
@@ -264,5 +272,6 @@ def test_main_flows_render_without_configured_profile(
     assert events == [
         "dashboard",
         "transactions",
+        "budget",
         "goals",
     ]

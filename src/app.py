@@ -29,6 +29,9 @@ from components.file_transfer import (
     render_transaction_import,
 )
 from components.goals import render_goal_simulator
+from components.budget import (
+    render_monthly_budget,
+)
 from components.header import render_header
 from components.metrics import (
     render_additional_metrics,
@@ -91,6 +94,7 @@ VALID_TRANSACTION_ACTIONS = {
 MAIN_TAB_LABELS = (
     "Visão geral",
     "Transações",
+    "Orçamento",
     "Metas",
 )
 
@@ -670,6 +674,7 @@ def main() -> None:
     (
         dashboard_tab,
         transactions_tab,
+        budget_tab,
         goals_tab,
     ) = st.tabs(
         MAIN_TAB_LABELS
@@ -684,6 +689,12 @@ def main() -> None:
                 period_transactions=filtered_transactions,
                 all_transactions=transactions,
                 rejections=rejections,
+            )
+        with budget_tab:
+            render_monthly_budget(
+                transactions=transactions,
+                user_id=current_user_id,
+                data_mode=data_mode,
             )
 
         with goals_tab:
@@ -722,6 +733,12 @@ def main() -> None:
             period_transactions=filtered_transactions,
             all_transactions=transactions,
             rejections=rejections,
+        )
+    with budget_tab:
+        render_monthly_budget(
+            transactions=transactions,
+            user_id=current_user_id,
+            data_mode=data_mode,
         )
 
     with goals_tab:
