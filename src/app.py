@@ -45,6 +45,10 @@ from components.tables import (
     render_latest_transactions,
     render_period_transactions,
 )
+from components.auth import (
+    render_account_sidebar,
+    render_authentication_gate,
+)
 from data_loader import (
     carregar_perfil_usuario as load_user_profile,
     carregar_rejeicoes as load_rejections,
@@ -601,6 +605,17 @@ def render_transactions_tab(
 def main() -> None:
     """Executa a interface principal."""
     apply_visual_styles()
+
+    authenticated_account = (
+        render_authentication_gate()
+    )
+
+    if authenticated_account is None:
+        return
+
+    render_account_sidebar(
+        authenticated_account
+    )
 
     current_user_id = (
         get_current_user_id()

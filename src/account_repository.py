@@ -624,3 +624,53 @@ def authenticate_user_account(
     return _row_to_account(
         row
     )
+    
+def has_user_accounts(
+    database_path: Path,
+) -> bool:
+    """Informa se existe pelo menos uma conta cadastrada."""
+    try:
+        with _connect(
+            database_path
+        ) as connection:
+            _ensure_account_table(
+                connection
+            )
+
+            row = connection.execute(
+                f"""
+                SELECT 1
+                FROM {ACCOUNT_TABLE_NAME}
+                LIMIT 1
+                """
+            ).fetchone()
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível verificar "
+            "as contas cadastradas."
+        ) from error
+
+    return row is not None
+
+def test_reports_whether_accounts_exist(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    assert not has_user_accounts(
+        database_path
+    )
+
+    create_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-segura-123",
+    )
+
+    assert has_user_accounts(
+        database_path
+    )

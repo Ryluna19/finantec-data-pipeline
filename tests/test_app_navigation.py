@@ -199,6 +199,20 @@ def test_main_flows_render_without_configured_profile(
         lambda: None,
     )
     monkeypatch.setattr(
+    app_module,
+    "render_authentication_gate",
+    lambda: {
+        "user_id": "user-1",
+        "username": "Ryan",
+    },
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "render_account_sidebar",
+        lambda account: None,
+    )
+    monkeypatch.setattr(
         app_module,
         "get_current_user_id",
         lambda: "user-1",
@@ -275,3 +289,45 @@ def test_main_flows_render_without_configured_profile(
         "budget",
         "goals",
     ]
+    
+def test_main_stops_when_user_is_not_authenticated(
+    monkeypatch,
+) -> None:
+    fake_streamlit = (
+        MainStreamlit()
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "st",
+        fake_streamlit,
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "apply_visual_styles",
+        lambda: None,
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "render_authentication_gate",
+        lambda: None,
+    )
+
+    def fail_if_data_is_loaded(
+        *args,
+        **kwargs,
+    ):
+        raise AssertionError(
+            "Os dados não devem ser carregados "
+            "sem autenticação."
+        )
+
+    monkeypatch.setattr(
+        app_module,
+        "load_data",
+        fail_if_data_is_loaded,
+    )
+
+    app_module.main()
