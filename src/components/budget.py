@@ -18,14 +18,25 @@ from analytics import (
 from data_loader import ARQUIVO_BANCO
 from src.budget_repository import (
     DuplicateMonthlyBudgetError,
+    MonthlyBudgetNotFoundError,
     create_monthly_budget,
+    delete_monthly_budget,
     list_monthly_budgets,
+    update_monthly_budget,
 )
 from ui_components import MONTH_NAMES_PT_BR
 
 
 BUDGET_FORM_OPEN_KEY = (
     "monthly_budget_form_open"
+)
+
+BUDGET_EDIT_ID_KEY = (
+    "monthly_budget_edit_id"
+)
+
+BUDGET_DELETE_ID_KEY = (
+    "monthly_budget_delete_id"
 )
 
 BUDGET_FORM_VERSION_KEY = (
@@ -147,6 +158,27 @@ def get_budget_status_label(
     return "Dentro do limite"
 
 
+def _find_budget(
+    budgets: list[dict[str, Any]],
+    budget_id: str | None,
+) -> dict[str, Any] | None:
+    """Localiza um orçamento pelo identificador."""
+    if not budget_id:
+        return None
+
+    return next(
+        (
+            budget
+            for budget in budgets
+            if budget.get(
+                "budget_id"
+            )
+            == budget_id
+        ),
+        None,
+    )
+
+
 def _get_form_version() -> int:
     """Retorna a versão atual do formulário."""
     return int(
@@ -167,11 +199,17 @@ def _advance_form_version() -> None:
     )
 
 
-def _open_budget_form() -> None:
-    """Abre o formulário de novo limite."""
+def _open_budget_form(
+    budget_id: str | None = None,
+) -> None:
+    """Abre o formulário para criação ou edição."""
     st.session_state[
         BUDGET_FORM_OPEN_KEY
     ] = True
+
+    st.session_state[
+        BUDGET_EDIT_ID_KEY
+    ] = budget_id
 
     _advance_form_version()
 
@@ -181,6 +219,10 @@ def _close_budget_form() -> None:
     st.session_state[
         BUDGET_FORM_OPEN_KEY
     ] = False
+
+    st.session_state[
+        BUDGET_EDIT_ID_KEY
+    ] = None
 
     _advance_form_version()
 
@@ -231,18 +273,75 @@ def _show_budget_feedback() -> None:
 
 def _render_budget_form(
     *,
+    budgets: list[dict[str, Any]],
     user_id: str,
     selected_period: str,
 ) -> None:
-    """Exibe o cadastro de um limite por categoria."""
+    """Exibe o formulário de criação ou edição."""
     if not st.session_state.get(
         BUDGET_FORM_OPEN_KEY,
         False,
     ):
         return
 
+    edit_budget_id = (
+        st.session_state.get(
+            BUDGET_EDIT_ID_KEY
+        )
+    )
+
+    editing_budget = _find_budget(
+        budgets,
+        edit_budget_id,
+    )
+
+    is_editing = (
+        editing_budget is not None
+    )
+
+    if (
+        edit_budget_id
+        and editing_budget is None
+    ):
+        _close_budget_form()
+
+        st.warning(
+            "O limite selecionado para edição "
+            "não foi encontrado."
+        )
+
+        return
+
+    default_category = (
+        str(
+            editing_budget.get(
+                "category",
+                "",
+            )
+        )
+        if editing_budget
+        else ""
+    )
+
+    default_amount = (
+        float(
+            editing_budget.get(
+                "planned_amount",
+                100.0,
+            )
+        )
+        if editing_budget
+        else 100.0
+    )
+
+    title = (
+        "Editar limite"
+        if is_editing
+        else "Novo limite"
+    )
+
     st.markdown(
-        "### Novo limite"
+        f"### {title}"
     )
 
     st.caption(
@@ -264,6 +363,7 @@ def _render_budget_form(
     ):
         category = st.text_input(
             "Categoria",
+            value=default_category,
             max_chars=100,
             placeholder=(
                 "Ex.: Alimentação, Transporte ou Lazer"
@@ -274,7 +374,7 @@ def _render_budget_form(
             st.number_input(
                 "Valor planejado",
                 min_value=1.0,
-                value=100.0,
+                value=default_amount,
                 step=50.0,
                 format="%.2f",
             )
@@ -291,7 +391,11 @@ def _render_budget_form(
         with save_column:
             submitted = (
                 st.form_submit_button(
-                    "Criar limite",
+                    (
+                        "Salvar alterações"
+                        if is_editing
+                        else "Criar limite"
+                    ),
                     type="primary",
                     use_container_width=True,
                 )
@@ -319,14 +423,36 @@ def _render_budget_form(
     )
 
     try:
-        create_monthly_budget(
-            database_path=ARQUIVO_BANCO,
-            user_id=user_id,
-            budget=payload,
-        )
+        if is_editing:
+            update_monthly_budget(
+                database_path=ARQUIVO_BANCO,
+                user_id=user_id,
+                budget_id=str(
+                    editing_budget[
+                        "budget_id"
+                    ]
+                ),
+                budget=payload,
+            )
+
+            feedback_message = (
+                "Limite atualizado com sucesso."
+            )
+
+        else:
+            create_monthly_budget(
+                database_path=ARQUIVO_BANCO,
+                user_id=user_id,
+                budget=payload,
+            )
+
+            feedback_message = (
+                "Limite criado com sucesso."
+            )
 
     except (
         DuplicateMonthlyBudgetError,
+        MonthlyBudgetNotFoundError,
         ValueError,
         RuntimeError,
     ) as error:
@@ -340,7 +466,7 @@ def _render_budget_form(
 
     _set_budget_feedback(
         "success",
-        "Limite criado com sucesso.",
+        feedback_message,
     )
 
     st.cache_data.clear()
@@ -413,12 +539,52 @@ def _render_budget_summary(
     )
 
 
-def _render_budget_cards(
-    tracking: list[
-        dict[str, Any]
-    ],
+def _delete_budget(
+    *,
+    budget_id: str,
+    user_id: str,
 ) -> None:
-    """Exibe o acompanhamento por categoria."""
+    """Exclui um limite mensal após confirmação."""
+    try:
+        deleted = delete_monthly_budget(
+            database_path=ARQUIVO_BANCO,
+            user_id=user_id,
+            budget_id=budget_id,
+        )
+
+    except RuntimeError as error:
+        st.error(
+            str(error)
+        )
+
+        return
+
+    if not deleted:
+        st.error(
+            "O limite informado não foi encontrado."
+        )
+
+        return
+
+    st.session_state[
+        BUDGET_DELETE_ID_KEY
+    ] = None
+
+    _set_budget_feedback(
+        "success",
+        "Limite excluído com sucesso.",
+    )
+
+    st.cache_data.clear()
+    st.rerun()
+
+
+def _render_budget_cards(
+    *,
+    tracking: list[dict[str, Any]],
+    user_id: str,
+) -> None:
+    """Exibe o acompanhamento e as ações por categoria."""
     if not tracking:
         st.info(
             "Nenhum limite foi cadastrado para este mês."
@@ -426,7 +592,19 @@ def _render_budget_cards(
 
         return
 
+    pending_delete_id = (
+        st.session_state.get(
+            BUDGET_DELETE_ID_KEY
+        )
+    )
+
     for item in tracking:
+        budget_id = str(
+            item[
+                "budget_id"
+            ]
+        )
+
         category = str(
             item[
                 "category"
@@ -474,7 +652,7 @@ def _render_budget_cards(
             border=True,
             key=(
                 "monthly-budget-card-"
-                f"{item.get('budget_id')}"
+                f"{budget_id}"
             ),
         ):
             (
@@ -570,6 +748,91 @@ def _render_budget_cards(
                 f"{usage_percentage:.1f}% do limite utilizado."
             )
 
+            (
+                edit_column,
+                delete_column,
+            ) = st.columns(
+                2,
+                gap="small",
+            )
+
+            with edit_column:
+                if st.button(
+                    "Editar",
+                    key=(
+                        "edit-monthly-budget-"
+                        f"{budget_id}"
+                    ),
+                    use_container_width=True,
+                ):
+                    _open_budget_form(
+                        budget_id
+                    )
+
+                    st.rerun()
+
+            with delete_column:
+                if st.button(
+                    "Excluir",
+                    key=(
+                        "delete-monthly-budget-"
+                        f"{budget_id}"
+                    ),
+                    use_container_width=True,
+                ):
+                    st.session_state[
+                        BUDGET_DELETE_ID_KEY
+                    ] = budget_id
+
+                    st.rerun()
+
+            if (
+                pending_delete_id
+                == budget_id
+            ):
+                st.markdown(
+                    f"**Excluir o limite de “{category}”?** "
+                    "Essa ação não pode ser desfeita."
+                )
+
+                (
+                    confirm_column,
+                    cancel_column,
+                ) = st.columns(
+                    2,
+                    gap="small",
+                )
+
+                with confirm_column:
+                    if st.button(
+                        "Sim, excluir",
+                        key=(
+                            "confirm-delete-budget-"
+                            f"{budget_id}"
+                        ),
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        _delete_budget(
+                            budget_id=budget_id,
+                            user_id=user_id,
+                        )
+
+                with cancel_column:
+                    if st.button(
+                        "Manter limite",
+                        key=(
+                            "cancel-delete-budget-"
+                            f"{budget_id}"
+                        ),
+                        use_container_width=True,
+                    ):
+                        st.session_state[
+                            BUDGET_DELETE_ID_KEY
+                        ] = None
+
+                        st.rerun()
+
 
 def render_monthly_budget(
     *,
@@ -660,9 +923,11 @@ def render_monthly_budget(
             use_container_width=True,
         ):
             _open_budget_form()
+
             st.rerun()
 
     _render_budget_form(
+        budgets=budgets,
         user_id=user_id,
         selected_period=selected_period,
     )
@@ -679,10 +944,6 @@ def render_monthly_budget(
         )
 
     _render_budget_cards(
-        tracking
-    )
-
-    st.caption(
-        "A edição e a exclusão de limites serão "
-        "adicionadas em uma próxima etapa."
+        tracking=tracking,
+        user_id=user_id,
     )
