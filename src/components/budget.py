@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
-
+import unicodedata
 import pandas as pd
 import streamlit as st
 
@@ -38,6 +38,9 @@ BUDGET_FEEDBACK_KEY = "monthly_budget_feedback"
 
 BUDGET_PERIOD_KEY = "monthly_budget_period"
 
+CATEGORY_PLACEHOLDER = (
+    "Selecione uma categoria"
+)
 
 def build_budget_period_options(
     transactions: pd.DataFrame,
@@ -61,6 +64,144 @@ def build_budget_period_options(
         reverse=True,
     )
 
+def _normalize_category_key(
+    value: object,
+) -> str:
+    """Cria uma chave comparável para uma categoria."""
+    text = " ".join(
+        str(
+            value
+            if value is not None
+            else ""
+        )
+        .strip()
+        .split()
+    )
+
+    normalized_text = unicodedata.normalize(
+        "NFKD",
+        text,
+    )
+
+    return "".join(
+        character
+        for character in normalized_text
+        if not unicodedata.combining(
+            character
+        )
+    ).casefold()
+
+
+def build_budget_category_options(
+    transactions: pd.DataFrame,
+) -> list[str]:
+    """Lista categorias de despesas disponíveis no período."""
+    required_columns = {
+        "tipo",
+        "categoria",
+    }
+
+    if (
+        transactions.empty
+        or not required_columns.issubset(
+            transactions.columns
+        )
+    ):
+        return []
+
+    transaction_types = (
+        transactions["tipo"]
+        .astype("string")
+        .str.strip()
+        .str.casefold()
+    )
+
+    expense_categories = transactions.loc[
+        transaction_types == "despesa",
+        "categoria",
+    ]
+
+    categories_by_key: dict[
+        str,
+        str,
+    ] = {}
+
+    for value in expense_categories:
+        if pd.isna(
+            value
+        ):
+            continue
+
+        category = " ".join(
+            str(
+                value
+            )
+            .strip()
+            .split()
+        )
+
+        if not category:
+            continue
+
+        category_key = (
+            _normalize_category_key(
+                category
+            )
+        )
+
+        if (
+            not category_key
+            or category_key == "reserva"
+        ):
+            continue
+
+        categories_by_key.setdefault(
+            category_key,
+            category,
+        )
+
+    return sorted(
+        categories_by_key.values(),
+        key=_normalize_category_key,
+    )
+
+
+def resolve_budget_category(
+    *,
+    selected_category: str,
+    custom_category: str,
+) -> str:
+    """Define a categoria final usada pelo orçamento."""
+    normalized_custom_category = (
+        " ".join(
+            str(
+                custom_category
+            )
+            .strip()
+            .split()
+        )
+    )
+
+    if normalized_custom_category:
+        return normalized_custom_category
+
+    normalized_selected_category = (
+        " ".join(
+            str(
+                selected_category
+            )
+            .strip()
+            .split()
+        )
+    )
+
+    if (
+        normalized_selected_category
+        == CATEGORY_PLACEHOLDER
+    ):
+        return ""
+
+    return normalized_selected_category
 
 def format_budget_period(
     period: str,
@@ -256,6 +397,7 @@ def _show_budget_feedback() -> None:
 def _render_budget_form(
     *,
     budgets: list[dict[str, Any]],
+    period_transactions: pd.DataFrame,
     user_id: str,
     selected_period: str,
 ) -> None:
@@ -266,19 +408,31 @@ def _render_budget_form(
     ):
         return
 
-    edit_budget_id = st.session_state.get(BUDGET_EDIT_ID_KEY)
+    edit_budget_id = (
+        st.session_state.get(
+            BUDGET_EDIT_ID_KEY
+        )
+    )
 
     editing_budget = _find_budget(
         budgets,
         edit_budget_id,
     )
 
-    is_editing = editing_budget is not None
+    is_editing = (
+        editing_budget is not None
+    )
 
-    if edit_budget_id and editing_budget is None:
+    if (
+        edit_budget_id
+        and editing_budget is None
+    ):
         _close_budget_form()
 
-        st.warning("O limite selecionado para edição " "não foi encontrado.")
+        st.warning(
+            "O limite selecionado para edição "
+            "não foi encontrado."
+        )
 
         return
 
@@ -304,34 +458,121 @@ def _render_budget_form(
         else 100.0
     )
 
-    title = "Editar limite" if is_editing else "Novo limite"
+    category_options = (
+        build_budget_category_options(
+            period_transactions
+        )
+    )
 
-    st.markdown(f"### {title}")
+    category_keys = {
+        _normalize_category_key(
+            category
+        )
+        for category in category_options
+    }
+
+    if (
+        default_category
+        and _normalize_category_key(
+            default_category
+        )
+        not in category_keys
+    ):
+        category_options.insert(
+            0,
+            default_category,
+        )
+
+    selectable_categories = [
+        CATEGORY_PLACEHOLDER,
+        *category_options,
+    ]
+
+    default_category_index = 0
+
+    if default_category:
+        default_category_key = (
+            _normalize_category_key(
+                default_category
+            )
+        )
+
+        for (
+            index,
+            category_option,
+        ) in enumerate(
+            selectable_categories
+        ):
+            if (
+                _normalize_category_key(
+                    category_option
+                )
+                == default_category_key
+            ):
+                default_category_index = (
+                    index
+                )
+
+                break
+
+    title = (
+        "Editar limite"
+        if is_editing
+        else "Novo limite"
+    )
+
+    st.markdown(
+        f"### {title}"
+    )
 
     st.caption(
         "Defina quanto pretende gastar em uma categoria "
         f"durante {format_budget_period(selected_period)}."
     )
 
-    form_version = _get_form_version()
+    form_version = (
+        _get_form_version()
+    )
 
     with st.form(
-        key=("monthly-budget-form-" f"{selected_period}-" f"{form_version}"),
+        key=(
+            "monthly-budget-form-"
+            f"{selected_period}-"
+            f"{form_version}"
+        ),
         border=True,
     ):
-        category = st.text_input(
-            "Categoria",
-            value=default_category,
-            max_chars=100,
-            placeholder=("Ex.: Alimentação, Transporte ou Lazer"),
+        selected_category = (
+            st.selectbox(
+                "Categoria existente",
+                options=selectable_categories,
+                index=default_category_index,
+            )
         )
 
-        planned_amount = st.number_input(
-            "Valor planejado",
-            min_value=1.0,
-            value=default_amount,
-            step=50.0,
-            format="%.2f",
+        custom_category = (
+            st.text_input(
+                "Ou informe uma nova categoria",
+                max_chars=100,
+                placeholder=(
+                    "Ex.: Saúde ou Educação"
+                ),
+            )
+        )
+
+        st.caption(
+            "Quando uma nova categoria for informada, "
+            "ela substitui a opção selecionada acima."
+        )
+
+        planned_amount = (
+            st.number_input(
+                "Valor planejado",
+                min_value=1.0,
+                value=default_amount,
+                step=50.0,
+                format="%.2f",
+            )
         )
 
         (
@@ -343,16 +584,24 @@ def _render_budget_form(
         )
 
         with save_column:
-            submitted = st.form_submit_button(
-                ("Salvar alterações" if is_editing else "Criar limite"),
-                type="primary",
-                use_container_width=True,
+            submitted = (
+                st.form_submit_button(
+                    (
+                        "Salvar alterações"
+                        if is_editing
+                        else "Criar limite"
+                    ),
+                    type="primary",
+                    use_container_width=True,
+                )
             )
 
         with cancel_column:
-            cancelled = st.form_submit_button(
-                "Cancelar",
-                use_container_width=True,
+            cancelled = (
+                st.form_submit_button(
+                    "Cancelar",
+                    use_container_width=True,
+                )
             )
 
     if cancelled:
@@ -361,6 +610,15 @@ def _render_budget_form(
 
     if not submitted:
         return
+
+    category = resolve_budget_category(
+        selected_category=(
+            selected_category
+        ),
+        custom_category=(
+            custom_category
+        ),
+    )
 
     payload = build_budget_payload(
         period=selected_period,
@@ -373,11 +631,17 @@ def _render_budget_form(
             update_monthly_budget(
                 database_path=ARQUIVO_BANCO,
                 user_id=user_id,
-                budget_id=str(editing_budget["budget_id"]),
+                budget_id=str(
+                    editing_budget[
+                        "budget_id"
+                    ]
+                ),
                 budget=payload,
             )
 
-            feedback_message = "Limite atualizado com sucesso."
+            feedback_message = (
+                "Limite atualizado com sucesso."
+            )
 
         else:
             create_monthly_budget(
@@ -386,7 +650,9 @@ def _render_budget_form(
                 budget=payload,
             )
 
-            feedback_message = "Limite criado com sucesso."
+            feedback_message = (
+                "Limite criado com sucesso."
+            )
 
     except (
         DuplicateMonthlyBudgetError,
@@ -394,7 +660,9 @@ def _render_budget_form(
         ValueError,
         RuntimeError,
     ) as error:
-        st.error(str(error))
+        st.error(
+            str(error)
+        )
 
         return
 
@@ -416,35 +684,63 @@ def _render_budget_summary(
     (
         planned_column,
         spent_column,
-        remaining_column,
-        exceeded_column,
     ) = st.columns(
-        4,
+        2,
         gap="small",
     )
 
     with planned_column:
         st.metric(
             "Total planejado",
-            format_currency(float(summary["total_planned"])),
+            format_currency(
+                float(
+                    summary[
+                        "total_planned"
+                    ]
+                )
+            ),
         )
 
     with spent_column:
         st.metric(
             "Gasto nas categorias",
-            format_currency(float(summary["total_spent"])),
+            format_currency(
+                float(
+                    summary[
+                        "total_spent"
+                    ]
+                )
+            ),
         )
+
+    (
+        remaining_column,
+        exceeded_column,
+    ) = st.columns(
+        2,
+        gap="small",
+    )
 
     with remaining_column:
         st.metric(
             "Saldo planejado",
-            format_currency(float(summary["total_remaining"])),
+            format_currency(
+                float(
+                    summary[
+                        "total_remaining"
+                    ]
+                )
+            ),
         )
 
     with exceeded_column:
         st.metric(
-            "Acima do limite",
-            int(summary["categories_over_limit"]),
+            "Categorias acima do limite",
+            int(
+                summary[
+                    "categories_over_limit"
+                ]
+            ),
         )
 
     st.caption(
@@ -733,10 +1029,13 @@ def render_monthly_budget(
             st.rerun()
 
     _render_budget_form(
-        budgets=budgets,
-        user_id=user_id,
-        selected_period=selected_period,
-    )
+            budgets=budgets,
+            period_transactions=(
+                period_transactions
+            ),
+            user_id=user_id,
+            selected_period=selected_period,
+         )
 
     if tracking:
         summary = calculate_budget_summary(tracking)

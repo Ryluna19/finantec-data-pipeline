@@ -5,12 +5,15 @@ from __future__ import annotations
 import pandas as pd
 
 from src.components.budget import (
+    CATEGORY_PLACEHOLDER,
     _find_budget,
+    build_budget_category_options,
     build_budget_dashboard_summary,
     build_budget_payload,
     build_budget_period_options,
     format_budget_period,
     get_budget_status_label,
+    resolve_budget_category,
 )
 
 
@@ -186,3 +189,93 @@ def test_build_budget_dashboard_summary_without_limits():
         "over_limit_categories": [],
         "planned_categories": 0,
     }
+    
+def test_budget_category_options_use_expense_categories():
+    transactions = pd.DataFrame(
+        {
+            "tipo": [
+                "despesa",
+                "despesa",
+                "despesa",
+                "receita",
+                "despesa",
+                "despesa",
+            ],
+            "categoria": [
+                " Alimentação ",
+                "alimentacao",
+                "Transporte",
+                "Trabalho",
+                "Reserva",
+                None,
+            ],
+        }
+    )
+
+    categories = (
+        build_budget_category_options(
+            transactions
+        )
+    )
+
+    assert categories == [
+        "Alimentação",
+        "Transporte",
+    ]
+
+
+def test_budget_category_options_work_without_required_columns():
+    assert (
+        build_budget_category_options(
+            pd.DataFrame()
+        )
+        == []
+    )
+
+    assert (
+        build_budget_category_options(
+            pd.DataFrame(
+                {
+                    "categoria": [
+                        "Alimentação",
+                    ]
+                }
+            )
+        )
+        == []
+    )
+
+
+def test_resolve_budget_category_uses_selected_option():
+    category = resolve_budget_category(
+        selected_category=(
+            "Alimentação"
+        ),
+        custom_category="",
+    )
+
+    assert category == "Alimentação"
+
+
+def test_resolve_budget_category_prefers_custom_value():
+    category = resolve_budget_category(
+        selected_category=(
+            "Alimentação"
+        ),
+        custom_category=(
+            "  Saúde   Mental  "
+        ),
+    )
+
+    assert category == "Saúde Mental"
+
+
+def test_resolve_budget_category_rejects_empty_selection():
+    category = resolve_budget_category(
+        selected_category=(
+            CATEGORY_PLACEHOLDER
+        ),
+        custom_category="",
+    )
+
+    assert category == ""
