@@ -8,7 +8,7 @@ from scripts.etl_transacoes import (
     run_etl_with_summary,
 )
 from src.data_reset import (
-    reset_user_transaction_data,
+    delete_user_financial_data,
     summarize_user_transaction_data,
 )
 from src.transaction_editor import (
@@ -340,30 +340,8 @@ def _render_demo_action() -> None:
                 st.rerun()
 
 
-def _render_reset_action(
-    summary: dict[str, int | bool],
-) -> None:
-    """Exibe a exclusão das transações pessoais."""
-    has_transaction_data = any(
-        [
-            int(
-                summary["source_files"]
-            )
-            > 0,
-            int(
-                summary["processed_files"]
-            )
-            > 0,
-            int(
-                summary["transaction_rows"]
-            )
-            > 0,
-            bool(
-                summary["log_exists"]
-            ),
-        ]
-    )
-
+def _render_reset_action() -> None:
+    """Exibe a exclusão completa dos dados financeiros."""
     with st.container(
         key="danger-zone-wrapper",
     ):
@@ -372,13 +350,10 @@ def _render_reset_action(
             expanded=False,
         ):
             st.error(
-                "Será apagado permanentemente: suas transações "
-                "pessoais, os arquivos usados para adicioná-las, "
-                "as cópias locais geradas a partir delas e o "
-                "registro técnico das importações. "
-                "Será preservado: seu perfil, suas metas, o "
-                "histórico de conversas, os dados de demonstração "
-                "e o arquivo do banco local."
+                "Esta ação apaga permanentemente suas transações, "
+                "perfil financeiro, metas, orçamentos e histórico "
+                "pessoal. Sua conta, senha, sessão e os dados de "
+                "demonstração serão preservados."
             )
 
             confirmation = st.text_input(
@@ -396,25 +371,16 @@ def _render_reset_action(
                 == RESET_CONFIRMATION_TEXT
             )
 
-            delete_enabled = (
-                has_transaction_data
-                and confirmed
-            )
-
             if st.button(
-                "Apagar minhas transações",
-                key="delete-user-transactions",
+                "Apagar meus dados",
+                key="delete-user-financial-data",
                 type="primary",
-                disabled=not delete_enabled,
+                disabled=not confirmed,
                 use_container_width=True,
             ):
                 try:
-                    result = (
-                        reset_user_transaction_data(
-                            user_id=(
-                                get_current_user_id()
-                            ),
-                        )
+                    result = delete_user_financial_data(
+                        user_id=get_current_user_id(),
                     )
 
                     _clear_manual_session_state()
@@ -423,17 +389,24 @@ def _render_reset_action(
                         DATA_MODE_KEY
                     ] = "empty"
 
+                    st.session_state[
+                        APP_SECTION_KEY
+                    ] = MAIN_SECTION
+
+                    removed_rows = sum(
+                        int(value)
+                        for key, value in result.items()
+                        if key.endswith(
+                            "_rows_removed"
+                        )
+                    )
+
                     _set_feedback(
                         "success",
                         (
-                            "Transações pessoais apagadas. "
-                            "Linhas removidas do banco: "
-                            f"{result['transaction_rows_removed']} | "
-                            "Arquivos importados removidos: "
-                            f"{result['source_files_removed']} | "
-                            "Arquivos auxiliares removidos: "
-                            f"{result['processed_files_removed']}. "
-                            "Perfil, metas e conversas foram preservados."
+                            "Seus dados financeiros foram apagados. "
+                            f"Registros removidos: {removed_rows}. "
+                            "Sua conta e senha foram preservadas."
                         ),
                     )
 
@@ -445,7 +418,7 @@ def _render_reset_action(
                         "error",
                         (
                             "Não foi possível apagar "
-                            f"as transações: {error}"
+                            f"seus dados: {error}"
                         ),
                     )
 
@@ -477,6 +450,4 @@ def render_data_management() -> None:
 
     _render_demo_action()
 
-    _render_reset_action(
-        summary
-    )
+    _render_reset_action()

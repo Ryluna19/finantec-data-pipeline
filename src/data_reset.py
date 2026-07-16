@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 from pathlib import Path
 
 from src.transaction_repository import (
@@ -11,6 +12,20 @@ from src.transaction_repository import (
 )
 from src.user_context import (
     LOCAL_USER_ID,
+)
+
+from src.budget_repository import BUDGET_TABLE_NAME
+from src.chat_repository import CHAT_TABLE_NAME
+from src.goal_repository import (
+    GOAL_SEED_TABLE_NAME,
+    GOAL_TABLE_NAME,
+)
+from src.profile_repository import PROFILE_TABLE_NAME
+from src.transaction_repository import (
+    DATA_MODE_COLUMN,
+    USER_ID_COLUMN,
+    delete_transactions,
+    load_transactions,
 )
 
 
@@ -83,6 +98,84 @@ def _normalize_user_id(
 
     return normalized_user_id
 
+def _table_exists(
+    connection: sqlite3.Connection,
+    table_name: str,
+) -> bool:
+    """Verifica se uma tabela existe no banco."""
+    row = connection.execute(
+        """
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table' AND name = ?
+        LIMIT 1
+        """,
+        (table_name,),
+    ).fetchone()
+
+    return row is not None
+
+
+def _get_table_columns(
+    connection: sqlite3.Connection,
+    table_name: str,
+) -> set[str]:
+    """Retorna as colunas de uma tabela existente."""
+    rows = connection.execute(
+        f"PRAGMA table_info({table_name})"
+    ).fetchall()
+
+    return {
+        str(row[1])
+        for row in rows
+    }
+
+
+def _delete_user_rows(
+    connection: sqlite3.Connection,
+    table_name: str,
+    user_id: str,
+    *,
+    data_mode: str | None = None,
+) -> int:
+    """Remove linhas pertencentes a um usuário."""
+    if not _table_exists(
+        connection,
+        table_name,
+    ):
+        return 0
+
+    columns = _get_table_columns(
+        connection,
+        table_name,
+    )
+
+    if USER_ID_COLUMN not in columns:
+        raise RuntimeError(
+            f"A tabela {table_name} não possui contexto de usuário."
+        )
+
+    where_clause = f"{USER_ID_COLUMN} = ?"
+    parameters: list[str] = [user_id]
+
+    if data_mode is not None:
+        if DATA_MODE_COLUMN not in columns:
+            raise RuntimeError(
+                f"A tabela {table_name} não possui modo de dados."
+            )
+
+        where_clause += f" AND {DATA_MODE_COLUMN} = ?"
+        parameters.append(data_mode)
+
+    cursor = connection.execute(
+        f"""
+        DELETE FROM {table_name}
+        WHERE {where_clause}
+        """,
+        tuple(parameters),
+    )
+
+    return int(cursor.rowcount)
 
 def find_user_source_files(
     raw_dir: Path = RAW_DIR,
@@ -283,3 +376,79 @@ def reset_user_transaction_data(
             log_removed
         ),
     }
+    
+def delete_user_financial_data(
+    database_path: Path = DATABASE_PATH,
+    user_id: str = LOCAL_USER_ID,
+) -> dict[str, int | bool]:
+    """Remove os dados financeiros e preserva a conta."""
+    normalized_user_id = _normalize_user_id(
+        user_id
+    )
+
+    database_path = Path(
+        database_path
+    )
+
+    result: dict[str, int | bool] = {
+        "transaction_rows_removed": 0,
+        "profile_rows_removed": 0,
+        "goal_rows_removed": 0,
+        "goal_seed_rows_removed": 0,
+        "budget_rows_removed": 0,
+        "chat_rows_removed": 0,
+        "database_preserved": database_path.exists(),
+    }
+
+    if not database_path.exists():
+        return result
+
+    try:
+        with sqlite3.connect(
+            database_path,
+            timeout=5.0,
+        ) as connection:
+            result["transaction_rows_removed"] = _delete_user_rows(
+                connection,
+                TRANSACTION_TABLE_NAME,
+                normalized_user_id,
+                data_mode=USER_DATA_MODE,
+            )
+
+            result["profile_rows_removed"] = _delete_user_rows(
+                connection,
+                PROFILE_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["goal_rows_removed"] = _delete_user_rows(
+                connection,
+                GOAL_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["goal_seed_rows_removed"] = _delete_user_rows(
+                connection,
+                GOAL_SEED_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["budget_rows_removed"] = _delete_user_rows(
+                connection,
+                BUDGET_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["chat_rows_removed"] = _delete_user_rows(
+                connection,
+                CHAT_TABLE_NAME,
+                normalized_user_id,
+                data_mode=USER_DATA_MODE,
+            )
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível apagar os dados financeiros do usuário."
+        ) from error
+
+    return result

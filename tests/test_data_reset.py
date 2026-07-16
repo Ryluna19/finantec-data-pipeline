@@ -6,6 +6,7 @@ import sqlite3
 
 from src.data_reset import (
     count_user_transaction_rows,
+    delete_user_financial_data,
     reset_user_transaction_data,
     summarize_user_transaction_data,
 )
@@ -527,3 +528,188 @@ def test_count_user_transaction_rows_isolated_by_user(
         )
         == 1
     )
+    
+def create_complete_user_database(
+    database_path,
+) -> None:
+    """Cria dados pessoais, demonstração e outra conta."""
+    database_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE user_accounts (
+                user_id TEXT PRIMARY KEY,
+                username TEXT NOT NULL
+            );
+
+            INSERT INTO user_accounts
+                (user_id, username)
+            VALUES
+                ('local-user', 'ryan'),
+                ('other-user', 'outro');
+
+            CREATE TABLE transacoes_processadas (
+                transaction_id TEXT,
+                user_id TEXT,
+                data_mode TEXT
+            );
+
+            INSERT INTO transacoes_processadas
+                (transaction_id, user_id, data_mode)
+            VALUES
+                ('transaction-user', 'local-user', 'user'),
+                ('transaction-demo', 'local-user', 'demo'),
+                ('transaction-other', 'other-user', 'user');
+
+            CREATE TABLE user_profiles (
+                user_id TEXT PRIMARY KEY,
+                name TEXT
+            );
+
+            INSERT INTO user_profiles
+                (user_id, name)
+            VALUES
+                ('local-user', 'Ryan'),
+                ('other-user', 'Outro');
+
+            CREATE TABLE financial_goals (
+                goal_id TEXT PRIMARY KEY,
+                user_id TEXT
+            );
+
+            INSERT INTO financial_goals
+                (goal_id, user_id)
+            VALUES
+                ('goal-user', 'local-user'),
+                ('goal-other', 'other-user');
+
+            CREATE TABLE financial_goal_seed_state (
+                user_id TEXT PRIMARY KEY
+            );
+
+            INSERT INTO financial_goal_seed_state
+                (user_id)
+            VALUES
+                ('local-user'),
+                ('other-user');
+
+            CREATE TABLE monthly_budgets (
+                budget_id TEXT PRIMARY KEY,
+                user_id TEXT
+            );
+
+            INSERT INTO monthly_budgets
+                (budget_id, user_id)
+            VALUES
+                ('budget-user', 'local-user'),
+                ('budget-other', 'other-user');
+
+            CREATE TABLE chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                data_mode TEXT
+            );
+
+            INSERT INTO chat_messages
+                (user_id, data_mode)
+            VALUES
+                ('local-user', 'user'),
+                ('local-user', 'demo'),
+                ('other-user', 'user');
+            """
+        )
+
+
+def test_delete_user_financial_data_preserves_account_and_other_contexts(
+    tmp_path,
+) -> None:
+    database_path = (
+        tmp_path
+        / "database"
+        / "finantec.db"
+    )
+
+    create_complete_user_database(
+        database_path
+    )
+
+    result = delete_user_financial_data(
+        database_path=database_path,
+        user_id=LOCAL_USER_ID,
+    )
+
+    assert count_rows(
+        database_path,
+        "user_accounts",
+    ) == 2
+
+    assert count_rows(
+        database_path,
+        "transacoes_processadas",
+        "WHERE user_id = ? AND data_mode = ?",
+        (LOCAL_USER_ID, "user"),
+    ) == 0
+
+    assert count_rows(
+        database_path,
+        "transacoes_processadas",
+        "WHERE user_id = ? AND data_mode = ?",
+        (LOCAL_USER_ID, "demo"),
+    ) == 1
+
+    for table_name in (
+        "user_profiles",
+        "financial_goals",
+        "financial_goal_seed_state",
+        "monthly_budgets",
+    ):
+        assert count_rows(
+            database_path,
+            table_name,
+            "WHERE user_id = ?",
+            (LOCAL_USER_ID,),
+        ) == 0
+
+        assert count_rows(
+            database_path,
+            table_name,
+            "WHERE user_id = ?",
+            ("other-user",),
+        ) == 1
+
+    assert count_rows(
+        database_path,
+        "chat_messages",
+        "WHERE user_id = ? AND data_mode = ?",
+        (LOCAL_USER_ID, "user"),
+    ) == 0
+
+    assert count_rows(
+        database_path,
+        "chat_messages",
+        "WHERE user_id = ? AND data_mode = ?",
+        (LOCAL_USER_ID, "demo"),
+    ) == 1
+
+    assert count_rows(
+        database_path,
+        "chat_messages",
+        "WHERE user_id = ?",
+        ("other-user",),
+    ) == 1
+
+    assert result == {
+        "transaction_rows_removed": 1,
+        "profile_rows_removed": 1,
+        "goal_rows_removed": 1,
+        "goal_seed_rows_removed": 1,
+        "budget_rows_removed": 1,
+        "chat_rows_removed": 1,
+        "database_preserved": True,
+    }

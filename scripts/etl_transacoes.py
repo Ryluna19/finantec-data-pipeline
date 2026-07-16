@@ -42,6 +42,7 @@ from src.transaction_sources import (
 )
 
 from src.user_context import (
+    LOCAL_USER_ID,
     get_current_user_id,
 )
 
@@ -306,15 +307,29 @@ def filter_new_transactions(
         )
     )
 
+def _resolve_etl_user_id(
+    user_id: str | None,
+) -> str:
+    """Resolve o usuário do ETL dentro ou fora do Streamlit."""
+    if user_id is not None:
+        normalized_user_id = str(user_id).strip()
+
+        if normalized_user_id:
+            return normalized_user_id
+
+    try:
+        return get_current_user_id()
+    except RuntimeError:
+        return LOCAL_USER_ID
+
 def save_to_sqlite(
     transactions: pd.DataFrame,
     user_id: str | None = None,
     data_mode: str = "user",
 ) -> int:
     """Persiste transações sem sobrescrever dados reais existentes."""
-    current_user_id = (
+    current_user_id = _resolve_etl_user_id(
         user_id
-        or get_current_user_id()
     )
 
     if data_mode == "demo":
@@ -397,9 +412,8 @@ def run_etl(
     """Executa todas as etapas do pipeline ETL."""
     configure_logging()
 
-    current_user_id = (
+    current_user_id = _resolve_etl_user_id(
         user_id
-        or get_current_user_id()
     )
 
     transaction_data_mode = (

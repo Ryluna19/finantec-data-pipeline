@@ -132,7 +132,7 @@ def test_data_management_heading_uses_a_stable_anchor(
     monkeypatch.setattr(
         data_management_module,
         "_render_reset_action",
-        lambda _summary: None,
+        lambda: None,
     )
 
     data_management_module.render_data_management()
