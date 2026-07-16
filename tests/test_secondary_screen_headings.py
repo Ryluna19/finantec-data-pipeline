@@ -134,6 +134,11 @@ def test_data_management_heading_uses_a_stable_anchor(
         "_render_reset_action",
         lambda: None,
     )
+    monkeypatch.setattr(
+        data_management_module,
+        "_render_account_deletion_action",
+        lambda: None,
+    )
 
     data_management_module.render_data_management()
 

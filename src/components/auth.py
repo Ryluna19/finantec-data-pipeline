@@ -20,6 +20,8 @@ from src.user_context import (
 )
 
 
+AUTH_FEEDBACK_KEY = "finantec_auth_feedback"
+
 def choose_registration_user_id(
     accounts_exist: bool,
 ) -> str | None:
@@ -199,6 +201,32 @@ def _render_registration_form(
         account
     )
 
+def _show_auth_feedback() -> None:
+    """Exibe mensagens deixadas por uma sessão encerrada."""
+    feedback = st.session_state.pop(
+        AUTH_FEEDBACK_KEY,
+        None,
+    )
+
+    if not feedback:
+        return
+
+    message = str(
+        feedback.get(
+            "message",
+            "",
+        )
+    )
+
+    if feedback.get("type") == "success":
+        st.success(message)
+        return
+
+    if feedback.get("type") == "warning":
+        st.warning(message)
+        return
+
+    st.error(message)
 
 def render_authentication_gate(
 ) -> dict[str, str] | None:
@@ -217,6 +245,8 @@ def render_authentication_gate(
     st.caption(
         "Organização financeira local e privada."
     )
+    
+    _show_auth_feedback()
 
     try:
         accounts_exist = (

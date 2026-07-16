@@ -196,3 +196,25 @@ def test_user_data_action_keeps_personal_context_with_transactions(
         == 1
     )
     assert fake_streamlit.rerun_requested is True
+    
+def test_account_deletion_confirmation():
+    assert (
+        data_management_module
+        .is_account_deletion_confirmed(
+            "EXCLUIR CONTA"
+        )
+    )
+
+    assert (
+        data_management_module
+        .is_account_deletion_confirmed(
+            "  excluir   conta  "
+        )
+    )
+
+    assert not (
+        data_management_module
+        .is_account_deletion_confirmed(
+            "EXCLUIR"
+        )
+    )

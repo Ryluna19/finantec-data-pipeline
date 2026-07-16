@@ -10,6 +10,7 @@ from scripts.etl_transacoes import (
 from src.data_reset import (
     delete_user_financial_data,
     summarize_user_transaction_data,
+    delete_user_account_and_data,
 )
 from src.transaction_editor import (
     MANUAL_DRAFT_KEY,
@@ -18,12 +19,21 @@ from src.transaction_editor import (
     MANUAL_FORM_VERSION_KEY,
 )
 from src.user_context import (
+    get_current_account,
     get_current_user_id,
 )
 
 from components.navigation import (
     APP_SECTION_KEY,
     MAIN_SECTION,
+)
+
+from components.auth import (
+    AUTH_FEEDBACK_KEY,
+)
+from data_loader import ARQUIVO_BANCO
+from src.account_repository import (
+    authenticate_user_account,
 )
 
 
@@ -37,6 +47,27 @@ DATA_MODE_KEY = (
 
 RESET_CONFIRMATION_TEXT = "APAGAR"
 
+
+ACCOUNT_DELETION_CONFIRMATION_TEXT = (
+    "EXCLUIR CONTA"
+)
+
+
+def is_account_deletion_confirmed(
+    confirmation: str,
+) -> bool:
+    """Valida a confirmação textual da exclusão da conta."""
+    normalized_confirmation = " ".join(
+        str(confirmation)
+        .strip()
+        .upper()
+        .split()
+    )
+
+    return (
+        normalized_confirmation
+        == ACCOUNT_DELETION_CONFIRMATION_TEXT
+    )
 
 def _set_feedback(
     message_type: str,
@@ -425,6 +456,114 @@ def _render_reset_action() -> None:
                     st.rerun()
 
 
+def _render_account_deletion_action() -> None:
+    """Exibe a exclusão definitiva da conta autenticada."""
+    current_account = get_current_account()
+
+    if current_account is None:
+        return
+
+    with st.container(
+        key="account-deletion-wrapper",
+    ):
+        with st.expander(
+            "Excluir conta",
+            expanded=False,
+        ):
+            st.error(
+                "Esta ação exclui permanentemente sua conta, "
+                "credenciais, transações, perfil, metas, "
+                "orçamentos e histórico. Ela não pode ser desfeita."
+            )
+
+            with st.form(
+                "delete-current-account-form",
+                border=False,
+            ):
+                password = st.text_input(
+                    "Confirme sua senha",
+                    type="password",
+                    max_chars=128,
+                    autocomplete="current-password",
+                )
+
+                confirmation = st.text_input(
+                    "Digite EXCLUIR CONTA para confirmar",
+                    placeholder="EXCLUIR CONTA",
+                )
+
+                submitted = st.form_submit_button(
+                    "Excluir minha conta",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if not submitted:
+                return
+
+            if not password:
+                st.error(
+                    "Informe sua senha para continuar."
+                )
+                return
+
+            if not is_account_deletion_confirmed(
+                confirmation
+            ):
+                st.error(
+                    "Digite EXCLUIR CONTA corretamente "
+                    "para confirmar a exclusão."
+                )
+                return
+
+            try:
+                authenticated_account = (
+                    authenticate_user_account(
+                        database_path=ARQUIVO_BANCO,
+                        username=current_account["username"],
+                        password=password,
+                    )
+                )
+
+                if (
+                    authenticated_account is None
+                    or authenticated_account["user_id"]
+                    != current_account["user_id"]
+                ):
+                    st.error(
+                        "A senha informada está incorreta."
+                    )
+                    return
+
+                delete_user_account_and_data(
+                    database_path=ARQUIVO_BANCO,
+                    user_id=current_account["user_id"],
+                )
+
+                st.session_state.clear()
+
+                st.session_state[
+                    AUTH_FEEDBACK_KEY
+                ] = {
+                    "type": "success",
+                    "message": (
+                        "Sua conta e os dados associados "
+                        "foram excluídos."
+                    ),
+                }
+
+                st.cache_data.clear()
+                st.rerun()
+
+            except (
+                ValueError,
+                RuntimeError,
+            ) as error:
+                st.error(
+                    str(error)
+                )
+                
+
 def render_data_management() -> None:
     """Exibe a área de gerenciamento dos dados."""
     st.subheader(
@@ -434,20 +573,15 @@ def render_data_management() -> None:
 
     st.caption(
         "Escolha quais dados serão exibidos e controle "
-        "as transações armazenadas localmente."
+        "as informações associadas à sua conta."
     )
 
     _show_feedback()
     _render_current_mode()
 
-    summary = (
-        _render_data_summary()
-    )
+    summary = _render_data_summary()
 
-    _render_user_data_action(
-        summary
-    )
-
+    _render_user_data_action(summary)
     _render_demo_action()
-
     _render_reset_action()
+    _render_account_deletion_action()
