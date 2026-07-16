@@ -9,6 +9,7 @@ from src.data_reset import (
     delete_user_financial_data,
     reset_user_transaction_data,
     summarize_user_transaction_data,
+    delete_user_account_and_data,
 )
 from src.user_context import (
     LOCAL_USER_ID,
@@ -711,5 +712,70 @@ def test_delete_user_financial_data_preserves_account_and_other_contexts(
         "goal_seed_rows_removed": 1,
         "budget_rows_removed": 1,
         "chat_rows_removed": 1,
+        "database_preserved": True,
+    }
+    
+def test_delete_user_account_and_all_associated_data(
+    tmp_path,
+) -> None:
+    database_path = (
+        tmp_path
+        / "database"
+        / "finantec.db"
+    )
+
+    create_complete_user_database(
+        database_path
+    )
+
+    result = delete_user_account_and_data(
+        database_path=database_path,
+        user_id=LOCAL_USER_ID,
+    )
+
+    assert count_rows(
+        database_path,
+        "user_accounts",
+        "WHERE user_id = ?",
+        (LOCAL_USER_ID,),
+    ) == 0
+
+    assert count_rows(
+        database_path,
+        "user_accounts",
+        "WHERE user_id = ?",
+        ("other-user",),
+    ) == 1
+
+    for table_name in (
+        "transacoes_processadas",
+        "user_profiles",
+        "financial_goals",
+        "financial_goal_seed_state",
+        "monthly_budgets",
+        "chat_messages",
+    ):
+        assert count_rows(
+            database_path,
+            table_name,
+            "WHERE user_id = ?",
+            (LOCAL_USER_ID,),
+        ) == 0
+
+        assert count_rows(
+            database_path,
+            table_name,
+            "WHERE user_id = ?",
+            ("other-user",),
+        ) == 1
+
+    assert result == {
+        "transaction_rows_removed": 2,
+        "profile_rows_removed": 1,
+        "goal_rows_removed": 1,
+        "goal_seed_rows_removed": 1,
+        "budget_rows_removed": 1,
+        "chat_rows_removed": 2,
+        "account_rows_removed": 1,
         "database_preserved": True,
     }

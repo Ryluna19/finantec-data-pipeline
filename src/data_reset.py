@@ -20,6 +20,7 @@ from src.goal_repository import (
     GOAL_SEED_TABLE_NAME,
     GOAL_TABLE_NAME,
 )
+from src.account_repository import ACCOUNT_TABLE_NAME
 from src.profile_repository import PROFILE_TABLE_NAME
 from src.transaction_repository import (
     DATA_MODE_COLUMN,
@@ -449,6 +450,82 @@ def delete_user_financial_data(
     except sqlite3.Error as error:
         raise RuntimeError(
             "Não foi possível apagar os dados financeiros do usuário."
+        ) from error
+
+    return result
+
+def delete_user_account_and_data(
+    database_path: Path = DATABASE_PATH,
+    user_id: str = LOCAL_USER_ID,
+) -> dict[str, int | bool]:
+    """Remove a conta e todos os dados associados ao usuário."""
+    normalized_user_id = _normalize_user_id(user_id)
+    database_path = Path(database_path)
+
+    result: dict[str, int | bool] = {
+        "transaction_rows_removed": 0,
+        "profile_rows_removed": 0,
+        "goal_rows_removed": 0,
+        "goal_seed_rows_removed": 0,
+        "budget_rows_removed": 0,
+        "chat_rows_removed": 0,
+        "account_rows_removed": 0,
+        "database_preserved": database_path.exists(),
+    }
+
+    if not database_path.exists():
+        return result
+
+    try:
+        with sqlite3.connect(
+            database_path,
+            timeout=5.0,
+        ) as connection:
+            result["transaction_rows_removed"] = _delete_user_rows(
+                connection,
+                TRANSACTION_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["profile_rows_removed"] = _delete_user_rows(
+                connection,
+                PROFILE_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["goal_rows_removed"] = _delete_user_rows(
+                connection,
+                GOAL_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["goal_seed_rows_removed"] = _delete_user_rows(
+                connection,
+                GOAL_SEED_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["budget_rows_removed"] = _delete_user_rows(
+                connection,
+                BUDGET_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["chat_rows_removed"] = _delete_user_rows(
+                connection,
+                CHAT_TABLE_NAME,
+                normalized_user_id,
+            )
+
+            result["account_rows_removed"] = _delete_user_rows(
+                connection,
+                ACCOUNT_TABLE_NAME,
+                normalized_user_id,
+            )
+
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            "Não foi possível excluir a conta e seus dados."
         ) from error
 
     return result
