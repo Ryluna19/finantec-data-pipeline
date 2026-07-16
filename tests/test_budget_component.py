@@ -5,6 +5,8 @@ from __future__ import annotations
 import pandas as pd
 
 from src.components.budget import (
+    _find_budget,
+    build_budget_dashboard_summary,
     build_budget_payload,
     build_budget_period_options,
     format_budget_period,
@@ -110,3 +112,77 @@ def test_budget_status_labels():
         )
         == "Limite ultrapassado"
     )
+    
+def test_build_budget_dashboard_summary():
+    transactions = pd.DataFrame(
+        {
+            "tipo": [
+                "despesa",
+                "despesa",
+            ],
+            "categoria": [
+                "Alimentação",
+                "Transporte",
+            ],
+            "valor": [
+                350.0,
+                100.0,
+            ],
+        }
+    )
+
+    budgets = [
+        {
+            "budget_id": "budget-1",
+            "period": "2026-07",
+            "category": "Alimentação",
+            "planned_amount": 300.0,
+        },
+        {
+            "budget_id": "budget-2",
+            "period": "2026-07",
+            "category": "Transporte",
+            "planned_amount": 200.0,
+        },
+    ]
+
+    summary = (
+        build_budget_dashboard_summary(
+            transactions=transactions,
+            budgets=budgets,
+        )
+    )
+
+    assert (
+        summary["remaining_amount"]
+        == 50.0
+    )
+
+    assert (
+        summary["planned_categories"]
+        == 2
+    )
+
+    assert (
+        summary[
+            "over_limit_categories"
+        ]
+        == [
+            "Alimentação",
+        ]
+    )
+
+
+def test_build_budget_dashboard_summary_without_limits():
+    summary = (
+        build_budget_dashboard_summary(
+            transactions=pd.DataFrame(),
+            budgets=[],
+        )
+    )
+
+    assert summary == {
+        "remaining_amount": 0.0,
+        "over_limit_categories": [],
+        "planned_categories": 0,
+    }

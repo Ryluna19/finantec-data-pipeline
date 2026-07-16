@@ -30,6 +30,7 @@ from components.file_transfer import (
 )
 from components.goals import render_goal_simulator
 from components.budget import (
+    render_budget_dashboard_summary,
     render_monthly_budget,
 )
 from components.header import render_header
@@ -286,6 +287,9 @@ def render_dashboard_tab(
     summary: dict[str, Any],
     expenses_by_category: pd.Series,
     show_yearly_evolution: bool,
+    user_id: str,
+    data_mode: str,
+    show_budget_summary: bool,
 ) -> None:
     """Compõe a visão geral do dashboard."""
     st.header(
@@ -305,6 +309,15 @@ def render_dashboard_tab(
         render_financial_diagnosis(
             summary
         )
+    if show_budget_summary:
+        with st.container(
+            key="dashboard-budget-section",
+        ):
+            render_budget_dashboard_summary(
+                transactions=transactions,
+                user_id=user_id,
+                data_mode=data_mode,
+            )
 
     with st.container(
         key="dashboard-metrics-section",
@@ -725,6 +738,11 @@ def main() -> None:
             expenses_by_category=expenses_by_category,
             show_yearly_evolution=(
                 selected_month == 0
+            ),
+            user_id=current_user_id,
+            data_mode=data_mode,
+            show_budget_summary=(
+                selected_month != 0
             ),
         )
 
