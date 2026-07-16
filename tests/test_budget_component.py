@@ -6,6 +6,7 @@ import pandas as pd
 
 from src.components.budget import (
     CATEGORY_PLACEHOLDER,
+    DEFAULT_BUDGET_CATEGORIES,
     _find_budget,
     build_budget_category_options,
     build_budget_dashboard_summary,
@@ -47,17 +48,14 @@ def test_budget_period_options_include_current_and_existing_months():
     ]
 
 
-def test_budget_period_options_work_without_transactions():
-    periods = (
-        build_budget_period_options(
-            pd.DataFrame(),
-            reference_period="2026-07",
-        )
+def test_budget_category_options_use_defaults_without_transactions():
+    categories = build_budget_category_options(
+        pd.DataFrame()
     )
 
-    assert periods == [
-        "2026-07",
-    ]
+    assert categories == list(
+        DEFAULT_BUDGET_CATEGORIES
+    )
 
 
 def test_build_budget_payload():
@@ -190,7 +188,7 @@ def test_build_budget_dashboard_summary_without_limits():
         "planned_categories": 0,
     }
     
-def test_budget_category_options_use_expense_categories():
+def test_budget_category_options_combine_defaults_and_expenses():
     transactions = pd.DataFrame(
         {
             "tipo": [
@@ -199,50 +197,40 @@ def test_budget_category_options_use_expense_categories():
                 "despesa",
                 "receita",
                 "despesa",
-                "despesa",
             ],
             "categoria": [
                 " Alimentação ",
-                "alimentacao",
+                "Mercado",
                 "Transporte",
                 "Trabalho",
                 "Reserva",
-                None,
             ],
         }
     )
 
-    categories = (
-        build_budget_category_options(
-            transactions
-        )
+    categories = build_budget_category_options(
+        transactions
     )
 
-    assert categories == [
-        "Alimentação",
-        "Transporte",
-    ]
+    assert "Alimentação" in categories
+    assert "Mercado" in categories
+    assert "Transporte" in categories
+    assert "Moradia" in categories
+    assert "Reserva" not in categories
+    assert "Trabalho" not in categories
+
+    assert categories.count(
+        "Alimentação"
+    ) == 1
 
 
-def test_budget_category_options_work_without_required_columns():
-    assert (
-        build_budget_category_options(
-            pd.DataFrame()
-        )
-        == []
+def test_budget_category_options_use_defaults_without_transactions():
+    categories = build_budget_category_options(
+        pd.DataFrame()
     )
 
-    assert (
-        build_budget_category_options(
-            pd.DataFrame(
-                {
-                    "categoria": [
-                        "Alimentação",
-                    ]
-                }
-            )
-        )
-        == []
+    assert categories == list(
+        DEFAULT_BUDGET_CATEGORIES
     )
 
 

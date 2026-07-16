@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 import unicodedata
+
 import pandas as pd
 import streamlit as st
 
@@ -40,6 +41,19 @@ BUDGET_PERIOD_KEY = "monthly_budget_period"
 
 CATEGORY_PLACEHOLDER = (
     "Selecione uma categoria"
+)
+
+DEFAULT_BUDGET_CATEGORIES = (
+    "Alimentação",
+    "Moradia",
+    "Transporte",
+    "Saúde",
+    "Educação",
+    "Lazer",
+    "Contas",
+    "Assinaturas",
+    "Compras",
+    "Outros",
 )
 
 def build_budget_period_options(
@@ -95,7 +109,12 @@ def _normalize_category_key(
 def build_budget_category_options(
     transactions: pd.DataFrame,
 ) -> list[str]:
-    """Lista categorias de despesas disponíveis no período."""
+    """Combina categorias sugeridas e categorias usadas nas despesas."""
+    categories_by_key = {
+        _normalize_category_key(category): category
+        for category in DEFAULT_BUDGET_CATEGORIES
+    }
+
     required_columns = {
         "tipo",
         "categoria",
@@ -107,7 +126,9 @@ def build_budget_category_options(
             transactions.columns
         )
     ):
-        return []
+        return list(
+            categories_by_key.values()
+        )
 
     transaction_types = (
         transactions["tipo"]
@@ -121,21 +142,12 @@ def build_budget_category_options(
         "categoria",
     ]
 
-    categories_by_key: dict[
-        str,
-        str,
-    ] = {}
-
     for value in expense_categories:
-        if pd.isna(
-            value
-        ):
+        if pd.isna(value):
             continue
 
         category = " ".join(
-            str(
-                value
-            )
+            str(value)
             .strip()
             .split()
         )
@@ -143,10 +155,8 @@ def build_budget_category_options(
         if not category:
             continue
 
-        category_key = (
-            _normalize_category_key(
-                category
-            )
+        category_key = _normalize_category_key(
+            category
         )
 
         if (
@@ -542,22 +552,20 @@ def _render_budget_form(
         ),
         border=True,
     ):
-        selected_category = (
-            st.selectbox(
-                "Categoria existente",
+        selected_category = st.selectbox(
+                "Categoria",
                 options=selectable_categories,
                 index=default_category_index,
-            )
-        )
-
-        custom_category = (
-            st.text_input(
-                "Ou informe uma nova categoria",
-                max_chars=100,
-                placeholder=(
-                    "Ex.: Saúde ou Educação"
+                help=(
+                    "Escolha uma categoria sugerida ou "
+                    "uma categoria já usada nas transações."
                 ),
             )
+
+        custom_category = st.text_input(
+            "Ou informe uma categoria personalizada",
+            max_chars=100,
+            placeholder="Ex.: Pet, Viagem ou Academia",
         )
 
         st.caption(
