@@ -44,6 +44,8 @@ O FinanTec centraliza esses fluxos em uma aplicação local:
 - acompanha metas persistentes;
 - separa dados pessoais e demonstração;
 - permite apagar somente as transações pessoais.
+- planeja limites mensais por categoria;
+- compara o valor planejado com os gastos efetivamente registrados;
 
 ---
 
@@ -77,7 +79,7 @@ Análise de possíveis duplicatas
         ↓
 Gravação direta no SQLite
         ↓
-Consulta, indicadores e metas
+Consulta, indicadores, orçamento e metas
 ```
 
 Um contexto pessoal sem perfil ou metas é válido e não recebe dados fictícios
@@ -149,15 +151,28 @@ existentes.
 - persistência pessoal isolada por usuário;
 - metas de demonstração compostas em memória e somente leitura.
 
+### Orçamento
+
+- planejamento mensal com valores fixos por categoria;
+- criação, edição e exclusão de limites;
+- ausência de orçamento como estado válido;
+- comparação entre valor planejado e gasto real do mês;
+- cálculo de valor disponível ou ultrapassado;
+- identificação de categorias dentro, próximas ou acima do limite;
+- resumo mensal exibido na Visão geral quando um mês específico possui limites;
+- persistência isolada por `user_id`;
+- indisponível no contexto de demonstração.
+
 ### Perfil
 
 - ausência de perfil como estado válido no primeiro uso;
 - criação do perfil no primeiro salvamento, sem seed automático;
 - resumo antes do formulário de edição;
-- fontes de renda editáveis;
-- renda mensal calculada pela soma das fontes;
-- perfil de demonstração composto em memória e somente leitura;
-- preservação interna de campos antigos por compatibilidade.
+- identidade local representada pelo nome de exibição;
+- único dado público preenchido no campo “Como quer ser chamado?”;
+- perfil de Marina com o mesmo subconjunto visual e somente leitura;
+- Metas mantidas como uma entidade separada do Perfil;
+- tolerância interna de campos antigos por compatibilidade.
 
 ### Dados e privacidade
 
@@ -198,7 +213,7 @@ privacidade, documentada em
 ### Persistência
 
 - SQLite como fonte principal;
-- repositórios para transações, perfil, metas e conversas pessoais;
+- repositórios para transações, perfil, metas, orçamento e conversas pessoais;
 - isolamento interno por `user_id`;
 - separação entre dados pessoais e demonstração;
 - Perfil e Metas de demonstração mantidos fora das tabelas pessoais;
@@ -223,7 +238,9 @@ privacidade, documentada em
 | `src/components/` | Reúne componentes visuais por fluxo. |
 | `src/transaction_repository.py` | Persiste e consulta transações. |
 | `src/goal_repository.py` | Persiste e consulta metas. |
-| `src/profile_repository.py` | Persiste o perfil e suas fontes de renda. |
+| `src/profile_repository.py` | Persiste a identidade local e mantém compatibilidade com registros antigos. |
+| `src/components/budget.py` | Compõe o planejamento mensal, acompanhamento e ações de orçamento. |
+| `src/budget_repository.py` | Persiste e consulta limites mensais por usuário, período e categoria. |
 | `src/chat_repository.py` | Preserva localmente o histórico do recurso congelado. |
 | `src/financial_intents.py` | Classificação determinística preservada. |
 | `src/financial_responses.py` | Respostas financeiras locais preservadas. |
@@ -304,7 +321,7 @@ pessoal e local.
 ## Status Atual
 
 O FinanTec possui os principais fluxos financeiros estabilizados, navegação
-focada em Visão geral, Transações e Metas, persistência local em SQLite e suíte
+focada em Visão geral, Transações, Orçamento e Metas, persistência local em SQLite e suíte
 automatizada cobrindo as regras de maior risco.
 
 A primeira revisão global da experiência foi concluída em celular, notebook e

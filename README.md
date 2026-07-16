@@ -44,6 +44,9 @@ Demonstrar um fluxo de dados aplicado a uma ferramenta financeira local:
 - visualização em Streamlit;
 - persistência e isolamento local dos principais dados;
 - testes automatizados das regras e fluxos de maior risco.
+- planejamento mensal de limites por categoria;
+- comparação entre valores planejados e gastos efetivamente registrados;
+
 
 ---
 
@@ -70,6 +73,11 @@ Demonstrar um fluxo de dados aplicado a uma ferramenta financeira local:
 - entrada manual de transações pelo dashboard;
 - edição e exclusão de transações persistidas;
 - importação e exportação de arquivos CSV e Excel.
+- orçamento mensal por categoria;
+- criação, edição e exclusão de limites mensais;
+- comparação entre valor planejado, gasto real e saldo disponível;
+- identificação de categorias próximas ou acima do limite;
+- resumo do orçamento mensal na Visão geral;
 
 ---
 
@@ -163,6 +171,7 @@ finantec-data-pipeline/
 │   ├── components/
 │   ├── analytics.py
 │   ├── app.py
+│   ├── budget_repository.py
 │   ├── data_loader.py
 │   ├── data_reset.py
 │   ├── goal_repository.py
@@ -334,6 +343,8 @@ regras financeiras, a persistência e os principais fluxos da aplicação.
 | `tests/test_etl_pipeline.py` | Testa validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
 | `tests/test_transaction_*.py` | Testa identidade, arquivos, repositórios, sincronização, CRUD e composição da tela de transações. |
 | `tests/test_goal_*.py` | Testa persistência, isolamento, cálculos e composição da tela de metas. |
+| `tests/test_budget_repository.py` | Testa persistência, isolamento, validações e CRUD dos limites mensais. |
+| `tests/test_budget_component.py` | Testa períodos, estados, resumos e funções auxiliares da interface de orçamento. |
 | `tests/test_profile_*.py` | Testa perfil, fontes de renda e persistência. |
 | `tests/test_data_reset.py` | Testa a exclusão limitada às transações pessoais e arquivos relacionados. |
 | `tests/test_financial_*.py` | Preserva testes do mecanismo local e determinístico de consultas financeiras. |
@@ -411,7 +422,7 @@ Entrada manual ou importação → validação → SQLite → dashboard Streamli
 Navegação principal:
 
 ```text
-Visão geral → Transações → Metas
+Visão geral → Transações → Orçamento → Metas
 ```
 
 O ETL continua disponível para demonstração, compatibilidade e execução

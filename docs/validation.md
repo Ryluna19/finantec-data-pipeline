@@ -67,13 +67,15 @@ pytest
 
 | Arquivo | O que valida |
 |---|---|
-| `tests/test_analytics.py` | Cálculos financeiros, metas, formatação de moeda e filtros por período. |
+| `tests/test_analytics.py` | Cálculos financeiros, metas, acompanhamento de orçamento, formatação de moeda e filtros por período. |
 | `tests/test_etl_pipeline.py` | Validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
 | `tests/test_rejections.py` | Geração do relatório de transações rejeitadas e acúmulo de motivos de rejeição. |
 | `tests/test_sqlite_load.py` | Carga dos dados tratados em SQLite usando banco temporário. |
 | `tests/test_transaction_editor.py` | Valida a camada de preparação, salvamento e carregamento das transações manuais. |
 | `tests/test_transaction_*.py` | Persistência, identidade, importação, sincronização e composição de transações. |
 | `tests/test_goal_*.py` | Persistência, cálculos e composição de metas. |
+| `tests/test_budget_repository.py` | Persistência, isolamento, duplicidade, validações e CRUD de limites mensais. |
+| `tests/test_budget_component.py` | Períodos disponíveis, resumos, estados e funções auxiliares da interface de orçamento. |
 | `tests/test_profile_*.py` | Perfil, fontes de renda e persistência. |
 | `tests/test_data_reset.py` | Exclusão limitada e preservação dos demais dados locais. |
 | `tests/test_financial_*.py` | Classificação e respostas determinísticas preservadas. |
@@ -95,6 +97,11 @@ Os testes verificam regras importantes do projeto, como:
 - formatação de moeda brasileira;
 - listagem de períodos disponíveis;
 - filtragem por mês.
+- comparação entre orçamento planejado e gasto real por categoria;
+- saldo restante ou valor ultrapassado;
+- percentual utilizado de cada limite;
+- resumo das categorias planejadas;
+- identificação das categorias acima do limite.
 
 Uma regra importante validada é que a categoria `Reserva` não entra como gasto de consumo por padrão.
 
@@ -341,6 +348,11 @@ A versão atual possui validação automatizada para:
 - reset limitado das transações pessoais;
 - respostas financeiras locais preservadas;
 - composição de Transações, Metas e navegação principal.
+- persistência e CRUD de orçamentos mensais;
+- isolamento dos limites por usuário e período;
+- comparação entre planejamento e gastos reais;
+- composição da aba Orçamento;
+- resumo mensal do orçamento na Visão geral.
 
 Além disso, possui testes manuais para:
 

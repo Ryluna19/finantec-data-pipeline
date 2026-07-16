@@ -3,8 +3,8 @@
 ## Visão Geral
 
 O FinanTec deve continuar como um aplicativo financeiro local, simples e
-coerente. O objetivo é registrar transações, acompanhar períodos, organizar
-metas e demonstrar boas decisões de persistência, validação, privacidade e UX.
+coerente. O objetivo é registrar transações, acompanhar períodos, planejar limites
+mensais, organizar metas e demonstrar boas decisões de persistência, validação, privacidade e UX.
 
 O projeto não precisa se transformar em banco digital, sistema empresarial ou
 SaaS para cumprir seu papel. A prioridade é fazer o básico parecer um produto
@@ -27,9 +27,13 @@ Já estão implementados:
 - gerenciamento seguro das transações pessoais;
 - metas persistentes e simulador separado;
 - Perfil e Metas de demonstração isolados e somente leitura;
-- navegação principal com Visão geral, Transações e Metas;
+- navegação principal com Visão geral, Transações, Orçamento e Metas;
 - testes automatizados dos principais repositórios e regras;
 - ETL mantido para demonstração e compatibilidade.
+- orçamento mensal persistente por categoria;
+- comparação entre valores planejados e gastos reais;
+- criação, edição e exclusão de limites;
+- resumo mensal do orçamento integrado à Visão geral;
 
 A integração externa com Gemini foi removida preventivamente. O mecanismo
 local de consultas e o histórico foram preservados, mas o recurso está
@@ -71,6 +75,17 @@ congelado fora da navegação principal. Consulte a
 - cartões com progresso, restante e contribuição mensal;
 - prioridade removida da interface e preservada internamente;
 - edição e exclusão sob demanda.
+
+### Orçamento mensal
+
+- limites definidos em valores fixos por categoria e mês;
+- persistência isolada por usuário;
+- categorias planejadas sem obrigação de totalizar 100%;
+- criação, edição e exclusão com confirmação;
+- comparação entre planejado, gasto, disponível e ultrapassado;
+- estados visuais para acompanhamento do limite;
+- resumo exibido na Visão geral para o mês selecionado;
+- funcionalidade restrita aos dados pessoais.
 
 ### Identidade, primeiro uso e demonstração
 
@@ -132,7 +147,6 @@ Somente depois de produto, UX e documentação estarem coerentes:
 Ainda precisam de avaliação separada:
 
 - reavaliação dos campos do perfil;
-- planejador orçamentário como candidato futuro, sujeito a avaliação;
 - exclusão coordenada de todos os dados locais;
 - autenticação e exclusão de conta;
 - deploy e eventual uso de PostgreSQL.
@@ -167,7 +181,7 @@ Os testes devem continuar focados em comportamentos de risco:
 - persistência e CRUD;
 - importação, rejeições e duplicatas;
 - exclusão limitada e preservação de dados;
-- cálculos financeiros e metas;
+- cálculos financeiros, orçamento e metas;
 - migrações de banco;
 - composição dos fluxos principais.
 
