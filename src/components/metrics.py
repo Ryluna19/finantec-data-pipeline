@@ -24,6 +24,32 @@ def calculate_percentage(
     )
 
 
+def _render_stat_card(
+    *,
+    title: str,
+    value: str,
+    description: str,
+) -> None:
+    """Exibe um indicador secundário padronizado."""
+    render_html(
+        f"""
+        <div class="finantec-stat-card">
+            <div class="finantec-mini-title">
+                {escape(title)}
+            </div>
+
+            <div class="finantec-stat-value">
+                {escape(value)}
+            </div>
+
+            <div class="finantec-mini-desc">
+                {escape(description)}
+            </div>
+        </div>
+        """
+    )
+
+
 def render_financial_summary(
     summary: dict[str, Any],
 ) -> None:
@@ -206,7 +232,6 @@ def render_financial_diagnosis(
             "as receitas."
         )
 
-    # Evita que percentuais acima de 100% ultrapassem o painel.
     consumption_bar_width = min(
         consumption_percentage,
         100,
@@ -297,27 +322,48 @@ def render_additional_metrics(
         )
     )
 
+    st.subheader(
+        "Indicadores do período"
+    )
+
     (
         total_column,
         average_column,
         reserve_column,
     ) = st.columns(
-        3
+        3,
+        gap="small",
     )
 
-    total_column.metric(
-        "Transações",
-        len(transactions),
-    )
+    with total_column:
+        _render_stat_card(
+            title="Transações",
+            value=str(
+                len(transactions)
+            ),
+            description=(
+                "Movimentações consideradas no período."
+            ),
+        )
 
-    average_column.metric(
-        "Gasto médio",
-        format_currency(
-            average_expense
-        ),
-    )
+    with average_column:
+        _render_stat_card(
+            title="Gasto médio",
+            value=format_currency(
+                average_expense
+            ),
+            description=(
+                "Média das despesas registradas."
+            ),
+        )
 
-    reserve_column.metric(
-        "Renda reservada",
-        f"{reserve_percentage:.1f}%",
-    )
+    with reserve_column:
+        _render_stat_card(
+            title="Renda reservada",
+            value=(
+                f"{reserve_percentage:.1f}%"
+            ),
+            description=(
+                "Parte da renda destinada à reserva."
+            ),
+        )

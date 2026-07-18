@@ -9,6 +9,8 @@ import pandas as pd
 import streamlit as st
 
 from analytics import formatar_moeda as format_currency
+from components.appearance import get_visual_preferences
+from components.tables import render_read_only_table
 from ui_components import (
     EXPENSE_COLOR,
     INCOME_COLOR,
@@ -17,9 +19,18 @@ from ui_components import (
 )
 
 
-CHART_TEXT_COLOR = "#d4d4d8"
-CHART_MUTED_COLOR = "#a1a1aa"
-CHART_GRID_COLOR = "#27272a"
+CHART_THEME_COLORS = {
+    "dark": {
+        "text": "#d4d4d8",
+        "muted": "#a1a1aa",
+        "grid": "#27272a",
+    },
+    "light": {
+        "text": "#554b43",
+        "muted": "#75685e",
+        "grid": "#ded3c8",
+    },
+}
 
 MONTHLY_SERIES_ORDER = [
     "Receitas",
@@ -27,10 +38,30 @@ MONTHLY_SERIES_ORDER = [
 ]
 
 
+def get_chart_theme_colors() -> dict[str, str]:
+    """Retorna as cores dos gráficos para o tema ativo."""
+    appearance, _ = get_visual_preferences()
+
+    return CHART_THEME_COLORS.get(
+        appearance,
+        CHART_THEME_COLORS["dark"],
+    )
+
+
 def apply_chart_theme(
     chart: alt.Chart,
 ) -> alt.Chart:
-    """Aplica o tema visual escuro usado pelo dashboard."""
+    """Aplica ao gráfico as cores do tema visual ativo."""
+    colors = get_chart_theme_colors()
+
+    appearance, _ = get_visual_preferences()
+
+    grid_opacity = (
+        0.75
+        if appearance == "light"
+        else 0.55
+    )
+
     return (
         chart
         .properties(
@@ -40,12 +71,12 @@ def apply_chart_theme(
             stroke=None,
         )
         .configure_axis(
-            domainColor=CHART_GRID_COLOR,
-            gridColor=CHART_GRID_COLOR,
-            gridOpacity=0.55,
-            labelColor=CHART_MUTED_COLOR,
-            titleColor=CHART_TEXT_COLOR,
-            tickColor=CHART_GRID_COLOR,
+            domainColor=colors["grid"],
+            gridColor=colors["grid"],
+            gridOpacity=grid_opacity,
+            labelColor=colors["muted"],
+            titleColor=colors["text"],
+            tickColor=colors["grid"],
             labelFont="Inter",
             titleFont="Inter",
             labelFontSize=12,
@@ -53,14 +84,37 @@ def apply_chart_theme(
             titleFontWeight=600,
         )
         .configure_legend(
-            labelColor=CHART_TEXT_COLOR,
-            titleColor=CHART_TEXT_COLOR,
+            labelColor=colors["text"],
+            titleColor=colors["text"],
             labelFont="Inter",
             titleFont="Inter",
             labelFontSize=12,
             symbolStrokeWidth=3,
         )
     )
+
+
+def monthly_summary_cell_style(
+    column: str,
+    _value: Any,
+    _row: pd.Series,
+) -> str:
+    """Aplica alinhamento e cor semântica ao resumo mensal."""
+    if column == "Receitas":
+        return (
+            f"color: {INCOME_COLOR} !important; "
+            "font-weight: 700; "
+            "text-align: right;"
+        )
+
+    if column == "Despesas":
+        return (
+            f"color: {EXPENSE_COLOR} !important; "
+            "font-weight: 700; "
+            "text-align: right;"
+        )
+
+    return ""
 
 
 def create_monthly_summary(
@@ -405,22 +459,8 @@ def render_monthly_evolution(
             )
         )
 
-        st.dataframe(
+        render_read_only_table(
             table,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Mês": st.column_config.TextColumn(
-                    "Mês",
-                    width="medium",
-                ),
-                "Receitas": st.column_config.TextColumn(
-                    "Receitas",
-                    width="medium",
-                ),
-                "Despesas": st.column_config.TextColumn(
-                    "Despesas",
-                    width="medium",
-                ),
-            },
+            table_label="Resumo mensal",
+            cell_style_resolver=monthly_summary_cell_style,
         )

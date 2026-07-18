@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from html import escape
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -57,6 +59,155 @@ def transaction_column_config() -> dict:
             alignment="right",
         ),
     }
+
+
+CellStyleResolver = Callable[
+    [str, Any, pd.Series],
+    str,
+]
+
+
+def build_read_only_table_html(
+    table: pd.DataFrame,
+    *,
+    table_label: str,
+    maximum_height: int | None = None,
+    cell_style_resolver: CellStyleResolver | None = None,
+) -> str:
+    """Monta uma tabela HTML segura e adaptada aos temas visuais."""
+    header_cells = "".join(
+        (
+            "<th scope=\"col\">"
+            f"{escape(str(column))}"
+            "</th>"
+        )
+        for column in table.columns
+    )
+
+    body_rows: list[str] = []
+
+    for _, row in table.iterrows():
+        cells: list[str] = []
+
+        for column in table.columns:
+            value = row[column]
+
+            style = (
+                cell_style_resolver(
+                    str(column),
+                    value,
+                    row,
+                )
+                if cell_style_resolver
+                else ""
+            )
+
+            style_attribute = (
+                f' style="{escape(style, quote=True)}"'
+                if style
+                else ""
+            )
+
+            cells.append(
+                "<td"
+                f"{style_attribute}"
+                ">"
+                f"{escape(str(value))}"
+                "</td>"
+            )
+
+        body_rows.append(
+            "<tr>"
+            + "".join(cells)
+            + "</tr>"
+        )
+
+    wrapper_styles = [
+        "overflow: auto",
+    ]
+
+    if maximum_height is not None:
+        safe_height = max(
+            120,
+            int(maximum_height),
+        )
+
+        wrapper_styles.append(
+            f"max-height: {safe_height}px"
+        )
+
+    wrapper_style = "; ".join(
+        wrapper_styles
+    )
+
+    return (
+        '<div class="finantec-table-panel" '
+        f'style="{wrapper_style};">'
+        '<table class="finantec-table" '
+        f'aria-label="{escape(table_label, quote=True)}">'
+        '<thead style="position: sticky; top: 0; z-index: 2;">'
+        "<tr>"
+        f"{header_cells}"
+        "</tr>"
+        "</thead>"
+        "<tbody>"
+        + "".join(body_rows)
+        + "</tbody>"
+        "</table>"
+        "</div>"
+    )
+
+
+def render_read_only_table(
+    table: pd.DataFrame,
+    *,
+    table_label: str,
+    maximum_height: int | None = None,
+    cell_style_resolver: CellStyleResolver | None = None,
+) -> None:
+    """Renderiza uma tabela somente de consulta com tema consistente."""
+    st.markdown(
+        build_read_only_table_html(
+            table,
+            table_label=table_label,
+            maximum_height=maximum_height,
+            cell_style_resolver=cell_style_resolver,
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def transaction_cell_style(
+    column: str,
+    _value: Any,
+    row: pd.Series,
+) -> str:
+    """Define alinhamento e cor semântica da tabela de transações."""
+    if column != "Valor":
+        return ""
+
+    transaction_type = str(
+        row.get(
+            "Tipo",
+            "",
+        )
+    ).strip()
+
+    if transaction_type == "Receita":
+        return (
+            f"color: {INCOME_COLOR} !important; "
+            "font-weight: 700; "
+            "text-align: right;"
+        )
+
+    if transaction_type == "Despesa":
+        return (
+            f"color: {EXPENSE_COLOR} !important; "
+            "font-weight: 700; "
+            "text-align: right;"
+        )
+
+    return "text-align: right;"
 
 
 def prepare_transactions_for_display(
@@ -121,6 +272,7 @@ def prepare_transactions_for_display(
         ]
     ]
 
+
 def style_transactions_table(
     table: pd.DataFrame,
 ) -> Styler:
@@ -160,6 +312,7 @@ def style_transactions_table(
         style_transaction_row,
         axis=1,
     )
+
 
 def render_category_ranking(
     expenses_by_category: pd.Series,
@@ -289,19 +442,12 @@ def render_latest_transactions(
             )
         )
 
-        st.dataframe(
-            style_transactions_table(
-              table
-            ),
-            use_container_width=True,
-            hide_index=True,
-            height=calculate_table_height(
-                len(table),
-                maximum=300,
-            ),
-            column_config=(
-                transaction_column_config()
-            ),
+
+        render_read_only_table(
+            table,
+            table_label="Últimas transações",
+            maximum_height=300,
+            cell_style_resolver=transaction_cell_style,
         )
 
 
@@ -560,20 +706,11 @@ def render_period_transactions(
             )
         )
 
-        st.dataframe(
-            style_transactions_table(
-                table
-            ),
-            use_container_width=True,
-            hide_index=True,
-            height=calculate_table_height(
-                len(
-                    table
-                )
-            ),
-            column_config=(
-                transaction_column_config()
-            ),
+        render_read_only_table(
+            table,
+            table_label="Transações do período",
+            maximum_height=420,
+            cell_style_resolver=transaction_cell_style,
         )
 
         return (

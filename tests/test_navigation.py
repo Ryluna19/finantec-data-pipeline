@@ -21,6 +21,21 @@ class SidebarContext:
     ) -> bool:
         return False
 
+class DummyContext:
+    """Simula um container do Streamlit."""
+
+    def __enter__(
+        self,
+    ):
+        return self
+
+    def __exit__(
+        self,
+        exception_type,
+        exception_value,
+        traceback,
+    ) -> bool:
+        return False
 
 class NavigationStreamlit:
     """Registra a identidade e os avisos da navegação."""
@@ -57,6 +72,11 @@ class NavigationStreamlit:
     ) -> None:
         return None
 
+    def container(
+        self,
+        **_kwargs,
+    ) -> DummyContext:
+        return DummyContext()
 
 def test_demo_keeps_personal_identity_and_shows_mode(
     monkeypatch,
@@ -82,7 +102,8 @@ def test_demo_keeps_personal_identity_and_shows_mode(
         "Ryan",
     ]
     assert fake_streamlit.captions == [
-        "Modo demonstração",
+        "Navegação",
+        "Modo demonstração ativo",
     ]
 
 
@@ -109,4 +130,6 @@ def test_unconfigured_profile_uses_navigation_fallback(
     assert fake_streamlit.menu_labels == [
         "Meu perfil",
     ]
-    assert fake_streamlit.captions == []
+    assert fake_streamlit.captions == [
+        "Navegação",
+    ]

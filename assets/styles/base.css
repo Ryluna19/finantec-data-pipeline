@@ -14,7 +14,7 @@ body {
     background:
         radial-gradient(
             circle at top center,
-            rgba(249, 115, 22, 0.035),
+            var(--accent-glow),
             transparent 34rem
         ),
         var(--bg-main) !important;
@@ -164,11 +164,11 @@ a:hover {
     color: var(--accent);
 
     background:
-        rgba(249, 115, 22, 0.08);
+    var(--accent-soft);
 
     border:
         1px solid
-        rgba(249, 115, 22, 0.28);
+        var(--accent-line);
 
     border-radius: 14px;
 }
@@ -250,28 +250,87 @@ a:hover {
 
 .stTabs [data-baseweb="tab-list"] {
     gap: 1.25rem;
-    border-bottom: 1px solid var(--border);
+
+    border-bottom:
+        1px solid
+        var(--border);
 }
 
-.stTabs [data-baseweb="tab"] {
-    padding: 0.55rem 0 0.65rem;
-    color: var(--text-muted) !important;
-    background: transparent;
+.stTabs [data-baseweb="tab"],
+.stTabs button[role="tab"] {
+    padding:
+        0.55rem
+        0
+        0.65rem;
+
+    color:
+        var(--text-muted) !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    border-bottom:
+        2px solid
+        transparent !important;
+
+    border-radius:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+
     font-weight: 650;
 }
 
-.stTabs [data-baseweb="tab"]:hover {
-    color: var(--text-soft) !important;
+.stTabs [data-baseweb="tab"]:hover,
+.stTabs button[role="tab"]:hover {
+    color:
+        var(--text-soft) !important;
 }
 
-.stTabs [data-baseweb="tab"][aria-selected="true"] {
-    color: var(--text-main) !important;
+.stTabs [data-baseweb="tab"][aria-selected="true"],
+.stTabs button[role="tab"][aria-selected="true"] {
+    color:
+        var(--text-main) !important;
+
+    border-bottom-color:
+        var(--accent) !important;
 }
+
+/* O indicador nativo é ocultado para evitar a cor padrão do Streamlit. */
 
 .stTabs [data-baseweb="tab-highlight"] {
-    background-color: var(--accent) !important;
+    display:
+        none !important;
 }
 
+/* O foco por teclado usa a paleta sem criar uma moldura vermelha. */
+
+.stTabs [data-baseweb="tab"]:focus,
+.stTabs [data-baseweb="tab"]:focus-visible,
+.stTabs button[role="tab"]:focus,
+.stTabs button[role="tab"]:focus-visible {
+    color:
+        var(--text-main) !important;
+
+    background:
+        var(--accent-soft) !important;
+
+    border-bottom-color:
+        var(--accent) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
 
 /* =========================================================
    INPUTS E CAMPOS
@@ -337,7 +396,7 @@ a:hover {
 
     outline:
         2px solid
-        rgba(249, 115, 22, 0.22) !important;
+       var(--accent-focus) !important;
 
     outline-offset: 1px;
     box-shadow: none !important;
@@ -471,7 +530,7 @@ button[data-testid="baseButton-primary"]:not(:disabled):hover,
 [data-testid="stFileUploader"] button:focus-visible {
     outline:
         2px solid
-        rgba(249, 115, 22, 0.42) !important;
+        var(--accent-focus) !important;
 
     outline-offset: 2px !important;
 }
