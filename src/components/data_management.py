@@ -36,6 +36,10 @@ from src.account_repository import (
     authenticate_user_account,
 )
 
+from components.appearance import (
+    clear_session_preserving_visual_preferences,
+)
+
 
 DATA_MANAGEMENT_FEEDBACK_KEY = (
     "data_management_feedback"
@@ -540,7 +544,7 @@ def _render_account_deletion_action() -> None:
                     user_id=current_account["user_id"],
                 )
 
-                st.session_state.clear()
+                clear_session_preserving_visual_preferences()
 
                 st.session_state[
                     AUTH_FEEDBACK_KEY

@@ -20,6 +20,11 @@ from src.user_context import (
 )
 from ui_components import render_html
 
+from components.appearance import (
+    clear_session_preserving_visual_preferences,
+    render_appearance_toolbar,
+)
+
 
 AUTH_FEEDBACK_KEY = "finantec_auth_feedback"
 
@@ -38,7 +43,7 @@ def _start_authenticated_session(
     account: dict[str, Any],
 ) -> None:
     """Inicia uma sessão limpa para a conta informada."""
-    st.session_state.clear()
+    clear_session_preserving_visual_preferences()
     set_current_account(account)
 
     st.cache_data.clear()
@@ -392,6 +397,10 @@ def render_authentication_gate() -> dict[str, str] | None:
         ></div>
         """
     )
+    
+    render_appearance_toolbar(
+        key="finantec-auth-toolbar"
+    )
 
     with st.container(
         border=True,
@@ -406,6 +415,7 @@ def render_authentication_gate() -> dict[str, str] | None:
             _render_auth_brand_panel()
 
         with form_column:
+
             _render_auth_form_heading(
                 accounts_exist=accounts_exist
             )
@@ -439,7 +449,7 @@ def render_authentication_gate() -> dict[str, str] | None:
 def render_account_sidebar(
     account: dict[str, str],
 ) -> None:
-    """Exibe a conta atual e a ação de saída."""
+    """Exibe a conta atual e as ações globais da sessão."""
     with st.sidebar:
         st.caption("Conta atual")
 
@@ -452,8 +462,12 @@ def render_account_sidebar(
             key="finantec-logout",
             use_container_width=True,
         ):
-            st.session_state.clear()
+            clear_session_preserving_visual_preferences()
             st.cache_data.clear()
             st.rerun()
 
         st.divider()
+
+    render_appearance_toolbar(
+        key="finantec-page-toolbar"
+    )
