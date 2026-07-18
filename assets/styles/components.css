@@ -1,0 +1,1367 @@
+/* =========================================================
+   PAINÉIS FINANCEIROS
+   ========================================================= */
+
+.finantec-panel,
+.finantec-balance-panel,
+.finantec-mini-card,
+.finantec-diagnosis-panel,
+.finantec-stat-card,
+.finantec-chart-panel,
+.finantec-table-panel {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+
+    box-shadow: var(--shadow-soft);
+}
+
+.finantec-overview-grid {
+    display: grid;
+    gap: 1rem;
+
+    width: 100%;
+}
+
+.finantec-mini-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(220px, 1fr)
+    );
+
+    gap: 1rem;
+}
+
+
+/* Saldo principal */
+
+.finantec-balance-panel {
+    --balance-glow:
+        rgba(161, 161, 170, 0.05);
+
+    --balance-border:
+        var(--border-light);
+
+    min-height: 190px;
+    padding: 1.5rem;
+
+    border-color:
+        var(--balance-border);
+
+    background:
+        radial-gradient(
+            circle at top right,
+            var(--balance-glow),
+            transparent 38%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.025),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel);
+}
+
+.finantec-balance-panel.positive {
+    --balance-glow:
+        rgba(34, 197, 94, 0.11);
+
+    --balance-border:
+        rgba(34, 197, 94, 0.32);
+}
+
+.finantec-balance-panel.negative {
+    --balance-glow:
+        rgba(239, 68, 68, 0.12);
+
+    --balance-border:
+        rgba(239, 68, 68, 0.38);
+}
+
+.finantec-balance-panel.neutral {
+    --balance-glow:
+        rgba(161, 161, 170, 0.05);
+
+    --balance-border:
+        var(--border-light);
+}
+
+.finantec-balance-label,
+.finantec-mini-title,
+.finantec-stat-title {
+    color: #c4c7d1 !important;
+
+    font-size: 0.82rem !important;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.finantec-balance-value {
+    margin: 1rem 0 0.9rem;
+
+    color: var(--text-main);
+
+    font-size: clamp(
+        2.5rem,
+        4vw,
+        3.4rem
+    );
+
+    line-height: 1;
+    font-weight: 800;
+}
+
+.finantec-balance-value.positive {
+    color: var(--success);
+}
+
+.finantec-balance-value.negative {
+    color: var(--danger);
+}
+
+.finantec-balance-value.neutral {
+    color: var(--text-main);
+}
+
+.finantec-balance-desc,
+.finantec-mini-desc,
+.finantec-diagnosis-text {
+    color: var(--text-soft);
+
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
+}
+
+
+/* Mini cards */
+
+.finantec-mini-card {
+    min-height: 130px;
+    padding: 1.2rem;
+}
+
+.finantec-mini-card:hover {
+    border-color: var(--border-light);
+}
+
+.finantec-mini-value {
+    margin: 0.75rem 0 0.55rem;
+
+    color: #ffffff !important;
+
+    font-size: 1.45rem !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+}
+
+.finantec-mini-card.receita {
+    border-top:
+        3px solid
+        var(--success);
+}
+
+.finantec-mini-card.consumo {
+    border-top:
+        3px solid
+        var(--danger);
+}
+
+.finantec-mini-card.reserva {
+    border-top:
+        3px solid
+        var(--info);
+}
+
+
+/* Diagnóstico */
+
+.finantec-diagnosis-panel {
+    padding: 1.3rem;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.018),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel);
+}
+
+.finantec-diagnosis-title {
+    margin-bottom: 0.75rem;
+
+    color: #ffffff !important;
+
+    font-size: 1.28rem !important;
+    font-weight: 800 !important;
+}
+
+.finantec-diagnosis-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(280px, 1fr)
+    );
+
+    gap: 1.25rem;
+}
+
+
+/* Barras */
+
+.finantec-bar-label {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 1rem;
+    margin-bottom: 0.45rem;
+
+    color: #e4e4e7 !important;
+
+    font-size: 0.9rem !important;
+    font-weight: 650;
+}
+
+.finantec-bar-track {
+    width: 100%;
+    height: 10px;
+
+    background: var(--bg-elevated);
+
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    overflow: hidden;
+}
+
+.finantec-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.finantec-bar-fill.expense {
+    background:
+        linear-gradient(
+            90deg,
+            rgba(239, 68, 68, 0.78),
+            rgba(248, 113, 113, 0.92)
+        );
+}
+
+.finantec-bar-fill.green {
+    background:
+        linear-gradient(
+            90deg,
+            #22c55e,
+            #4ade80
+        );
+}
+
+
+/* Métricas personalizadas */
+
+.finantec-stat-card {
+    min-height: 120px;
+    padding: 1rem 1.2rem;
+}
+
+.finantec-stat-value {
+    margin-top: 0.7rem;
+
+    color: #ffffff !important;
+
+    font-size: 2.15rem !important;
+    line-height: 1.08 !important;
+    font-weight: 800 !important;
+}
+
+
+/* =========================================================
+   MÉTRICAS NATIVAS
+   ========================================================= */
+
+[data-testid="stMetric"] {
+    min-height: 122px !important;
+    padding: 1rem 1.15rem !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.01),
+            rgba(255, 255, 255, 0)
+        ),
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-radius: var(--radius) !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--text-soft) !important;
+
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #ffffff !important;
+
+    font-size: clamp(
+        2rem,
+        2.4vw,
+        2.4rem
+    ) !important;
+
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+}
+
+/* =========================================================
+   MÉTRICAS SEMÂNTICAS
+   ========================================================= */
+
+.st-key-validation-valid-metric
+[data-testid="stMetric"],
+.st-key-validation-rejected-metric-neutral
+[data-testid="stMetric"],
+.st-key-validation-rejected-metric-error
+[data-testid="stMetric"],
+.st-key-period-total-metric
+[data-testid="stMetric"],
+.st-key-period-income-metric
+[data-testid="stMetric"],
+.st-key-period-expense-metric
+[data-testid="stMetric"],
+.st-key-import-validation-valid
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-neutral
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-error
+[data-testid="stMetric"],
+.st-key-import-file-valid-metric
+[data-testid="stMetric"],
+.st-key-import-ready-metric
+[data-testid="stMetric"] {
+    border-top-width: 3px !important;
+}
+
+
+/* Valores positivos */
+
+.st-key-validation-valid-metric
+[data-testid="stMetric"],
+.st-key-period-income-metric
+[data-testid="stMetric"],
+.st-key-import-validation-valid
+[data-testid="stMetric"],
+.st-key-import-file-valid-metric
+[data-testid="stMetric"] {
+    border-top-color:
+        var(--success) !important;
+}
+
+.st-key-validation-valid-metric
+[data-testid="stMetricValue"],
+.st-key-period-income-metric
+[data-testid="stMetricValue"],
+.st-key-import-validation-valid
+[data-testid="stMetricValue"],
+.st-key-import-file-valid-metric
+[data-testid="stMetricValue"] {
+    color: var(--success) !important;
+}
+
+
+/* Valores negativos */
+
+.st-key-validation-rejected-metric-error
+[data-testid="stMetric"],
+.st-key-period-expense-metric
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-error
+[data-testid="stMetric"] {
+    border-top-color:
+        var(--danger) !important;
+}
+
+.st-key-validation-rejected-metric-error
+[data-testid="stMetricValue"],
+.st-key-period-expense-metric
+[data-testid="stMetricValue"],
+.st-key-import-validation-rejected-error
+[data-testid="stMetricValue"] {
+    color: var(--danger) !important;
+}
+
+
+/* Valores neutros */
+
+.st-key-validation-rejected-metric-neutral
+[data-testid="stMetric"],
+.st-key-period-total-metric
+[data-testid="stMetric"],
+.st-key-import-validation-rejected-neutral
+[data-testid="stMetric"],
+.st-key-import-ready-metric
+[data-testid="stMetric"] {
+    border-top-color:
+        var(--border-light) !important;
+}
+
+.st-key-validation-rejected-metric-neutral
+[data-testid="stMetricValue"],
+.st-key-period-total-metric
+[data-testid="stMetricValue"],
+.st-key-import-validation-rejected-neutral
+[data-testid="stMetricValue"],
+.st-key-import-ready-metric
+[data-testid="stMetricValue"] {
+    color: var(--text-main) !important;
+}
+
+/* =========================================================
+   SIMULADOR DE METAS
+   ========================================================= */
+
+.finantec-goal-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.finantec-goal-card {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+    min-height: 132px;
+    padding: 1.15rem 1.2rem;
+
+    background: var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-top:
+        3px solid
+        var(--border-light);
+
+    border-radius: var(--radius);
+
+    box-shadow: none;
+}
+
+.finantec-goal-card.current {
+    border-top-color: var(--success);
+}
+
+.finantec-goal-card.remaining {
+    border-top-color: var(--warning);
+}
+
+.finantec-goal-card.monthly {
+    border-top-color: var(--info);
+}
+
+.finantec-goal-label {
+    color: var(--text-muted);
+
+    font-size: 0.72rem;
+    line-height: 1.3;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.finantec-goal-value {
+    margin: 0.7rem 0 0.5rem;
+
+    color: var(--text-main);
+
+    font-size:
+        clamp(
+            1.35rem,
+            2vw,
+            1.9rem
+        );
+
+    line-height: 1.12;
+    font-weight: 800;
+
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.finantec-goal-card.current
+.finantec-goal-value {
+    color: var(--success);
+}
+
+.finantec-goal-card.remaining
+.finantec-goal-value {
+    color: var(--warning);
+}
+
+.finantec-goal-description {
+    margin-top: auto;
+
+    color: var(--text-muted);
+
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+
+/* Barra de progresso */
+
+.finantec-goal-progress-panel {
+    margin-bottom: 1rem;
+    padding: 1.15rem 1.2rem;
+
+    background: var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius: var(--radius);
+}
+
+.finantec-goal-progress-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.finantec-goal-progress-title {
+    color: var(--text-main);
+
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.finantec-goal-progress-name {
+    margin-top: 0.2rem;
+
+    color: var(--text-muted);
+
+    font-size: 0.82rem;
+}
+
+.finantec-goal-progress-header strong {
+    color: var(--success);
+
+    font-size: 0.85rem;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+.finantec-goal-progress-track {
+    width: 100%;
+    height: 11px;
+
+    background: var(--bg-elevated);
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius: 999px;
+
+    overflow: hidden;
+}
+
+.finantec-goal-progress-fill {
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(34, 197, 94, 0.78),
+            #22c55e
+        );
+
+    border-radius: 999px;
+
+    transition: width 180ms ease;
+}
+
+.finantec-goal-progress-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 1rem;
+    margin-top: 0.6rem;
+
+    color: var(--text-muted);
+
+    font-size: 0.8rem;
+}
+
+
+/* =========================================================
+   TABELAS E DATAFRAMES
+   ========================================================= */
+
+.finantec-table-panel {
+    padding: 0;
+    overflow: hidden;
+}
+
+.finantec-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.finantec-table thead th {
+    padding: 0.95rem 1rem;
+
+    background: var(--bg-table-head);
+    color: var(--text-soft) !important;
+
+    border-bottom:
+        1px solid
+        var(--border-light);
+
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    text-align: left;
+}
+
+.finantec-table tbody td {
+    padding: 0.95rem 1rem;
+
+    color: #f4f4f5 !important;
+
+    border-bottom:
+        1px solid
+        var(--border);
+
+    font-size: 0.92rem !important;
+}
+
+.finantec-table tbody tr:nth-child(odd) {
+    background: var(--bg-table-row);
+}
+
+.finantec-table tbody tr:nth-child(even) {
+    background: var(--bg-table-row-alt);
+}
+
+.finantec-table tbody tr:hover {
+    background: var(--bg-table-hover);
+}
+
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"] {
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    overflow: hidden;
+}
+
+[data-testid="stDataFrame"] * {
+    font-size: 0.92rem !important;
+}
+
+/* =========================================================
+   PAINÉIS ANALÍTICOS
+   ========================================================= */
+
+.st-key-expenses-category-card,
+.st-key-category-ranking-card,
+.st-key-monthly-evolution-card,
+.st-key-latest-transactions-card,
+.st-key-data-validation-card,
+.st-key-period-transactions-card {
+    width: 100%;
+    height: 100%;
+}
+
+.st-key-expenses-category-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-category-ranking-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-monthly-evolution-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-latest-transactions-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-data-validation-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-period-transactions-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    height: 100%;
+    padding: 1.1rem 1.2rem !important;
+
+    background: var(--bg-panel);
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius: var(--radius);
+}
+
+.st-key-expenses-category-card h3,
+.st-key-category-ranking-card h3,
+.st-key-monthly-evolution-card h3,
+.st-key-latest-transactions-card h3,
+.st-key-data-validation-card h3,
+.st-key-period-transactions-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.15rem;
+
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.st-key-expenses-category-card
+[data-testid="stCaptionContainer"],
+.st-key-category-ranking-card
+[data-testid="stCaptionContainer"],
+.st-key-monthly-evolution-card
+[data-testid="stCaptionContainer"],
+.st-key-latest-transactions-card
+[data-testid="stCaptionContainer"],
+.st-key-data-validation-card
+[data-testid="stCaptionContainer"],
+.st-key-period-transactions-card
+[data-testid="stCaptionContainer"] {
+    margin-bottom: 0.45rem;
+}
+
+
+/* Gráficos Altair */
+
+.st-key-expenses-category-card
+[data-testid="stVegaLiteChart"],
+.st-key-monthly-evolution-card
+[data-testid="stVegaLiteChart"] {
+    margin-top: 0.25rem;
+}
+
+.st-key-expenses-category-card
+.vega-embed,
+.st-key-monthly-evolution-card
+.vega-embed {
+    width: 100%;
+}
+
+
+/* Ranking */
+
+.finantec-ranking-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 0.55rem;
+
+    margin-top: 0.45rem;
+    padding-bottom: 0.7rem;
+}
+
+.finantec-ranking-item {
+    display: grid;
+
+    grid-template-columns:
+        34px
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 0.7rem;
+    min-height: 48px;
+    padding: 0.65rem 0.75rem;
+
+    background: var(--bg-deep);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.finantec-ranking-item:hover {
+    background: var(--bg-panel-soft);
+    border-color: var(--border-light);
+}
+
+.finantec-ranking-position {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+
+    color: var(--text-muted);
+
+    background: var(--bg-elevated);
+
+    border-radius: 8px;
+
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.finantec-ranking-item.top-one {
+    border-color: var(--accent-line);
+}
+
+.finantec-ranking-item.top-one
+.finantec-ranking-position {
+    color: #ffffff;
+    background: var(--accent-active);
+}
+
+.finantec-ranking-category {
+    min-width: 0;
+
+    color: var(--text-soft);
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.finantec-ranking-value {
+    color: var(--text-main);
+
+    font-size: 0.9rem;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+/* =========================================================
+   RESUMO LOCAL
+   ========================================================= */
+
+.finantec-section-heading {
+    margin: 1.5rem 0 0.85rem;
+}
+
+.finantec-section-heading h3 {
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.finantec-section-heading p {
+    margin: 0.35rem 0 0;
+
+    color: var(--text-muted);
+
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.finantec-data-summary-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(190px, 1fr)
+    );
+
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.finantec-data-summary-card {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 132px;
+    padding: 1.1rem 1.2rem;
+
+    background: var(--bg-panel);
+
+    border: 1px solid var(--border);
+    border-top:
+        3px solid
+        var(--border-light);
+
+    border-radius: var(--radius);
+}
+
+.finantec-data-summary-label {
+    color: var(--text-muted);
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.finantec-data-summary-value {
+    margin: 0.7rem 0 0.45rem;
+
+    color: var(--text-main);
+
+    font-size: 1.65rem;
+    line-height: 1.1;
+    font-weight: 800;
+}
+
+.finantec-data-summary-value.available {
+    color: var(--success);
+}
+
+.finantec-data-summary-value.unavailable {
+    color: var(--text-muted);
+}
+
+.finantec-data-summary-description {
+    margin-top: auto;
+
+    color: var(--text-muted);
+
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+/* =========================================================
+   AÇÕES DE DADOS E ARQUIVOS
+   ========================================================= */
+
+.st-key-user-data-action-card,
+.st-key-demo-data-action-card {
+    margin-bottom: 1rem;
+}
+
+.st-key-user-data-action-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-demo-data-action-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 1.1rem 1.2rem !important;
+}
+
+.st-key-user-data-action-card h4,
+.st-key-demo-data-action-card h4 {
+    margin-top: 0;
+}
+
+.st-key-use-user-data
+button,
+.st-key-load-demo-data
+button,
+.st-key-confirm-transaction-import
+button {
+    width: auto !important;
+    min-width: 180px;
+}
+
+.st-key-file-downloads
+[data-testid="stHorizontalBlock"] {
+    gap: 0.75rem;
+}
+
+/* =========================================================
+   AÇÕES DA ENTRADA MANUAL
+   ========================================================= */
+
+/* Card do formulário manual */
+
+.st-key-manual-entry-card {
+    margin-bottom: 1.25rem;
+}
+
+.st-key-manual-entry-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 1.15rem 1.2rem !important;
+
+    background: var(--bg-panel);
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius: var(--radius);
+}
+
+.st-key-manual-entry-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.35rem;
+}
+
+.st-key-manual-entry-card
+[data-testid="stForm"] {
+    padding-bottom: 0 !important;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button {
+    width: auto !important;
+    min-width: 170px;
+}
+
+/* Ação principal do formulário manual */
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background: var(--accent-active) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent) !important;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent-hover) !important;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span,
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) svg {
+    color: #ffffff !important;
+    fill: currentColor !important;
+}
+
+.st-key-manual-actions {
+    margin-top: 0.25rem;
+}
+
+.st-key-manual-actions
+[data-testid="stHorizontalBlock"] {
+    gap: 0.75rem;
+}
+
+.st-key-manual-actions
+.stButton > button {
+    width: 100% !important;
+}
+
+.st-key-manual-clear-all {
+    margin-top: 0.75rem;
+}
+
+.st-key-manual-clear-all
+button:not(:disabled) {
+    background: transparent !important;
+    color: #fca5a5 !important;
+
+    border-color: #7f1d1d !important;
+}
+
+.st-key-manual-clear-all
+button:not(:disabled):hover {
+    background:
+        rgba(239, 68, 68, 0.10) !important;
+
+    color: #fecaca !important;
+
+    border-color: var(--danger) !important;
+}
+
+
+/* Ações dos cartões */
+
+[class*="st-key-edit_manual_"]
+button:not(:disabled) {
+    background: #202226 !important;
+    color: var(--text-main) !important;
+
+    border-color: var(--border-strong) !important;
+}
+
+[class*="st-key-edit_manual_"]
+button:not(:disabled):hover {
+    background: var(--bg-hover) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent) !important;
+}
+
+[class*="st-key-delete_manual_"]
+button:not(:disabled) {
+    background:
+        rgba(239, 68, 68, 0.06) !important;
+
+    color: #fca5a5 !important;
+
+    border-color: #7f1d1d !important;
+}
+
+[class*="st-key-delete_manual_"]
+button:not(:disabled):hover {
+    background:
+        rgba(239, 68, 68, 0.14) !important;
+
+    color: #fecaca !important;
+
+    border-color: var(--danger) !important;
+}
+
+/* =========================================================
+   GERENCIAMENTO DE TRANSAÇÕES PERSISTIDAS
+   ========================================================= */
+
+.st-key-persisted-transaction-management {
+    margin-top: 1rem;
+}
+
+.st-key-persisted-transaction-management
+[data-testid="stExpander"] {
+    border-color:
+        var(--border-light) !important;
+}
+
+.st-key-persisted-transaction-management
+[data-testid="stExpander"]
+[data-testid="stAlert"] {
+    margin-top: 0.75rem;
+}
+
+
+/* Ação destrutiva habilitada */
+
+[class*="st-key-delete-persisted-transaction-"]
+button:not(:disabled) {
+    min-width: 180px;
+
+    background: #b91c1c !important;
+    color: #ffffff !important;
+
+    border-color:
+        var(--danger) !important;
+}
+
+[class*="st-key-delete-persisted-transaction-"]
+button:not(:disabled):hover {
+    background: #dc2626 !important;
+
+    border-color:
+        #f87171 !important;
+}
+
+
+/* Ação destrutiva bloqueada */
+
+[class*="st-key-delete-persisted-transaction-"]
+button:disabled {
+    background:
+        rgba(127, 29, 29, 0.10) !important;
+
+    color: #86585d !important;
+
+    border-color:
+        rgba(127, 29, 29, 0.50) !important;
+}
+
+
+/* =========================================================
+   ZONA DE RISCO
+   ========================================================= */
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] {
+    background: var(--danger-bg) !important;
+
+    border:
+        1px solid
+        var(--danger-border) !important;
+
+    border-radius: var(--radius) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary {
+    background: var(--danger-surface) !important;
+    color: #fecaca !important;
+
+    border-bottom-color:
+        rgba(239, 68, 68, 0.30) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary:hover {
+    background:
+        rgba(127, 29, 29, 0.28) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary p,
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary span,
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"] summary svg {
+    color: #fecaca !important;
+    fill: currentColor !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stAlert"] {
+    padding: 1rem 1.1rem !important;
+
+    background:
+        var(--danger-surface-strong) !important;
+
+    border:
+        1px solid
+        var(--danger-border) !important;
+
+    border-left:
+        5px solid
+        var(--danger) !important;
+
+    border-radius: 12px !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stAlert"] p,
+.st-key-danger-zone-wrapper
+[data-testid="stAlert"] span {
+    color: #fee2e2 !important;
+
+    font-size: 0.94rem !important;
+    font-weight: 600 !important;
+    line-height: 1.55 !important;
+}
+
+.st-key-danger-zone-wrapper
+.stTextInput input {
+    background: #160d0f !important;
+    color: #fee2e2 !important;
+
+    border-color: var(--danger-border) !important;
+}
+
+.st-key-danger-zone-wrapper
+.stTextInput input::placeholder {
+    color: #9f6a70 !important;
+}
+
+.st-key-danger-zone-wrapper
+.stTextInput input:focus {
+    border-color: var(--danger) !important;
+
+    outline:
+        2px solid
+        rgba(239, 68, 68, 0.28) !important;
+}
+
+
+/* Botão destrutivo habilitado */
+
+.st-key-danger-zone-wrapper
+.st-key-delete-all-user-data
+button:not(:disabled),
+.st-key-delete-all-user-data
+button:not(:disabled) {
+    background: #b91c1c !important;
+    color: #ffffff !important;
+
+    border-color: var(--danger) !important;
+}
+
+.st-key-danger-zone-wrapper
+.st-key-delete-all-user-data
+button:not(:disabled):hover,
+.st-key-delete-all-user-data
+button:not(:disabled):hover {
+    background: #dc2626 !important;
+    border-color: #f87171 !important;
+}
+
+
+/* Botão destrutivo bloqueado */
+
+.st-key-danger-zone-wrapper
+.st-key-delete-all-user-data
+button:disabled,
+.st-key-delete-all-user-data
+button:disabled {
+    background:
+        rgba(127, 29, 29, 0.10) !important;
+
+    color: #86585d !important;
+
+    border-color:
+        rgba(127, 29, 29, 0.50) !important;
+}
+
+
+/* =========================================================
+   DIVISORES
+   ========================================================= */
+
+hr {
+    margin: 2rem 0;
+
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* =========================================================
+   ESPAÇAMENTO ENTRE SEÇÕES
+   ========================================================= */
+
+.st-key-dashboard-summary-section,
+.st-key-dashboard-diagnosis-section,
+.st-key-dashboard-metrics-section,
+.st-key-dashboard-categories-section,
+.st-key-dashboard-evolution-section,
+.st-key-transactions-validation-section {
+    margin-bottom: 2rem;
+}
+
+.st-key-dashboard-latest-section,
+.st-key-transactions-period-section {
+    margin-bottom: 0;
+}

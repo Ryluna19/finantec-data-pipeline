@@ -1,0 +1,277 @@
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    [data-testid="stMainBlockContainer"] {
+        padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .finantec-mini-grid,
+    .finantec-diagnosis-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-balance-panel,
+    .finantec-mini-card {
+        min-height: auto;
+    }
+
+    .finantec-mini-value,
+    .finantec-stat-value {
+        font-size: 1.8rem !important;
+    }
+
+    .stButton > button,
+    .stDownloadButton > button,
+    [data-testid="stFormSubmitButton"] > button {
+        width: 100% !important;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .stTabs
+    [data-baseweb="tab-list"]::-webkit-scrollbar {
+        display: none;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        flex-shrink: 0;
+    }
+  .finantec-goal-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+}
+
+
+@media (max-width: 700px) {
+    [data-testid="stMetric"] {
+        min-height: 96px !important;
+        padding: 0.8rem 0.9rem !important;
+
+        border-radius: 14px !important;
+    }
+
+    [data-testid="stMetricLabel"] {
+        font-size: 0.82rem !important;
+        line-height: 1.3 !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 1.7rem !important;
+        line-height: 1.05 !important;
+    }
+
+    [data-testid="stMetricDelta"] {
+        font-size: 0.8rem !important;
+    }
+
+    .st-key-manual-actions
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+
+    .st-key-manual-actions
+    [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+      [class*="st-key-manual-transaction-card-"]
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.85rem !important;
+    }
+
+    [class*="st-key-manual-transaction-card-"]
+    h3 {
+        font-size: 1.3rem;
+    }
+        .st-key-expenses-category-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-category-ranking-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-monthly-evolution-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-latest-transactions-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-data-validation-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-period-transactions-card
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.9rem !important;
+    }
+
+    .finantec-ranking-item {
+        grid-template-columns:
+            30px
+            minmax(0, 1fr)
+            auto;
+
+        gap: 0.55rem;
+        padding: 0.6rem;
+    }
+
+    .finantec-ranking-position {
+        width: 26px;
+        height: 26px;
+    }
+
+    .finantec-ranking-category,
+    .finantec-ranking-value {
+        font-size: 0.84rem;
+    }
+      .st-key-dashboard-summary-section,
+    .st-key-dashboard-diagnosis-section,
+    .st-key-dashboard-metrics-section,
+    .st-key-dashboard-categories-section,
+    .st-key-dashboard-evolution-section,
+    .st-key-transactions-validation-section {
+        margin-bottom: 1.5rem;
+    }
+}
+
+
+@media (max-width: 560px) {
+  [class*="st-key-delete-persisted-transaction-"]
+    button {
+        width: 100% !important;
+        min-width: 0;
+    }
+    [data-testid="stMainBlockContainer"] {
+        padding: 4rem 0.8rem 2.5rem;
+    }
+
+    .finantec-brand-header {
+        margin-bottom: 0.55rem;
+    }
+
+    .finantec-brand-title-row {
+        gap: 0.65rem;
+    }
+
+    .finantec-brand-icon {
+        width: 40px;
+        height: 40px;
+
+        border-radius: 11px;
+    }
+
+    .finantec-brand-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .finantec-brand-eyebrow,
+    .finantec-brand-description {
+        display: none;
+    }
+
+    .finantec-brand-title-row h1 {
+        font-size: 1.65rem;
+    }
+
+    .finantec-brand-header::after {
+        width: 34px;
+        margin-top: 0.55rem;
+    }
+
+    .finantec-alert {
+        margin: 0.5rem 0;
+        padding: 0.65rem 0.75rem;
+
+        border-radius: 10px !important;
+
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.55rem;
+    }
+
+    .finantec-balance-panel,
+    .finantec-mini-card,
+    .finantec-diagnosis-panel,
+    .finantec-stat-card {
+        border-radius: 14px;
+    }
+
+    .finantec-balance-panel {
+        padding: 1.2rem;
+    }
+
+    .finantec-balance-value {
+        font-size: 2.35rem;
+    }
+
+    .finantec-data-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-data-summary-card {
+        min-height: auto;
+    }
+
+    .finantec-table {
+        min-width: 620px;
+    }
+
+    .finantec-table-panel {
+        overflow-x: auto;
+    }
+      .finantec-goal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-goal-card {
+        min-height: auto;
+        padding: 1rem;
+    }
+
+    .finantec-goal-value {
+        font-size: 1.55rem;
+    }
+
+    .finantec-goal-progress-panel {
+        padding: 1rem;
+    }
+
+    .finantec-goal-progress-header {
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .finantec-goal-progress-header strong {
+        white-space: normal;
+    }
+
+    .finantec-goal-progress-footer {
+        align-items: flex-start;
+        flex-direction: column;
+
+        gap: 0.25rem;
+    }
+
+        .st-key-manual-entry-card
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 1rem !important;
+    }
+
+    .st-key-manual-entry-card
+    [data-testid="stFormSubmitButton"]
+    button {
+        width: 100% !important;
+        min-width: 0;
+    }
+}

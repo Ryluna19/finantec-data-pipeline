@@ -1,0 +1,1307 @@
+/* =========================================================
+   APARÊNCIA E PALETAS
+   ========================================================= */
+
+.finantec-visual-marker {
+    display: none;
+}
+
+
+/* =========================================================
+   TEMA ESCURO — BASE PRINCIPAL
+   ========================================================= */
+
+:root:has(.finantec-theme-dark) {
+    color-scheme: dark;
+
+    --bg-main: #111111;
+    --bg-sidebar: #161616;
+
+    --bg-panel: #1c1c1e;
+    --bg-panel-2: #1f1f22;
+    --bg-panel-soft: #242426;
+    --bg-elevated: #2a2a2d;
+    --bg-hover: #303034;
+    --bg-deep: #151517;
+
+    --bg-table-head: #1c1c1e;
+    --bg-table-row: #151517;
+    --bg-table-row-alt: #19191b;
+    --bg-table-hover: #242426;
+
+    --border: rgba(255, 255, 255, 0.07);
+    --border-light: #35353a;
+    --border-strong: #4a4a50;
+
+    --text: #f0f0f0;
+    --text-main: #f0f0f0;
+    --text-soft: #c7c7cc;
+    --text-muted: #888888;
+    --text-disabled: #5d5d63;
+
+    --success: #4ade80;
+    --green: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.10);
+
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.10);
+
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.10);
+
+    --info: #8b8b94;
+    --info-soft: rgba(139, 139, 148, 0.10);
+
+    --danger-bg: #160d0f;
+    --danger-surface: rgba(127, 29, 29, 0.18);
+    --danger-surface-strong: rgba(127, 29, 29, 0.26);
+    --danger-border: rgba(248, 113, 113, 0.48);
+
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 12px;
+
+    --shadow: none;
+    --shadow-soft: none;
+}
+
+
+/* Escuro + laranja */
+
+:root:has(
+    .finantec-theme-dark.finantec-accent-orange
+) {
+    --orange: #e06c1a;
+
+    --accent: #e06c1a;
+    --accent-hover: #ef7d2e;
+    --accent-active: #c45810;
+
+    --accent-soft: rgba(224, 108, 26, 0.11);
+    --accent-line: rgba(224, 108, 26, 0.32);
+    --accent-focus: rgba(224, 108, 26, 0.30);
+    --accent-glow: rgba(224, 108, 26, 0.045);
+}
+
+
+/* Escuro + azul */
+
+:root:has(
+    .finantec-theme-dark.finantec-accent-blue
+) {
+    --accent: #60a5fa;
+    --accent-hover: #93c5fd;
+    --accent-active: #3b82f6;
+
+    --accent-soft: rgba(96, 165, 250, 0.11);
+    --accent-line: rgba(96, 165, 250, 0.32);
+    --accent-focus: rgba(96, 165, 250, 0.30);
+    --accent-glow: rgba(96, 165, 250, 0.045);
+}
+
+
+/* Escuro + verde */
+
+:root:has(
+    .finantec-theme-dark.finantec-accent-green
+) {
+    --accent: #4ade80;
+    --accent-hover: #86efac;
+    --accent-active: #22c55e;
+
+    --accent-soft: rgba(74, 222, 128, 0.11);
+    --accent-line: rgba(74, 222, 128, 0.32);
+    --accent-focus: rgba(74, 222, 128, 0.30);
+    --accent-glow: rgba(74, 222, 128, 0.045);
+}
+
+
+/* =========================================================
+   TEMA CLARO QUENTE
+   ========================================================= */
+
+:root:has(.finantec-theme-light) {
+    color-scheme: light;
+
+    --bg-main: #f5efe8;
+    --bg-sidebar: #161616;
+
+    --bg-panel: #fffdf9;
+    --bg-panel-2: #fffaf5;
+    --bg-panel-soft: #f4ebe2;
+    --bg-elevated: #e8dfd5;
+    --bg-hover: #fef6f0;
+    --bg-deep: #fbf7f2;
+
+    --bg-table-head: #f7f1ea;
+    --bg-table-row: #fffdf9;
+    --bg-table-row-alt: #fbf7f2;
+    --bg-table-hover: #fef6f0;
+
+    --border: #ebe5df;
+    --border-light: #ddd0c4;
+    --border-strong: #c5b3a3;
+
+    --text: #1a1a1a;
+    --text-main: #1a1a1a;
+    --text-soft: #6b5e52;
+    --text-muted: #8f8072;
+    --text-disabled: #b0a49a;
+
+    --orange: #c45810;
+
+    --green: #1a7c45;
+    --success: #1a7c45;
+    --success-soft: #f0faf4;
+
+    --danger: #b83232;
+    --danger-soft: #fef5f5;
+    --danger-bg: #fffafa;
+    --danger-surface: rgba(254, 226, 226, 0.72);
+    --danger-surface-strong: rgba(254, 202, 202, 0.58);
+    --danger-border: rgba(184, 50, 50, 0.42);
+
+    --warning: #b8750d;
+    --warning-soft: #fff8e7;
+
+    --info: #64748b;
+    --info-soft: #f1f5f9;
+
+    --shadow:
+        0 1px 3px rgba(45, 38, 33, 0.05);
+
+    --shadow-soft:
+        0 8px 24px rgba(45, 38, 33, 0.06);
+}
+
+
+/* Tons de destaque apropriados para fundo claro */
+
+:root:has(
+    .finantec-theme-light.finantec-accent-orange
+) {
+    --accent: #c45810;
+    --accent-hover: #d6671b;
+    --accent-active: #a34408;
+
+    --accent-soft: rgba(196, 88, 16, 0.10);
+    --accent-line: rgba(196, 88, 16, 0.28);
+    --accent-focus: rgba(196, 88, 16, 0.22);
+    --accent-glow: rgba(196, 88, 16, 0.07);
+}
+
+:root:has(
+    .finantec-theme-light.finantec-accent-blue
+) {
+    --accent: #2563a9;
+    --accent-hover: #3577bf;
+    --accent-active: #1d4f87;
+
+    --accent-soft: rgba(37, 99, 169, 0.10);
+    --accent-line: rgba(37, 99, 169, 0.28);
+    --accent-focus: rgba(37, 99, 169, 0.22);
+    --accent-glow: rgba(37, 99, 169, 0.06);
+}
+
+:root:has(
+    .finantec-theme-light.finantec-accent-green
+) {
+    --accent: #16803c;
+    --accent-hover: #23954c;
+    --accent-active: #11652f;
+
+    --accent-soft: rgba(22, 128, 60, 0.10);
+    --accent-line: rgba(22, 128, 60, 0.28);
+    --accent-focus: rgba(22, 128, 60, 0.22);
+    --accent-glow: rgba(22, 128, 60, 0.06);
+}
+
+
+/* Estrutura principal */
+
+:root:has(.finantec-theme-light)
+[data-testid="stApp"],
+:root:has(.finantec-theme-light)
+[data-testid="stAppViewContainer"],
+:root:has(.finantec-theme-light)
+[data-testid="stMain"] {
+    background:
+        radial-gradient(
+            circle at top center,
+            var(--accent-glow),
+            transparent 36rem
+        ),
+        var(--bg-main) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stHeader"] {
+    background:
+        rgba(255, 253, 249, 0.94) !important;
+
+    border-bottom-color:
+        var(--border) !important;
+}
+
+
+/* Sidebar permanece escura */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] {
+    --bg-panel: #1c1c1e;
+    --bg-panel-2: #202022;
+    --bg-panel-soft: #262628;
+    --bg-elevated: #2c2c2e;
+    --bg-hover: #29292c;
+    --bg-deep: #111111;
+
+    --border: #2b2b2e;
+    --border-light: #3b3b40;
+    --border-strong: #55555c;
+
+    --text-main: #f0f0f0;
+    --text-soft: #c5c5ca;
+    --text-muted: #8d8d94;
+    --text-disabled: #626269;
+
+    background: #161616 !important;
+    color: var(--text-main) !important;
+
+    border-right-color: #2b2b2e !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] p,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] label,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h1,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h2,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h3 {
+    color: var(--text-main) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-testid="stCaptionContainer"] {
+    color: var(--text-muted) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-testid="stExpander"] {
+    background: #1c1c1e !important;
+    border-color: #3b3b40 !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-testid="stExpander"] summary {
+    background: #202022 !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+.stButton > button:not(:disabled) {
+    background: #202226 !important;
+    color: #f4f4f5 !important;
+
+    border-color: #3f3f46 !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+.stButton > button:not(:disabled):hover {
+    background: #292b31 !important;
+    border-color: var(--accent) !important;
+}
+
+
+/* Cards e superfícies principais */
+
+:root:has(.finantec-theme-light)
+.finantec-panel,
+:root:has(.finantec-theme-light)
+.finantec-mini-card,
+:root:has(.finantec-theme-light)
+.finantec-diagnosis-panel,
+:root:has(.finantec-theme-light)
+.finantec-stat-card,
+:root:has(.finantec-theme-light)
+.finantec-chart-panel,
+:root:has(.finantec-theme-light)
+.finantec-table-panel,
+:root:has(.finantec-theme-light)
+.finantec-goal-card,
+:root:has(.finantec-theme-light)
+.finantec-goal-progress-panel,
+:root:has(.finantec-theme-light)
+.finantec-data-summary-card,
+:root:has(.finantec-theme-light)
+[data-testid="stMetric"] {
+    background: var(--bg-panel) !important;
+
+    border-color: var(--border) !important;
+
+    box-shadow: var(--shadow-soft) !important;
+}
+
+
+/* Saldo principal */
+
+:root:has(.finantec-theme-light)
+.finantec-balance-panel.positive {
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(26, 124, 69, 0.08),
+            transparent 42%
+        ),
+        #f0faf4;
+
+    border-color: #bbdfc9;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-balance-panel.negative {
+    background: #fef5f5;
+    border-color: #edcaca;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-balance-panel.neutral {
+    background: var(--bg-panel);
+    border-color: var(--border);
+}
+
+
+/* Diferenciação dos cards financeiros */
+
+:root:has(.finantec-theme-light)
+.finantec-mini-card.receita {
+    border-top:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--success) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-mini-card.consumo {
+    border-top:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--danger) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-mini-card.reserva {
+    border-top:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--orange) !important;
+}
+
+
+/* Textos antes fixados em branco */
+
+:root:has(.finantec-theme-light)
+.finantec-mini-value,
+:root:has(.finantec-theme-light)
+.finantec-diagnosis-title,
+:root:has(.finantec-theme-light)
+.finantec-stat-value,
+:root:has(.finantec-theme-light)
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+.finantec-table tbody td {
+    color: var(--text-main) !important;
+}
+
+
+/* Inputs e selects */
+
+:root:has(.finantec-theme-light)
+.stTextInput input,
+:root:has(.finantec-theme-light)
+.stNumberInput input,
+:root:has(.finantec-theme-light)
+.stDateInput input,
+:root:has(.finantec-theme-light)
+.stTextArea textarea,
+:root:has(.finantec-theme-light)
+[data-baseweb="input"] > div,
+:root:has(.finantec-theme-light)
+[data-baseweb="textarea"] > div,
+:root:has(.finantec-theme-light)
+[data-baseweb="select"] > div {
+    background: #fffdf9 !important;
+    color: var(--text-main) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"],
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"] {
+    background: #fffdf9 !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"] li {
+    color: var(--text-soft) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"] li:hover {
+    background: var(--accent-soft) !important;
+    color: var(--text-main) !important;
+}
+
+
+/* Botões secundários */
+
+:root:has(.finantec-theme-light)
+.stButton > button:not([kind="primary"]):not(:disabled),
+:root:has(.finantec-theme-light)
+.stDownloadButton > button:not(:disabled),
+:root:has(.finantec-theme-light)
+[data-testid="stFormSubmitButton"]
+> button:not([kind="primary"]):not(:disabled) {
+    background: #fffdf9 !important;
+    color: var(--text-main) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+.stButton > button:not([kind="primary"]):not(:disabled):hover,
+:root:has(.finantec-theme-light)
+.stDownloadButton > button:not(:disabled):hover {
+    background: var(--bg-hover) !important;
+    border-color: var(--accent) !important;
+}
+
+:root:has(.finantec-theme-light)
+.stButton > button:disabled,
+:root:has(.finantec-theme-light)
+.stDownloadButton > button:disabled,
+:root:has(.finantec-theme-light)
+[data-testid="stFormSubmitButton"] > button:disabled {
+    background: #f1ebe5 !important;
+    color: var(--text-disabled) !important;
+
+    border-color:
+        var(--border) !important;
+}
+
+
+/* Upload */
+
+:root:has(.finantec-theme-light)
+[data-testid="stFileUploader"] section {
+    background: #fffaf5 !important;
+    border-color: var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stFileUploader"] button {
+    background: #fffdf9 !important;
+    color: var(--text-main) !important;
+}
+
+
+/* Autenticação no tema claro */
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-color: #d9cdc1 !important;
+    box-shadow:
+        0 24px 70px
+        rgba(45, 38, 33, 0.13) !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child {
+    --text-main: #f0f0f0;
+    --text-soft: #c5c5ca;
+    --text-muted: #93939a;
+    --text-disabled: #68686f;
+
+    background:
+        linear-gradient(
+            145deg,
+            var(--accent-soft),
+            transparent 45%
+        ),
+        #161616;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:nth-child(2) {
+    background: #fffdf9;
+}
+
+
+/* =========================================================
+   FUNDO PRINCIPAL
+   ========================================================= */
+
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    background:
+        radial-gradient(
+            circle at top center,
+            var(--accent-glow),
+            transparent 34rem
+        ),
+        var(--bg-main) !important;
+
+    color: var(--text-main);
+}
+
+
+/* Tema claro sem gradiente perceptível */
+
+:root:has(.finantec-theme-light)
+[data-testid="stApp"],
+:root:has(.finantec-theme-light)
+[data-testid="stAppViewContainer"],
+:root:has(.finantec-theme-light)
+[data-testid="stMain"] {
+    background: var(--bg-main) !important;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+[data-testid="stHeader"] {
+    background:
+        rgba(22, 22, 22, 0.97) !important;
+
+    border-bottom:
+        1px solid
+        rgba(255, 255, 255, 0.08);
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stHeader"] button,
+:root:has(.finantec-theme-light)
+[data-testid="stHeader"] span,
+:root:has(.finantec-theme-light)
+[data-testid="stHeader"] svg {
+    color: #f0f0f0 !important;
+    fill: currentColor !important;
+}
+
+
+/* =========================================================
+   SIDEBAR ESCURA NOS DOIS TEMAS
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] {
+    --bg-panel: #1c1c1e;
+    --bg-panel-2: #1f1f22;
+    --bg-panel-soft: #242426;
+    --bg-elevated: #2a2a2d;
+    --bg-hover: #303034;
+    --bg-deep: #151517;
+
+    --border: rgba(255, 255, 255, 0.07);
+    --border-light: #35353a;
+    --border-strong: #4a4a50;
+
+    --text-main: #f0f0f0;
+    --text-soft: #c7c7cc;
+    --text-muted: #94949c;
+    --text-disabled: #64646b;
+
+    background: #161616 !important;
+
+    border-right:
+        1px solid
+        rgba(255, 255, 255, 0.07);
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h1,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h2,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h3,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] h4,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] p,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] label,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-testid="stCaptionContainer"] {
+    color: var(--text-soft) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-baseweb="input"] > div,
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+.stTextInput input {
+    background: #1c1c1e !important;
+    color: #f0f0f0 !important;
+
+    border-color: #35353a !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-baseweb="select"] span {
+    color: #f0f0f0 !important;
+}
+
+
+/* Aparência dentro da sidebar */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-testid="stExpander"] {
+    background: #161616 !important;
+    border-color: #35353a !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+[data-testid="stExpander"] summary {
+    background: #1c1c1e !important;
+    color: #f0f0f0 !important;
+}
+
+
+/* =========================================================
+   INPUTS E SELECTS NO CONTEÚDO CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.stTextInput input,
+:root:has(.finantec-theme-light)
+.stNumberInput input,
+:root:has(.finantec-theme-light)
+.stDateInput input,
+:root:has(.finantec-theme-light)
+.stTextArea textarea,
+:root:has(.finantec-theme-light)
+[data-baseweb="input"] > div,
+:root:has(.finantec-theme-light)
+[data-baseweb="textarea"] > div,
+:root:has(.finantec-theme-light)
+[data-baseweb="select"] > div {
+    background: #ffffff !important;
+    color: var(--text-main) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[data-baseweb="select"] input {
+    color: var(--text-main) !important;
+}
+
+:root:has(.finantec-theme-light)
+.stTextInput input::placeholder,
+:root:has(.finantec-theme-light)
+.stNumberInput input::placeholder,
+:root:has(.finantec-theme-light)
+.stDateInput input::placeholder,
+:root:has(.finantec-theme-light)
+.stTextArea textarea::placeholder {
+    color: var(--text-disabled) !important;
+}
+
+:root:has(.finantec-theme-light)
+.stNumberInput button {
+    background: var(--bg-panel-soft) !important;
+    color: var(--text-soft) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+
+/* Menus suspensos */
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"],
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"] {
+    background: #ffffff !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"] li {
+    color: var(--text-soft) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"] li:hover {
+    background: var(--accent-soft) !important;
+    color: var(--text-main) !important;
+}
+
+
+/* Foco dos campos */
+
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stDateInput input:focus,
+.stTextArea textarea:focus,
+[data-baseweb="input"] > div:focus-within,
+[data-baseweb="textarea"] > div:focus-within,
+[data-baseweb="select"] > div:focus-within {
+    border-color: var(--accent) !important;
+
+    outline:
+        2px solid
+        var(--accent-focus) !important;
+}
+
+
+/* =========================================================
+   BOTÕES
+   ========================================================= */
+
+/* Secundários no tema claro */
+
+:root:has(.finantec-theme-light)
+.stButton > button:not([kind="primary"]):not(:disabled),
+:root:has(.finantec-theme-light)
+.stDownloadButton > button:not(:disabled),
+:root:has(.finantec-theme-light)
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled),
+:root:has(.finantec-theme-light)
+[data-testid="stFileUploader"]
+button:not(:disabled) {
+    background: transparent !important;
+    color: var(--text-main) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+.stButton > button:not([kind="primary"]):not(:disabled):hover,
+:root:has(.finantec-theme-light)
+.stDownloadButton > button:not(:disabled):hover,
+:root:has(.finantec-theme-light)
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled):hover {
+    background: var(--accent-soft) !important;
+    color: var(--text-main) !important;
+
+    border-color: var(--accent) !important;
+}
+
+
+/* Primários */
+
+button[kind="primary"]:not(:disabled),
+button[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+
+    border-color:
+        var(--accent) !important;
+}
+
+button[kind="primary"]:not(:disabled):hover,
+button[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background: var(--accent-hover) !important;
+
+    border-color:
+        var(--accent-hover) !important;
+}
+
+
+/* Desabilitados no claro */
+
+:root:has(.finantec-theme-light)
+.stButton > button:disabled,
+:root:has(.finantec-theme-light)
+.stDownloadButton > button:disabled,
+:root:has(.finantec-theme-light)
+[data-testid="stFormSubmitButton"] > button:disabled {
+    background: #eee7df !important;
+    color: var(--text-disabled) !important;
+
+    border-color:
+        var(--border) !important;
+}
+
+
+/* Foco */
+
+.stButton > button:focus-visible,
+.stDownloadButton > button:focus-visible,
+[data-testid="stFormSubmitButton"] > button:focus-visible {
+    outline:
+        2px solid
+        var(--accent-focus) !important;
+}
+
+
+/* =========================================================
+   CARDS E PAINÉIS CLAROS
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.finantec-panel,
+:root:has(.finantec-theme-light)
+.finantec-balance-panel,
+:root:has(.finantec-theme-light)
+.finantec-mini-card,
+:root:has(.finantec-theme-light)
+.finantec-diagnosis-panel,
+:root:has(.finantec-theme-light)
+.finantec-stat-card,
+:root:has(.finantec-theme-light)
+.finantec-chart-panel,
+:root:has(.finantec-theme-light)
+.finantec-table-panel,
+:root:has(.finantec-theme-light)
+.finantec-goal-card,
+:root:has(.finantec-theme-light)
+.finantec-goal-progress-panel,
+:root:has(.finantec-theme-light)
+.finantec-data-summary-card {
+    background: #ffffff !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    box-shadow:
+        var(--shadow-soft) !important;
+}
+
+
+/* Saldo principal */
+
+:root:has(.finantec-theme-light)
+.finantec-balance-panel.positive {
+    background:
+        #f0faf4 !important;
+
+    border-color:
+        #bbdfc9 !important;
+
+    box-shadow: none !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-balance-panel.negative {
+    background:
+        #fef5f5 !important;
+
+    border-color:
+        #edcaca !important;
+
+    box-shadow: none !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-balance-panel.neutral {
+    background:
+        #ffffff !important;
+}
+
+
+/* Cards semânticos */
+
+:root:has(.finantec-theme-light)
+.finantec-mini-card.receita {
+    border-top-color:
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--success) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-mini-card.consumo {
+    border-top-color:
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--danger) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-mini-card.reserva {
+    border-top-color:
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--accent) !important;
+}
+
+
+/* Métricas nativas */
+
+:root:has(.finantec-theme-light)
+[data-testid="stMetric"] {
+    background: #ffffff !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    box-shadow:
+        var(--shadow-soft) !important;
+}
+
+
+/* =========================================================
+   CORREÇÃO DE TEXTOS FIXADOS EM CORES ESCURAS
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.finantec-balance-label,
+:root:has(.finantec-theme-light)
+.finantec-mini-title,
+:root:has(.finantec-theme-light)
+.finantec-stat-title,
+:root:has(.finantec-theme-light)
+.finantec-goal-label,
+:root:has(.finantec-theme-light)
+.finantec-data-summary-label {
+    color: var(--text-muted) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-mini-value,
+:root:has(.finantec-theme-light)
+.finantec-diagnosis-title,
+:root:has(.finantec-theme-light)
+.finantec-stat-value,
+:root:has(.finantec-theme-light)
+.finantec-bar-label,
+:root:has(.finantec-theme-light)
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+.finantec-table tbody td {
+    color: var(--text-main) !important;
+}
+
+
+/* =========================================================
+   EXPANDERS E ALERTAS CLAROS
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+[data-testid="stExpander"] {
+    background: #ffffff !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stExpander"] summary {
+    background: #fffdf9 !important;
+    color: var(--text-main) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stAlert"],
+:root:has(.finantec-theme-light)
+[data-baseweb="notification"],
+:root:has(.finantec-theme-light)
+.finantec-alert {
+    background: #ffffff !important;
+    color: var(--text-soft) !important;
+
+    border-color:
+        var(--border) !important;
+}
+
+
+/* =========================================================
+   TABELAS E UPLOAD
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+[data-testid="stDataFrame"],
+:root:has(.finantec-theme-light)
+[data-testid="stDataEditor"] {
+    background: #ffffff !important;
+
+    border-color:
+        var(--border) !important;
+
+    box-shadow:
+        var(--shadow-soft) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stFileUploader"] section {
+    background: #fffdf9 !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stFileUploader"] button {
+    background: #ffffff !important;
+}
+
+
+/* =========================================================
+   LOGIN NO TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(196, 88, 16, 0.16),
+            transparent 48%
+        ),
+        #161616;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child
+.finantec-auth-product-name,
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child
+.finantec-auth-brand-copy h1,
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child
+.finantec-auth-benefit strong {
+    color: #f0f0f0 !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child
+.finantec-auth-brand-copy p,
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child
+.finantec-auth-benefit p {
+    color: #a8a8ae !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:nth-child(2) {
+    background: #ffffff;
+}
+
+
+/* =========================================================
+   BARRAS DE PROGRESSO
+   ========================================================= */
+
+.finantec-goal-progress-fill,
+.finantec-bar-fill:not(.expense):not(.green) {
+    background:
+        var(--accent) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-bar-track,
+:root:has(.finantec-theme-light)
+.finantec-goal-progress-track {
+    background: #e8dfd5 !important;
+
+    border-color:
+        var(--border) !important;
+}
+
+/* =========================================================
+   CONTROLE GLOBAL DE APARÊNCIA
+   ========================================================= */
+
+.st-key-finantec-auth-toolbar,
+.st-key-finantec-page-toolbar {
+    position: relative;
+    z-index: 20;
+}
+
+.st-key-finantec-auth-toolbar {
+    margin:
+        0
+        0
+        0.65rem;
+}
+
+.st-key-finantec-page-toolbar {
+    margin:
+        0
+        0
+        0.4rem;
+}
+
+.st-key-finantec-auth-toolbar
+> [data-testid="stVerticalBlock"],
+.st-key-finantec-page-toolbar
+> [data-testid="stVerticalBlock"] {
+    gap: 0;
+
+    align-items: flex-end;
+}
+
+.st-key-finantec-auth-toolbar
+[data-testid="stPopover"],
+.st-key-finantec-page-toolbar
+[data-testid="stPopover"],
+.st-key-finantec-appearance-popover {
+    width: fit-content !important;
+
+    align-self: flex-end;
+}
+
+.st-key-finantec-appearance-popover
+button {
+    width: auto !important;
+    min-height: 34px !important;
+
+    padding:
+        0.4rem
+        0.75rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    color:
+        var(--text-muted) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        999px !important;
+
+    font-size:
+        0.76rem !important;
+
+    font-weight:
+        600 !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-finantec-appearance-popover
+button:hover {
+    background:
+        var(--accent-soft) !important;
+
+    color:
+        var(--accent) !important;
+
+    border-color:
+        var(--accent-line) !important;
+}
+
+.st-key-finantec-appearance-popover
+button:focus-visible {
+    outline:
+        2px solid
+        var(--accent-focus) !important;
+
+    outline-offset:
+        2px;
+}
+
+
+/* Login */
+
+body:has(.finantec-auth-page-marker)
+.st-key-finantec-auth-toolbar {
+    width: 100%;
+    max-width: 1100px;
+
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* Aplicativo autenticado */
+
+.st-key-finantec-page-toolbar {
+    width: 100%;
+}
+
+
+/* Mobile */
+
+@media (max-width: 640px) {
+    body:has(.finantec-auth-page-marker)
+    .st-key-finantec-auth-toolbar {
+        padding:
+            0
+            0.25rem;
+
+        margin-bottom:
+            0.4rem;
+    }
+
+    .st-key-finantec-appearance-popover
+    button {
+        min-height:
+            32px !important;
+
+        padding:
+            0.35rem
+            0.65rem !important;
+    }
+}

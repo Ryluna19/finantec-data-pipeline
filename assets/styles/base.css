@@ -1,0 +1,729 @@
+/* =========================================================
+   ESTRUTURA PRINCIPAL
+   ========================================================= */
+
+html,
+body {
+    background: var(--bg-main);
+    color: var(--text-main);
+}
+
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    background:
+        radial-gradient(
+            circle at top center,
+            rgba(249, 115, 22, 0.035),
+            transparent 34rem
+        ),
+        var(--bg-main) !important;
+
+    color: var(--text-main);
+}
+
+[data-testid="stMainBlockContainer"] {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+}
+
+[data-testid="stHeader"] {
+    background: rgba(9, 9, 11, 0.94) !important;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+}
+
+[data-testid="stToolbar"] {
+    background: transparent !important;
+}
+
+[data-testid="stSidebar"] {
+    background: var(--bg-sidebar) !important;
+    border-right: 1px solid var(--border);
+}
+
+[data-testid="stSidebarContent"] {
+    background: transparent;
+}
+
+
+/* =========================================================
+   TIPOGRAFIA
+   ========================================================= */
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+html,
+body {
+    font-size: 14px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+}
+
+h1 {
+    font-size: 1.875rem;
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+h2 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+p {
+    color: var(--text-soft);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+label {
+    color: var(--text-soft) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+}
+
+small {
+    color: var(--text-muted);
+}
+
+[data-testid="stCaptionContainer"],
+.stCaption {
+    color: var(--text-muted) !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.55 !important;
+}
+
+[data-testid="stMarkdownContainer"] p {
+    line-height: 1.5;
+}
+
+a {
+    color: var(--accent);
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+/* =========================================================
+   CABEÇALHO DA MARCA
+   ========================================================= */
+
+.finantec-brand-header {
+    margin-bottom: 1rem;
+}
+
+.finantec-brand-title-row {
+    display: flex;
+    align-items: center;
+
+    gap: 0.9rem;
+}
+
+.finantec-brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 48px;
+    height: 48px;
+
+    color: var(--accent);
+
+    background:
+        rgba(249, 115, 22, 0.08);
+
+    border:
+        1px solid
+        rgba(249, 115, 22, 0.28);
+
+    border-radius: 14px;
+}
+
+.finantec-brand-icon svg {
+    width: 27px;
+    height: 27px;
+
+    stroke: currentColor;
+    stroke-width: 1.7;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.finantec-brand-copy {
+    min-width: 0;
+}
+
+.finantec-brand-eyebrow {
+    margin-bottom: 0.25rem;
+
+    color: var(--text-muted);
+
+    font-size: 0.72rem;
+    line-height: 1.2;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.finantec-brand-title-row h1 {
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size:
+        clamp(
+            1.9rem,
+            3vw,
+            2.5rem
+        );
+
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+}
+
+.finantec-brand-description {
+    max-width: 680px;
+
+    margin: 0.85rem 0 0;
+
+    color: var(--text-muted) !important;
+
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
+}
+
+.finantec-brand-header::after {
+    content: "";
+
+    display: block;
+
+    width: 44px;
+    height: 3px;
+
+    margin-top: 0.9rem;
+
+    background: var(--accent);
+
+    border-radius: 999px;
+}
+
+/* =========================================================
+   ABAS
+   ========================================================= */
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.stTabs [data-baseweb="tab"] {
+    padding: 0.55rem 0 0.65rem;
+    color: var(--text-muted) !important;
+    background: transparent;
+    font-weight: 650;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--text-soft) !important;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    color: var(--text-main) !important;
+}
+
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: var(--accent) !important;
+}
+
+
+/* =========================================================
+   INPUTS E CAMPOS
+   ========================================================= */
+
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea,
+[data-baseweb="input"] > div,
+[data-baseweb="textarea"] > div,
+[data-baseweb="select"] > div {
+    min-height: 42px;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-main) !important;
+
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--radius-sm) !important;
+
+    box-shadow: none !important;
+
+    transition:
+        border-color 140ms ease,
+        background-color 140ms ease,
+        outline-color 140ms ease;
+}
+
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea {
+    color: var(--text-main) !important;
+    caret-color: var(--accent);
+}
+
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder,
+.stDateInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: var(--text-disabled) !important;
+    opacity: 1;
+}
+
+.stTextInput input:hover,
+.stNumberInput input:hover,
+.stDateInput input:hover,
+.stTextArea textarea:hover,
+[data-baseweb="input"] > div:hover,
+[data-baseweb="textarea"] > div:hover,
+[data-baseweb="select"] > div:hover {
+    border-color: var(--border-strong) !important;
+}
+
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stDateInput input:focus,
+.stTextArea textarea:focus,
+[data-baseweb="input"] > div:focus-within,
+[data-baseweb="textarea"] > div:focus-within,
+[data-baseweb="select"] > div:focus-within {
+    border-color: var(--accent) !important;
+
+    outline:
+        2px solid
+        rgba(249, 115, 22, 0.22) !important;
+
+    outline-offset: 1px;
+    box-shadow: none !important;
+}
+
+[data-baseweb="select"] span {
+    color: var(--text-main) !important;
+}
+
+[data-baseweb="popover"] {
+    background: var(--bg-elevated) !important;
+}
+
+[data-baseweb="menu"] {
+    background: var(--bg-elevated) !important;
+
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+
+    box-shadow: none;
+}
+
+[data-baseweb="menu"] li {
+    color: var(--text-soft);
+}
+
+[data-baseweb="menu"] li:hover {
+    background: var(--accent-soft) !important;
+    color: var(--text-main);
+}
+
+.stNumberInput button {
+    background: var(--bg-elevated) !important;
+    color: var(--text-soft) !important;
+
+    border-color: var(--border-light) !important;
+}
+
+.stNumberInput button:hover {
+    color: var(--text-main) !important;
+    border-color: var(--accent) !important;
+}
+
+
+/* =========================================================
+   BOTÕES
+   ========================================================= */
+
+.stButton > button,
+.stDownloadButton > button,
+[data-testid="stFormSubmitButton"] > button,
+[data-testid="stFileUploader"] button {
+    min-height: 44px !important;
+    padding: 0.72rem 1rem !important;
+
+    border-radius: var(--radius-sm) !important;
+
+    font-size: 0.94rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+
+    box-shadow: none !important;
+
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease,
+        transform 140ms ease;
+}
+
+
+/* Botões secundários ativos */
+
+.stButton > button:not([kind="primary"]):not(:disabled),
+.stDownloadButton > button:not(:disabled),
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled),
+[data-testid="stFileUploader"] button:not(:disabled) {
+    background: #202226 !important;
+    color: #f4f4f5 !important;
+
+    border: 1px solid var(--border-strong) !important;
+
+    opacity: 1 !important;
+}
+
+.stButton > button:not([kind="primary"]):not(:disabled):hover,
+.stDownloadButton > button:not(:disabled):hover,
+[data-testid="stFormSubmitButton"]
+    > button:not([kind="primary"]):not(:disabled):hover,
+[data-testid="stFileUploader"] button:not(:disabled):hover {
+    background: var(--bg-hover) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent) !important;
+}
+
+
+/* Botões primários */
+
+button[kind="primary"]:not(:disabled),
+button[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="baseButton-primary"]:not(:disabled),
+[data-testid="stFormSubmitButton"] button:not(:disabled) {
+    background: var(--accent-active) !important;
+    color: #ffffff !important;
+
+    border:
+        1px solid
+        var(--accent) !important;
+
+    box-shadow: none !important;
+}
+
+button[kind="primary"]:not(:disabled):hover,
+button[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="baseButton-primary"]:not(:disabled):hover,
+[data-testid="stFormSubmitButton"] button:not(:disabled):hover {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+
+    border-color: var(--accent-hover) !important;
+}
+
+
+/* Estados de interação */
+
+.stButton > button:focus-visible,
+.stDownloadButton > button:focus-visible,
+[data-testid="stFormSubmitButton"] > button:focus-visible,
+[data-testid="stFileUploader"] button:focus-visible {
+    outline:
+        2px solid
+        rgba(249, 115, 22, 0.42) !important;
+
+    outline-offset: 2px !important;
+}
+
+.stButton > button:active,
+.stDownloadButton > button:active,
+[data-testid="stFormSubmitButton"] > button:active,
+[data-testid="stFileUploader"] button:active {
+    transform: translateY(1px);
+}
+
+
+/* Botões desabilitados */
+
+.stButton > button:disabled,
+.stDownloadButton > button:disabled,
+[data-testid="stFormSubmitButton"] > button:disabled,
+[data-testid="stFileUploader"] button:disabled {
+    background: #121317 !important;
+    color: var(--text-disabled) !important;
+
+    border:
+        1px solid
+        #292a30 !important;
+
+    font-weight: 600 !important;
+
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+
+
+/* Texto e ícones internos */
+
+.stButton > button p,
+.stDownloadButton > button p,
+[data-testid="stFormSubmitButton"] > button p,
+[data-testid="stFileUploader"] button p,
+.stButton > button span,
+.stDownloadButton > button span,
+[data-testid="stFormSubmitButton"] > button span,
+[data-testid="stFileUploader"] button span,
+.stButton > button svg,
+.stDownloadButton > button svg,
+[data-testid="stFormSubmitButton"] > button svg,
+[data-testid="stFileUploader"] button svg {
+    color: inherit !important;
+    fill: currentColor !important;
+
+    font-size: inherit !important;
+    font-weight: inherit !important;
+
+    opacity: 1 !important;
+}
+
+
+/* =========================================================
+   UPLOAD DE ARQUIVOS
+   ========================================================= */
+
+[data-testid="stFileUploader"] section {
+    background: #1a1d24 !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius: 12px !important;
+}
+
+[data-testid="stFileUploader"] button {
+    background: #13161c !important;
+}
+
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] label {
+    color: var(--text-soft) !important;
+}
+
+
+/* =========================================================
+   FORMULÁRIOS, CONTAINERS E EXPANDERS
+   ========================================================= */
+
+[data-testid="stForm"] {
+    padding: 0.35rem 0 0.5rem !important;
+
+    background: transparent !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stForm"]
+[data-testid="stVerticalBlock"] {
+    gap: 0.8rem;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--bg-panel);
+
+    border-color: var(--border) !important;
+    border-radius: var(--radius);
+}
+
+[data-testid="stExpander"] {
+    background: var(--bg-deep) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius: 14px !important;
+
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+    min-height: 48px !important;
+    padding: 0 1rem !important;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-main) !important;
+
+    border-bottom:
+        1px solid
+        transparent !important;
+
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background: var(--bg-panel-soft) !important;
+}
+
+[data-testid="stExpander"]
+details[open]
+summary {
+    border-bottom-color:
+        var(--border-light) !important;
+}
+
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary svg {
+    color: var(--text-main) !important;
+    fill: currentColor !important;
+}
+
+
+/* =========================================================
+   ALERTAS
+   ========================================================= */
+
+[data-testid="stAlert"],
+[data-baseweb="notification"] {
+    min-height: auto !important;
+    padding: 0.85rem 1rem !important;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-soft) !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--border-light) !important;
+
+    border-radius: 12px !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stAlert"] > div,
+[data-baseweb="notification"] > div {
+    background: transparent !important;
+}
+
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] span,
+[data-baseweb="notification"] p,
+[data-baseweb="notification"] span {
+    color: var(--text-soft) !important;
+
+    font-size: 0.92rem !important;
+    line-height: 1.5 !important;
+}
+
+[data-testid="stAlert"][kind="info"],
+[data-baseweb="notification"][kind="info"] {
+    border-left-color: var(--info) !important;
+}
+
+[data-testid="stAlert"][kind="success"],
+[data-baseweb="notification"][kind="success"] {
+    border-left-color: var(--success) !important;
+}
+
+[data-testid="stAlert"][kind="warning"],
+[data-baseweb="notification"][kind="warning"] {
+    border-left-color: var(--warning) !important;
+}
+
+[data-testid="stAlert"][kind="error"],
+[data-baseweb="notification"][kind="error"] {
+    border-left-color: var(--danger) !important;
+}
+
+
+/* Alertas HTML personalizados */
+
+.finantec-alert {
+    margin: 0.75rem 0;
+    padding: 0.9rem 1rem;
+
+    background: var(--bg-panel) !important;
+    color: var(--text-soft) !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-left:
+        4px solid
+        var(--border-light) !important;
+
+    border-radius: 12px !important;
+
+    line-height: 1.5;
+
+    box-shadow: none !important;
+}
+
+.finantec-alert.info {
+    border-left-color: var(--info) !important;
+}
+
+.finantec-alert.success {
+    border-left-color: var(--success) !important;
+}
+
+.finantec-alert.warning {
+    border-left-color: var(--warning) !important;
+}
+
+.finantec-alert.error {
+    border-left-color: var(--danger) !important;
+}

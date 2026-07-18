@@ -1,0 +1,39 @@
+/* =========================================================
+   CARTÕES DO RASCUNHO
+   ========================================================= */
+
+[class*="st-key-manual-transaction-card-"] {
+    margin-bottom: 0.75rem;
+}
+
+[class*="st-key-manual-transaction-card-"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--bg-deep);
+
+    border-color: var(--border-light) !important;
+    border-radius: 14px;
+}
+
+[class*="st-key-manual-transaction-card-"]
+[data-testid="stVerticalBlock"] {
+    gap: 0.35rem;
+}
+
+[class*="st-key-manual-transaction-card-"]
+h3 {
+    margin: 0.2rem 0 0;
+
+    font-size: 1.35rem;
+    line-height: 1.15;
+}
+
+[class*="st-key-manual-transaction-card-"]
+[data-testid="stCaptionContainer"] {
+    margin-bottom: 0.15rem;
+}
+
+[class*="st-key-manual-transaction-card-"]
+.stButton > button {
+    min-height: 40px !important;
+    padding: 0.55rem 0.7rem !important;
+}

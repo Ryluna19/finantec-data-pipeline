@@ -1,0 +1,610 @@
+/* =========================================================
+   AUTENTICAÇÃO
+   ========================================================= */
+
+.finantec-auth-page-marker {
+    display: none;
+}
+
+
+/* Página isolada */
+
+body:has(.finantec-auth-page-marker)
+[data-testid="stMainBlockContainer"] {
+    max-width: 1100px;
+
+    padding-top: 5rem;
+    padding-bottom: 4rem;
+}
+
+body:has(.finantec-auth-page-marker)
+[data-testid="stAppViewContainer"] {
+    background:
+        radial-gradient(
+            circle at 18% 18%,
+            var(--accent-soft),
+            transparent 30rem
+        ),
+        radial-gradient(
+            circle at 82% 75%,
+            rgba(255, 255, 255, 0.025),
+            transparent 28rem
+        ),
+        var(--bg-main) !important;
+}
+
+body:has(.finantec-auth-page-marker)
+[data-testid="stSidebar"] {
+    display: none !important;
+}
+
+
+/* Estrutura principal */
+
+.st-key-finantec-auth-shell
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 0 !important;
+
+    background: var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius: 24px !important;
+
+    box-shadow:
+        0 28px 80px
+        rgba(0, 0, 0, 0.28) !important;
+
+    overflow: hidden;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stHorizontalBlock"] {
+    gap: 0 !important;
+    align-items: stretch !important;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stColumn"] {
+    min-width: 0;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:first-child {
+    background:
+        linear-gradient(
+            145deg,
+            var(--accent-soft),
+            transparent 45%
+        ),
+        var(--bg-deep);
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stColumn"]:nth-child(2) {
+    padding:
+        2.8rem
+        3rem
+        2.5rem;
+
+    background: var(--bg-panel);
+}
+
+
+/* Painel da marca */
+
+.finantec-auth-brand {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 610px;
+    height: 100%;
+
+    padding: 3rem;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.finantec-auth-brand::before {
+    content: "";
+
+    position: absolute;
+    right: -110px;
+    bottom: -110px;
+
+    width: 330px;
+    height: 330px;
+
+    background:
+        radial-gradient(
+            circle,
+            var(--accent-soft),
+            transparent 68%
+        );
+
+    border-radius: 999px;
+
+    pointer-events: none;
+}
+
+.finantec-auth-brand-top {
+    display: flex;
+    align-items: center;
+
+    gap: 0.8rem;
+
+    position: relative;
+    z-index: 1;
+}
+
+.finantec-auth-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 46px;
+    height: 46px;
+
+    color: var(--accent);
+
+    background: var(--accent-soft);
+
+    border:
+        1px solid
+        var(--accent-line);
+
+    border-radius: 14px;
+}
+
+.finantec-auth-logo svg {
+    width: 26px;
+    height: 26px;
+
+    stroke: currentColor;
+    stroke-width: 1.7;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.finantec-auth-product-name {
+    color: var(--text-main);
+
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+.finantec-auth-brand-copy {
+    margin-top: 4rem;
+
+    position: relative;
+    z-index: 1;
+}
+
+.finantec-auth-eyebrow,
+.finantec-auth-form-eyebrow {
+    display: block;
+
+    margin-bottom: 0.75rem;
+
+    color: var(--accent);
+
+    font-size: 0.72rem;
+    line-height: 1.2;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+}
+
+.finantec-auth-brand-copy h1 {
+    max-width: 440px;
+
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size:
+        clamp(
+            2.3rem,
+            4vw,
+            3.35rem
+        );
+
+    line-height: 1.05;
+    font-weight: 850;
+    letter-spacing: -0.045em;
+}
+
+.finantec-auth-brand-copy > p {
+    max-width: 450px;
+
+    margin: 1.25rem 0 0;
+
+    color: var(--text-muted) !important;
+
+    font-size: 0.98rem !important;
+    line-height: 1.65 !important;
+}
+
+
+/* Benefícios */
+
+.finantec-auth-benefits {
+    display: grid;
+    gap: 0.9rem;
+
+    margin-top: 2.5rem;
+
+    position: relative;
+    z-index: 1;
+}
+
+.finantec-auth-benefit {
+    display: grid;
+
+    grid-template-columns:
+        34px
+        minmax(0, 1fr);
+
+    gap: 0.85rem;
+    align-items: flex-start;
+}
+
+.finantec-auth-benefit-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    height: 32px;
+
+    color: var(--accent);
+
+    background: var(--accent-soft);
+
+    border:
+        1px solid
+        var(--accent-line);
+
+    border-radius: 9px;
+
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.finantec-auth-benefit strong {
+    color: var(--text-main);
+
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.finantec-auth-benefit p {
+    margin: 0.2rem 0 0;
+
+    color: var(--text-muted) !important;
+
+    font-size: 0.8rem !important;
+    line-height: 1.45 !important;
+}
+
+.finantec-auth-local-note {
+    margin: auto 0 0;
+
+    color: var(--text-disabled) !important;
+
+    font-size: 0.75rem !important;
+
+    position: relative;
+    z-index: 1;
+}
+
+
+/* Área dos formulários */
+
+.finantec-auth-form-heading {
+    margin-bottom: 1.8rem;
+}
+
+.finantec-auth-form-heading h2 {
+    margin: 0;
+
+    color: var(--text-main);
+
+    font-size: 1.8rem;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+}
+
+.finantec-auth-form-heading p {
+    margin: 0.6rem 0 0;
+
+    color: var(--text-muted) !important;
+
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+}
+
+.st-key-finantec-auth-shell
+.stTabs
+[data-baseweb="tab-list"] {
+    margin-bottom: 1.4rem;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stForm"] {
+    padding: 0 !important;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stForm"]
+[data-testid="stVerticalBlock"] {
+    gap: 0.95rem;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stFormSubmitButton"] {
+    margin-top: 0.3rem;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stFormSubmitButton"]
+button {
+    min-height: 48px !important;
+}
+
+.st-key-finantec-auth-shell
+[data-testid="stAlert"] {
+    margin-bottom: 1rem;
+}
+
+
+/* Responsividade */
+
+@media (max-width: 850px) {
+    body:has(.finantec-auth-page-marker)
+    [data-testid="stMainBlockContainer"] {
+        max-width: 720px;
+
+        padding-top: 4rem;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .finantec-auth-brand {
+        min-height: auto;
+
+        padding: 2.4rem;
+    }
+
+    .finantec-auth-brand-copy {
+        margin-top: 2.5rem;
+    }
+
+    .finantec-auth-benefits {
+        grid-template-columns:
+            repeat(
+                3,
+                minmax(0, 1fr)
+            );
+    }
+
+    .finantec-auth-benefit {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-auth-local-note {
+        margin-top: 2rem;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stColumn"]:nth-child(2) {
+        padding: 2.4rem;
+    }
+}
+
+
+@media (max-width: 600px) {
+    body:has(.finantec-auth-page-marker)
+    [data-testid="stMainBlockContainer"] {
+        padding:
+            4rem
+            0.75rem
+            2.5rem;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 18px !important;
+    }
+
+    .finantec-auth-brand {
+        padding: 1.6rem;
+    }
+
+    .finantec-auth-brand-copy {
+        margin-top: 2rem;
+    }
+
+    .finantec-auth-brand-copy h1 {
+        font-size: 2rem;
+    }
+
+    .finantec-auth-brand-copy > p {
+        font-size: 0.88rem !important;
+    }
+
+    .finantec-auth-benefits {
+        grid-template-columns: 1fr;
+
+        margin-top: 1.8rem;
+    }
+
+    .finantec-auth-benefit {
+        grid-template-columns:
+            32px
+            minmax(0, 1fr);
+    }
+
+    .finantec-auth-local-note {
+        display: none;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stColumn"]:nth-child(2) {
+        padding:
+            2rem
+            1.4rem;
+    }
+
+    .finantec-auth-form-heading {
+        margin-bottom: 1.3rem;
+    }
+
+    .finantec-auth-form-heading h2 {
+        font-size: 1.55rem;
+    }
+}
+
+/* =========================================================
+   AUTENTICAÇÃO — AJUSTES MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+    body:has(.finantec-auth-page-marker)
+    [data-testid="stMainBlockContainer"] {
+        max-width: 100%;
+
+        padding:
+            4.75rem
+            0.55rem
+            1.5rem !important;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 16px !important;
+    }
+
+    /* Painel de identidade compacto */
+
+    .finantec-auth-brand {
+        min-height: 0;
+
+        padding:
+            1.35rem
+            1.25rem
+            1.5rem;
+    }
+
+    .finantec-auth-brand::before {
+        right: -150px;
+        bottom: -170px;
+    }
+
+    .finantec-auth-brand-top {
+        gap: 0.65rem;
+    }
+
+    .finantec-auth-logo {
+        width: 40px;
+        height: 40px;
+
+        border-radius: 12px;
+    }
+
+    .finantec-auth-logo svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .finantec-auth-product-name {
+        font-size: 1.1rem;
+    }
+
+    .finantec-auth-brand-copy {
+        margin-top: 1.4rem;
+    }
+
+    .finantec-auth-eyebrow {
+        margin-bottom: 0.55rem;
+
+        font-size: 0.65rem;
+    }
+
+    .finantec-auth-brand-copy h1 {
+        max-width: 310px;
+
+        font-size: 1.8rem;
+        line-height: 1.08;
+    }
+
+    /* Informações já disponíveis dentro do aplicativo */
+
+    .finantec-auth-brand-copy > p,
+    .finantec-auth-benefits,
+    .finantec-auth-local-note {
+        display: none;
+    }
+
+    /* Evita título repetido antes das abas e do formulário */
+
+    .finantec-auth-form-heading {
+        display: none;
+    }
+
+    /* Área do formulário */
+
+    .st-key-finantec-auth-shell
+    [data-testid="stColumn"]:nth-child(2) {
+        padding:
+            1.35rem
+            1.15rem
+            1.6rem;
+    }
+
+    .st-key-finantec-auth-shell
+    .stTabs
+    [data-baseweb="tab-list"] {
+        margin-bottom: 1rem;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stForm"]
+    [data-testid="stVerticalBlock"] {
+        gap: 0.8rem;
+    }
+
+    .st-key-finantec-auth-shell h3 {
+        margin-top: 0;
+
+        font-size: 1.35rem;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stFormSubmitButton"]
+    button {
+        min-height: 46px !important;
+    }
+
+    .st-key-finantec-auth-shell
+    [data-testid="stAlert"] {
+        margin-top: 0.75rem;
+        margin-bottom: 0;
+    }
+}
