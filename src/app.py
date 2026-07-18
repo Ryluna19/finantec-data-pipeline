@@ -144,7 +144,9 @@ def select_period(
     transactions: pd.DataFrame,
 ) -> tuple[int, str, pd.DataFrame]:
     """Filtra transações sem bloquear a aplicação quando a base está vazia."""
-    st.sidebar.title("Filtros")
+    st.sidebar.subheader(
+        "Filtros"
+    )
 
     if transactions.empty:
         st.sidebar.info(

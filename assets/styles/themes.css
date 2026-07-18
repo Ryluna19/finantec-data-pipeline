@@ -473,6 +473,39 @@ button:focus-visible {
 }
 
 
+/* Conta da sidebar permanece escura no tema claro */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+.st-key-finantec-sidebar-account
+.stButton > button:not(:disabled) {
+    background:
+        transparent !important;
+
+    color:
+        #c7c7cc !important;
+
+    border-color:
+        #3b3b40 !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"]
+.st-key-finantec-sidebar-account
+.stButton > button:not(:disabled):hover {
+    background:
+        var(--accent-soft) !important;
+
+    color:
+        var(--accent) !important;
+
+    border-color:
+        var(--accent-line) !important;
+}
+
 /* =========================================================
    INPUTS, SELECTS E MENUS NO TEMA CLARO
    ========================================================= */

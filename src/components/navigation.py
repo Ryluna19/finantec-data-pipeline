@@ -87,35 +87,42 @@ def render_user_navigation(
     ).strip()
 
     with st.sidebar:
-        selected_option = st.menu_button(
-            label=name,
-            options=list(
-                SECTION_OPTIONS
-            ),
-            key="finantec-user-menu",
-            icon=(
-                ":material/"
-                "account_circle:"
-            ),
-            type="secondary",
-            width="stretch",
-        )
-
-        if selected_option:
-            selected_section = (
-                SECTION_OPTIONS[
-                    selected_option
-                ]
-            )
-
-            _open_section(
-                selected_section
-            )
-
-        if data_mode == "demo":
+        with st.container(
+            key="finantec-sidebar-navigation",
+        ):
             st.caption(
-                "Modo demonstração"
+                "Navegação"
             )
+
+            selected_option = st.menu_button(
+                label=name,
+                options=list(
+                    SECTION_OPTIONS
+                ),
+                key="finantec-user-menu",
+                icon=(
+                    ":material/"
+                    "account_circle:"
+                ),
+                type="secondary",
+                width="stretch",
+            )
+
+            if selected_option:
+                selected_section = (
+                    SECTION_OPTIONS[
+                        selected_option
+                    ]
+                )
+
+                _open_section(
+                    selected_section
+                )
+
+            if data_mode == "demo":
+                st.caption(
+                    "Modo demonstração ativo"
+                )
 
         st.divider()
 

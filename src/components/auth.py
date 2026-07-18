@@ -450,21 +450,48 @@ def render_account_sidebar(
     account: dict[str, str],
 ) -> None:
     """Exibe a conta atual e as ações globais da sessão."""
-    with st.sidebar:
-        st.caption("Conta atual")
-
-        st.markdown(
-            f"**{account['username']}**"
+    username = str(
+        account.get(
+            "username",
+            "Conta local",
         )
+        or "Conta local"
+    ).strip()
 
-        if st.button(
-            "Sair",
-            key="finantec-logout",
-            use_container_width=True,
+    with st.sidebar:
+        with st.container(
+            key="finantec-sidebar-account",
         ):
-            clear_session_preserving_visual_preferences()
-            st.cache_data.clear()
-            st.rerun()
+            (
+                identity_column,
+                action_column,
+            ) = st.columns(
+                [1.45, 0.85],
+                gap="small",
+            )
+
+            with identity_column:
+                st.caption(
+                    "Conta atual"
+                )
+
+                st.markdown(
+                    f"**{username}**"
+                )
+
+            with action_column:
+                logout_requested = st.button(
+                    "Sair",
+                    key="finantec-logout",
+                    icon=":material/logout:",
+                    type="secondary",
+                    use_container_width=True,
+                )
+
+            if logout_requested:
+                clear_session_preserving_visual_preferences()
+                st.cache_data.clear()
+                st.rerun()
 
         st.divider()
 
