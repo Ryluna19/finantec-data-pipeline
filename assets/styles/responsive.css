@@ -275,3 +275,18 @@
         min-width: 0;
     }
 }
+
+/* Ação principal aparece antes no modal em telas pequenas. */
+@media (max-width: 640px) {
+    div[class*="st-key-quick-transaction-actions"]
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+    }
+
+    div[class*="st-key-quick-transaction-actions"]
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+}

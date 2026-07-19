@@ -62,7 +62,11 @@ from data_loader import (
 )
 from transaction_editor import (
     DATA_REFRESH_REQUESTED_KEY,
-    exibir_editor_transacoes_manuais as render_manual_transaction_editor,
+)
+from components.quick_transaction import (
+    QUICK_TRANSACTION_CANCELLED,
+    QUICK_TRANSACTION_SAVED,
+    render_quick_transaction_form,
 )
 from ui_components import apply_visual_styles
 
@@ -87,6 +91,10 @@ st.set_page_config(
 
 TRANSACTION_ACTION_KEY = (
     "active_transaction_action"
+)
+
+TRANSACTION_FEEDBACK_KEY = (
+    "transaction_action_feedback"
 )
 
 TRANSACTION_ACTION_NEW = "new"
@@ -364,6 +372,108 @@ def _toggle_transaction_action(
     )
 
 
+def _close_transaction_action() -> None:
+    """Fecha a ação secundária atualmente aberta."""
+    st.session_state[
+        TRANSACTION_ACTION_KEY
+    ] = None
+
+
+@st.dialog(
+    "Nova transação",
+    width="medium",
+    on_dismiss=_close_transaction_action,
+)
+def render_new_transaction_dialog() -> None:
+    """Exibe um lançamento único sem deslocar a consulta."""
+    st.caption(
+        "Preencha os dados abaixo para salvar "
+        "uma transação no banco local."
+    )
+
+    result = render_quick_transaction_form()
+
+    if result == QUICK_TRANSACTION_CANCELLED:
+        _close_transaction_action()
+        st.rerun()
+
+    if result != QUICK_TRANSACTION_SAVED:
+        return
+
+    st.session_state[
+        DATA_MODE_KEY
+    ] = "user"
+
+    st.session_state[
+        TRANSACTION_FEEDBACK_KEY
+    ] = (
+        "Transação salva no banco local."
+    )
+
+    load_data.clear()
+    _close_transaction_action()
+    st.rerun()
+
+
+def _render_transaction_import_dialog_content(
+    all_transactions: pd.DataFrame,
+) -> None:
+    """Executa a importação dentro do diálogo."""
+    import_executed = (
+        render_transaction_import(
+            all_transactions
+        )
+    )
+
+    if not import_executed:
+        return
+
+    load_data.clear()
+    st.rerun()
+
+
+@st.dialog(
+    "Importar transações",
+    width="large",
+    on_dismiss=_close_transaction_action,
+)
+def render_transaction_import_dialog(
+    all_transactions: pd.DataFrame,
+) -> None:
+    """Exibe o fluxo de importação sem deslocar a consulta."""
+    _render_transaction_import_dialog_content(
+        all_transactions
+    )
+
+
+def _render_transaction_export_dialog_content(
+    period_transactions: pd.DataFrame,
+) -> None:
+    """Exibe os downloads do período selecionado."""
+    st.caption(
+        "Baixe o modelo ou exporte somente "
+        "as transações do período selecionado."
+    )
+
+    render_transaction_downloads(
+        period_transactions
+    )
+
+
+@st.dialog(
+    "Exportar transações",
+    width="medium",
+    on_dismiss=_close_transaction_action,
+)
+def render_transaction_export_dialog(
+    period_transactions: pd.DataFrame,
+) -> None:
+    """Exibe os downloads sem deslocar a consulta."""
+    _render_transaction_export_dialog_content(
+        period_transactions
+    )
+
+
 def _render_transaction_action_bar() -> str | None:
     """Exibe os comandos da tela e retorna a ação ativa."""
     active_action = (
@@ -443,51 +553,30 @@ def _render_transaction_action_panel(
     active_action: str | None,
     period_transactions: pd.DataFrame,
     all_transactions: pd.DataFrame,
-) -> bool:
+) -> None:
     """Exibe somente o fluxo secundário solicitado."""
     if active_action is None:
-        return False
+        return
 
-    with st.container(
-        border=True,
-        key=(
-            "transaction-action-panel-"
-            f"{active_action}"
-        ),
+    if (
+        active_action
+        == TRANSACTION_ACTION_NEW
     ):
-        if (
-            active_action
-            == TRANSACTION_ACTION_NEW
-        ):
-            render_manual_transaction_editor()
-            return False
+        render_new_transaction_dialog()
+        return
 
-        if (
-            active_action
-            == TRANSACTION_ACTION_IMPORT
-        ):
-            st.markdown(
-                "### Importar transações"
-            )
-
-            return render_transaction_import(
-                all_transactions
-            )
-
-        st.markdown(
-            "### Exportar transações"
+    if (
+        active_action
+        == TRANSACTION_ACTION_IMPORT
+    ):
+        render_transaction_import_dialog(
+            all_transactions
         )
+        return
 
-        st.caption(
-            "Baixe o modelo ou exporte somente "
-            "as transações do período selecionado."
-        )
-
-        render_transaction_downloads(
-            period_transactions
-        )
-
-    return False
+    render_transaction_export_dialog(
+        period_transactions
+    )
 
 
 def render_transactions_tab(
@@ -525,26 +614,25 @@ def render_transactions_tab(
             f"Exibindo transações de {period_label}."
         )
 
+    feedback = st.session_state.pop(
+        TRANSACTION_FEEDBACK_KEY,
+        None,
+    )
+
+    if feedback:
+        st.success(
+            str(
+                feedback
+            )
+        )
+
+    st.markdown(
+        "### Ações"
+    )
+
     active_action = (
         _render_transaction_action_bar()
     )
-
-    file_import_executed = (
-        _render_transaction_action_panel(
-            active_action=active_action,
-            period_transactions=(
-                period_transactions
-            ),
-            all_transactions=(
-                all_transactions
-            ),
-        )
-    )
-
-    if file_import_executed:
-        load_data.clear()
-        st.rerun()
-        return
 
     with st.container(
         key="transactions-period-section",
@@ -566,6 +654,16 @@ def render_transactions_tab(
             len(period_transactions),
             rejections,
         )
+
+    _render_transaction_action_panel(
+        active_action=active_action,
+        period_transactions=(
+            period_transactions
+        ),
+        all_transactions=(
+            all_transactions
+        ),
+    )
 
 
 def main() -> None:

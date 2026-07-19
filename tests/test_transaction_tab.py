@@ -140,8 +140,6 @@ def build_transactions() -> pd.DataFrame:
 
 def configure_composition(
     monkeypatch,
-    *,
-    import_result: bool = False,
 ) -> tuple[
     FakeStreamlit,
     list[str],
@@ -186,7 +184,7 @@ def configure_composition(
 
     monkeypatch.setattr(
         app_module,
-        "render_manual_transaction_editor",
+        "render_new_transaction_dialog",
         lambda: events.append(
             "new"
         ),
@@ -194,18 +192,15 @@ def configure_composition(
 
     monkeypatch.setattr(
         app_module,
-        "render_transaction_import",
-        lambda transactions: (
-            events.append(
-                "import"
-            )
-            or import_result
+        "render_transaction_import_dialog",
+        lambda transactions: events.append(
+            "import"
         ),
     )
 
     monkeypatch.setattr(
         app_module,
-        "render_transaction_downloads",
+        "render_transaction_export_dialog",
         lambda transactions: events.append(
             "export"
         ),
@@ -277,6 +272,28 @@ def test_transaction_action_toggle_is_exclusive_and_closes(
     app_module._toggle_transaction_action(
         app_module.TRANSACTION_ACTION_IMPORT
     )
+
+    assert fake_streamlit.session_state[
+        app_module.TRANSACTION_ACTION_KEY
+    ] is None
+
+
+def test_close_transaction_action_clears_active_action(
+    monkeypatch,
+) -> None:
+    fake_streamlit = FakeStreamlit()
+
+    monkeypatch.setattr(
+        app_module,
+        "st",
+        fake_streamlit,
+    )
+
+    fake_streamlit.session_state[
+        app_module.TRANSACTION_ACTION_KEY
+    ] = app_module.TRANSACTION_ACTION_NEW
+
+    app_module._close_transaction_action()
 
     assert fake_streamlit.session_state[
         app_module.TRANSACTION_ACTION_KEY
@@ -366,13 +383,14 @@ def test_transactions_tab_renders_only_active_action(
         expected_event
     ]
 
-    assert events[0] == "period"
-
-    assert events[-3:] == [
+    assert events[:4] == [
+        "period",
         "query",
         "management",
         "validation",
     ]
+
+    assert events[-1] == expected_event
 
 
 def test_pending_feedback_restores_matching_action(
@@ -429,20 +447,19 @@ def test_action_panels_receive_correct_transaction_scopes(
 
     monkeypatch.setattr(
         app_module,
-        "render_transaction_import",
+        "render_transaction_import_dialog",
         lambda transactions: (
             captured.update(
                 import_data=(
                     transactions.copy()
                 )
             )
-            or False
         ),
     )
 
     monkeypatch.setattr(
         app_module,
-        "render_transaction_downloads",
+        "render_transaction_export_dialog",
         lambda transactions: (
             captured.update(
                 download_data=(
@@ -490,23 +507,29 @@ def test_action_panels_receive_correct_transaction_scopes(
     )
 
 
-def test_completed_import_refreshes_data_before_query(
+def test_completed_import_refreshes_application_data(
     monkeypatch,
 ) -> None:
-    (
+    fake_streamlit = FakeStreamlit()
+    events: list[str] = []
+    cache_events: list[str] = []
+
+    monkeypatch.setattr(
+        app_module,
+        "st",
         fake_streamlit,
-        events,
-        _,
-    ) = configure_composition(
-        monkeypatch,
-        import_result=True,
     )
 
-    fake_streamlit.session_state[
-        app_module.TRANSACTION_ACTION_KEY
-    ] = app_module.TRANSACTION_ACTION_IMPORT
-
-    cache_events: list[str] = []
+    monkeypatch.setattr(
+        app_module,
+        "render_transaction_import",
+        lambda transactions: (
+            events.append(
+                "import"
+            )
+            or True
+        ),
+    )
 
     monkeypatch.setattr(
         app_module.load_data,
@@ -516,18 +539,52 @@ def test_completed_import_refreshes_data_before_query(
         ),
     )
 
-    app_module.render_transactions_tab(
-        all_transactions=build_transactions(),
-        rejections=pd.DataFrame(),
+    app_module._render_transaction_import_dialog_content(
+        build_transactions()
     )
 
     assert events == [
-        "period",
         "import",
     ]
 
     assert cache_events == [
-        "clear"
+        "clear",
     ]
 
     assert fake_streamlit.rerun_requested is True
+
+
+def test_export_dialog_uses_selected_period(
+    monkeypatch,
+) -> None:
+    captured: dict[str, pd.DataFrame] = {}
+
+    monkeypatch.setattr(
+        app_module,
+        "render_transaction_downloads",
+        lambda transactions: (
+            captured.update(
+                transactions=(
+                    transactions.copy()
+                )
+            )
+        ),
+    )
+
+    period_transactions = (
+        build_transactions()
+        .head(
+            1
+        )
+        .copy()
+    )
+
+    app_module._render_transaction_export_dialog_content(
+        period_transactions
+    )
+
+    assert captured[
+        "transactions"
+    ].equals(
+        period_transactions
+    )
