@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from ui_components import (
-    render_alert,
-    render_html,
-)
+from ui_components import render_html
 
 
 def render_header(
-    period: str | None = None,
+    _period: str | None = None,
 ) -> None:
-    """Exibe a identidade visual e os avisos da seção atual."""
+    """Exibe somente a identidade visual global do FinanTec."""
     render_html(
         """
         <header class="finantec-brand-header">
@@ -65,18 +62,3 @@ def render_header(
         </header>
         """
     )
-
-    render_alert(
-        text=(
-            "Projeto educativo de uso local. "
-            "O FinanTec não oferece recomendação personalizada "
-            "de investimento."
-        ),
-        variant="warning",
-    )
-
-    if period:
-        render_alert(
-            text=f"Período analisado: {period}",
-            variant="info",
-        )
