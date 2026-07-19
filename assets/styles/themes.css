@@ -3002,3 +3002,525 @@ input[role="combobox"][aria-label="Cor de destaque"] {
         2px
         var(--accent-focus) !important;
 }
+
+/* =========================================================
+   PERÍODOS NO TEMA CLARO — REACT ARIA
+   ========================================================= */
+
+/*
+   Escopo exclusivo:
+   - período da Visão geral;
+   - período de Transações;
+   - período do Orçamento.
+
+   Não afeta Aparência, Metas, formulários ou outros selects.
+*/
+
+:root:has(.finantec-theme-light)
+:is(
+    .st-key-dashboard_year_filter,
+    .st-key-dashboard_month_filter,
+    .st-key-transactions_year_filter,
+    .st-key-transactions_month_filter,
+    .st-key-monthly_budget_period
+)
+.stSelectbox
+.react-aria-ComboBox
+> [role="group"] {
+    background:
+        #ffffff !important;
+
+    border:
+        1px solid
+        #d7c9bc !important;
+
+    border-radius:
+        8px !important;
+
+    box-shadow:
+        none !important;
+
+    overflow:
+        hidden !important;
+}
+
+
+/* Texto selecionado. */
+
+:root:has(.finantec-theme-light)
+:is(
+    .st-key-dashboard_year_filter,
+    .st-key-dashboard_month_filter,
+    .st-key-transactions_year_filter,
+    .st-key-transactions_month_filter,
+    .st-key-monthly_budget_period
+)
+input[role="combobox"] {
+    background:
+        transparent !important;
+
+    background-color:
+        transparent !important;
+
+    color:
+        #2d2621 !important;
+
+    -webkit-text-fill-color:
+        #2d2621 !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Botão e seta de abertura. */
+
+:root:has(.finantec-theme-light)
+:is(
+    .st-key-dashboard_year_filter,
+    .st-key-dashboard_month_filter,
+    .st-key-transactions_year_filter,
+    .st-key-transactions_month_filter,
+    .st-key-monthly_budget_period
+)
+button[aria-label="Open"] {
+    background:
+        transparent !important;
+
+    background-color:
+        transparent !important;
+
+    color:
+        #695c52 !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+:root:has(.finantec-theme-light)
+:is(
+    .st-key-dashboard_year_filter,
+    .st-key-dashboard_month_filter,
+    .st-key-transactions_year_filter,
+    .st-key-transactions_month_filter,
+    .st-key-monthly_budget_period
+)
+button[aria-label="Open"]
+svg {
+    color:
+        #695c52 !important;
+
+    fill:
+        currentColor !important;
+}
+
+
+/* Estado de foco do conjunto inteiro. */
+
+:root:has(.finantec-theme-light)
+:is(
+    .st-key-dashboard_year_filter,
+    .st-key-dashboard_month_filter,
+    .st-key-transactions_year_filter,
+    .st-key-transactions_month_filter,
+    .st-key-monthly_budget_period
+)
+.stSelectbox
+.react-aria-ComboBox
+> [role="group"]:has(
+    input[role="combobox"]:focus
+) {
+    border-color:
+        var(--accent) !important;
+
+    box-shadow:
+        0
+        0
+        0
+        2px
+        var(--accent-focus) !important;
+}
+
+/* =========================================================
+   SUPERFÍCIE DOS MODAIS — TEMA CLARO
+   ========================================================= */
+
+/*
+   Afeta somente elementos nativos de diálogo do Streamlit.
+   Não altera cards, métricas ou componentes fora dos modais.
+*/
+
+:root:has(.finantec-theme-light)
+section[role="dialog"] {
+    background:
+        #fffdf9 !important;
+
+    color:
+        #2d2621 !important;
+
+    border:
+        1px solid
+        #d7c9bc !important;
+
+    box-shadow:
+        0
+        18px
+        55px
+        rgba(45, 38, 33, 0.22) !important;
+}
+
+
+/* Título do modal. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+> h2,
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+> h2 p {
+    color:
+        #2d2621 !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Descrição e textos auxiliares. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[data-testid="stCaptionContainer"],
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[data-testid="stCaptionContainer"] p {
+    color:
+        #75685e !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Labels dos campos. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[data-testid="stWidgetLabel"],
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[data-testid="stWidgetLabel"] p {
+    color:
+        #4f443b !important;
+
+    font-weight:
+        600 !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Formulários não devem criar uma segunda superfície. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[data-testid="stForm"] {
+    background:
+        transparent !important;
+
+    border-color:
+        transparent !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Botão X. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+button[aria-label="Close"] {
+    background:
+        transparent !important;
+
+    color:
+        #695c52 !important;
+}
+
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+button[aria-label="Close"]:hover {
+    background:
+        #f3ebe3 !important;
+
+    color:
+        #2d2621 !important;
+}
+
+
+/* Abas presentes no modal de importação. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stTabs
+[role="tab"] {
+    color:
+        #75685e !important;
+}
+
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stTabs
+[role="tab"][aria-selected="true"] {
+    color:
+        #2d2621 !important;
+}
+
+/* =========================================================
+   ARQUIVO SELECIONADO NO UPLOAD — TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip {
+    background:
+        #f3ebe3 !important;
+
+    color:
+        #2d2621 !important;
+
+    border:
+        1px solid
+        #d7c9bc !important;
+
+    border-radius:
+        9px !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+p,
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+span,
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+svg {
+    color:
+        #2d2621 !important;
+
+    fill:
+        currentColor !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Botão para remover o arquivo. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+button {
+    background:
+        #fffdf9 !important;
+
+    color:
+        #695c52 !important;
+
+    border:
+        1px solid
+        #d7c9bc !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+button:hover {
+    background:
+        #eadfd5 !important;
+
+    color:
+        #2d2621 !important;
+
+    border-color:
+        var(--accent) !important;
+}
+
+/* =========================================================
+   UPLOAD E MÉTRICAS DA IMPORTAÇÃO — TEMA CLARO
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Texto do arquivo selecionado
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip,
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip * {
+    color:
+        #2d2621 !important;
+
+    -webkit-text-fill-color:
+        #2d2621 !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Nome do arquivo e tamanho. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+p,
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+span,
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+div {
+    color:
+        #2d2621 !important;
+
+    -webkit-text-fill-color:
+        #2d2621 !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Ícones internos do chip. */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+.stFileChip
+svg {
+    color:
+        #695c52 !important;
+
+    fill:
+        currentColor !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* ---------------------------------------------------------
+   Métricas positivas da importação
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+:is(
+    [class*="st-key-import-validation-valid"],
+    [class*="st-key-import-validation-rejected-neutral"],
+    [class*="st-key-import-file-valid-metric"],
+    [class*="st-key-import-ready-metric"]
+)
+[data-testid="stMetric"] {
+    border-top:
+        3px solid
+        var(--success) !important;
+}
+
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+:is(
+    [class*="st-key-import-validation-valid"],
+    [class*="st-key-import-validation-rejected-neutral"],
+    [class*="st-key-import-file-valid-metric"],
+    [class*="st-key-import-ready-metric"]
+)
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+:is(
+    [class*="st-key-import-validation-valid"],
+    [class*="st-key-import-validation-rejected-neutral"],
+    [class*="st-key-import-file-valid-metric"],
+    [class*="st-key-import-ready-metric"]
+)
+[data-testid="stMetricValue"]
+* {
+    color:
+        var(--success) !important;
+
+    -webkit-text-fill-color:
+        var(--success) !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* ---------------------------------------------------------
+   Métrica de erro real
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[class*="st-key-import-validation-rejected-error"]
+[data-testid="stMetric"] {
+    border-top:
+        3px solid
+        var(--danger) !important;
+}
+
+
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[class*="st-key-import-validation-rejected-error"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+section[role="dialog"]
+[class*="st-key-import-validation-rejected-error"]
+[data-testid="stMetricValue"]
+* {
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+
+    opacity:
+        1 !important;
+}

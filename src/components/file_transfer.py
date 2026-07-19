@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -114,6 +115,276 @@ def read_uploaded_transactions(
         "Envie um arquivo CSV ou XLSX."
     )
 
+def _format_preview_date(
+    value: object,
+) -> str:
+    """Formata uma data para exibição na prévia."""
+    parsed_date = pd.to_datetime(
+        value,
+        errors="coerce",
+    )
+
+    if pd.isna(
+        parsed_date
+    ):
+        return "—"
+
+    return parsed_date.strftime(
+        "%d/%m/%Y"
+    )
+
+
+def _format_preview_amount(
+    value: object,
+) -> str:
+    """Formata um valor monetário no padrão brasileiro."""
+    numeric_value = pd.to_numeric(
+        value,
+        errors="coerce",
+    )
+
+    if pd.isna(
+        numeric_value
+    ):
+        return escape(
+            str(value)
+        )
+
+    formatted_value = (
+        f"{float(numeric_value):,.2f}"
+        .replace(
+            ",",
+            "_",
+        )
+        .replace(
+            ".",
+            ",",
+        )
+        .replace(
+            "_",
+            ".",
+        )
+    )
+
+    return f"R$ {formatted_value}"
+
+
+def _get_preview_columns(
+    transactions: pd.DataFrame,
+) -> list[str]:
+    """Seleciona as colunas úteis da prévia."""
+    preferred_columns = (
+        "data",
+        "tipo",
+        "descricao",
+        "categoria",
+        "valor",
+    )
+
+    hidden_columns = {
+        "transaction_id",
+        "user_id",
+        "data_mode",
+        "arquivo_origem",
+        "ano_mes",
+    }
+
+    columns = [
+        column
+        for column in preferred_columns
+        if column in transactions.columns
+    ]
+
+    extra_columns = [
+        str(column)
+        for column in transactions.columns
+        if (
+            str(column) not in columns
+            and str(column) not in hidden_columns
+        )
+    ]
+
+    return [
+        *columns,
+        *extra_columns,
+    ]
+
+
+def _get_preview_column_label(
+    column: str,
+) -> str:
+    """Retorna o nome visível de uma coluna."""
+    labels = {
+        "data": "Data",
+        "tipo": "Tipo",
+        "descricao": "Descrição",
+        "categoria": "Categoria",
+        "valor": "Valor",
+        "motivo": "Motivo",
+        "motivo_rejeicao": "Motivo",
+        "motivos_rejeicao": "Motivos",
+        "erro": "Erro",
+        "erro_validacao": "Erro de validação",
+    }
+
+    return labels.get(
+        column,
+        column.replace(
+            "_",
+            " ",
+        ).strip().capitalize(),
+    )
+
+
+def render_transaction_preview_table(
+    transactions: pd.DataFrame,
+) -> None:
+    """Exibe uma tabela de prévia compatível com os temas."""
+    columns = _get_preview_columns(
+        transactions
+    )
+
+    header_cells = "".join(
+        (
+            '<th style="'
+            "position:sticky;"
+            "top:0;"
+            "z-index:1;"
+            "padding:0.72rem 0.8rem;"
+            "background:var(--bg-table-head);"
+            "color:var(--text-soft);"
+            "border-bottom:1px solid var(--border-light);"
+            "text-align:left;"
+            "font-size:0.72rem;"
+            "font-weight:700;"
+            "letter-spacing:0.02em;"
+            "text-transform:uppercase;"
+            '">'
+            f"{escape(_get_preview_column_label(column))}"
+            "</th>"
+        )
+        for column in columns
+    )
+
+    body_rows: list[str] = []
+
+    for row_index, transaction in enumerate(
+        transactions.to_dict(
+            orient="records"
+        )
+    ):
+        transaction_type = str(
+            transaction.get(
+                "tipo",
+                "",
+            )
+        ).strip().lower()
+
+        row_background = (
+            "var(--bg-table-row)"
+            if row_index % 2 == 0
+            else "var(--bg-table-row-alt)"
+        )
+
+        cells: list[str] = []
+
+        for column in columns:
+            raw_value = transaction.get(
+                column,
+                "",
+            )
+
+            if column == "data":
+                display_value = _format_preview_date(
+                    raw_value
+                )
+
+            elif column == "valor":
+                display_value = _format_preview_amount(
+                    raw_value
+                )
+
+            elif pd.isna(
+                raw_value
+            ):
+                display_value = "—"
+
+            else:
+                display_value = escape(
+                    str(raw_value)
+                )
+
+            cell_style = (
+                "padding:0.7rem 0.8rem;"
+                f"background:{row_background};"
+                "color:var(--text-main);"
+                "border-bottom:1px solid var(--border);"
+                "vertical-align:middle;"
+            )
+
+            if column == "valor":
+                value_color = (
+                    "var(--success)"
+                    if transaction_type == "receita"
+                    else (
+                        "var(--danger)"
+                        if transaction_type == "despesa"
+                        else "var(--text-main)"
+                    )
+                )
+
+                cell_style += (
+                    "text-align:right;"
+                    "white-space:nowrap;"
+                    "font-weight:700;"
+                    f"color:{value_color};"
+                )
+
+            cells.append(
+                (
+                    f'<td style="{cell_style}">'
+                    f"{display_value}"
+                    "</td>"
+                )
+            )
+
+        body_rows.append(
+            "<tr>"
+            f"{''.join(cells)}"
+            "</tr>"
+        )
+
+    table_html = (
+        '<div style="'
+        "width:100%;"
+        "max-height:360px;"
+        "overflow:auto;"
+        "border:1px solid var(--border-light);"
+        "border-radius:12px;"
+        '">'
+        '<table style="'
+        "width:100%;"
+        "min-width:720px;"
+        "border-collapse:separate;"
+        "border-spacing:0;"
+        "font-size:0.82rem;"
+        '">'
+        "<thead>"
+        "<tr>"
+        f"{header_cells}"
+        "</tr>"
+        "</thead>"
+        "<tbody>"
+        f"{''.join(body_rows)}"
+        "</tbody>"
+        "</table>"
+        "</div>"
+    )
+
+    st.markdown(
+        table_html,
+        unsafe_allow_html=True,
+    )
 
 def render_import_result() -> None:
     """Exibe o resultado preservado após a atualização da página."""
@@ -268,25 +539,9 @@ def render_matching_transactions(
     with st.expander(
         "Ver possíveis duplicatas"
     ):
-        preview = (
-            matching_transactions.copy()
-        )
-
-        preview["data"] = (
-            pd.to_datetime(
-                preview["data"],
-                errors="coerce",
-            )
-            .dt.strftime(
-                "%Y-%m-%d"
-            )
-        )
-
-        st.dataframe(
-            preview,
-            use_container_width=True,
-            hide_index=True,
-        )
+     render_transaction_preview_table(
+            matching_transactions
+     )
 
     widget_version = (
         _get_import_widget_version()
@@ -552,21 +807,8 @@ def render_uploaded_file_preview(
             )
 
         else:
-            valid_preview = (
-                valid_transactions.copy()
-            )
-
-            valid_preview["data"] = (
-                valid_preview["data"]
-                .dt.strftime(
-                    "%Y-%m-%d"
-                )
-            )
-
-            st.dataframe(
-                valid_preview,
-                use_container_width=True,
-                hide_index=True,
+            render_transaction_preview_table(
+                valid_transactions
             )
 
     with rejected_tab:
@@ -576,21 +818,8 @@ def render_uploaded_file_preview(
             )
 
         else:
-            rejected_preview = (
-                rejected_transactions.copy()
-            )
-
-            rejected_preview["data"] = (
-                rejected_preview["data"]
-                .dt.strftime(
-                    "%Y-%m-%d"
-                )
-            )
-
-            st.dataframe(
-                rejected_preview,
-                use_container_width=True,
-                hide_index=True,
+            render_transaction_preview_table(
+                rejected_transactions
             )
 
     if not rejected_transactions.empty:
