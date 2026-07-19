@@ -994,6 +994,25 @@ def render_persisted_transaction_management(
                 _get_management_version()
             )
 
+            selection_key = (
+                "persisted-transaction-selection-"
+                f"{widget_version}"
+            )
+
+            stored_selected_id = (
+                st.session_state.get(
+                    selection_key
+                )
+            )
+
+            if (
+                stored_selected_id
+                not in transaction_ids
+            ):
+                st.session_state[
+                    selection_key
+                ] = transaction_ids[0]
+
             selected_id = st.selectbox(
                 "Transação",
                 options=transaction_ids,
@@ -1003,20 +1022,27 @@ def render_persisted_transaction_management(
                         transaction_id,
                     )
                 ),
-                key=(
-                    "persisted-transaction-selection-"
-                    f"{widget_version}"
-                ),
+                key=selection_key,
             )
 
-            selected_transaction = (
+            selected_rows = (
                 manageable_transactions.loc[
                     manageable_transactions[
                         TRANSACTION_ID_COLUMN
                     ]
                     == selected_id
                 ]
-                .iloc[0]
+            )
+
+            if selected_rows.empty:
+                st.warning(
+                    "A transação selecionada não está mais "
+                    "disponível no período atual."
+                )
+                return
+
+            selected_transaction = (
+                selected_rows.iloc[0]
             )
 
             source_name = _safe_text(

@@ -142,12 +142,16 @@ def configure_composition(
     monkeypatch,
     *,
     import_result: bool = False,
-) -> tuple[FakeStreamlit, list[str], pd.DataFrame]:
+) -> tuple[
+    FakeStreamlit,
+    list[str],
+    pd.DataFrame,
+]:
     """Substitui os renderizadores por registros de chamadas."""
     fake_streamlit = FakeStreamlit()
     events: list[str] = []
 
-    visible_transactions = (
+    period_transactions = (
         build_transactions()
         .head(
             1
@@ -155,10 +159,29 @@ def configure_composition(
         .copy()
     )
 
+    visible_transactions = (
+        period_transactions.copy()
+    )
+
     monkeypatch.setattr(
         app_module,
         "st",
         fake_streamlit,
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "render_period_selector",
+        lambda transactions, *, key_prefix: (
+            events.append(
+                "period"
+            )
+            or (
+                7,
+                "Julho/2026",
+                period_transactions,
+            )
+        ),
     )
 
     monkeypatch.setattr(
@@ -220,7 +243,7 @@ def configure_composition(
     return (
         fake_streamlit,
         events,
-        visible_transactions,
+        period_transactions,
     )
 
 
@@ -271,18 +294,8 @@ def test_transactions_tab_starts_closed_and_queries_first(
         monkeypatch
     )
 
-    all_transactions = build_transactions()
-    period_transactions = (
-        all_transactions
-        .head(
-            1
-        )
-        .copy()
-    )
-
     app_module.render_transactions_tab(
-        period_transactions=period_transactions,
-        all_transactions=all_transactions,
+        all_transactions=build_transactions(),
         rejections=pd.DataFrame(),
     )
 
@@ -293,6 +306,7 @@ def test_transactions_tab_starts_closed_and_queries_first(
     ]
 
     assert events == [
+        "period",
         "query",
         "management",
         "validation",
@@ -333,17 +347,8 @@ def test_transactions_tab_renders_only_active_action(
         app_module.TRANSACTION_ACTION_KEY
     ] = active_action
 
-    all_transactions = build_transactions()
-
     app_module.render_transactions_tab(
-        period_transactions=(
-            all_transactions
-            .head(
-                1
-            )
-            .copy()
-        ),
-        all_transactions=all_transactions,
+        all_transactions=build_transactions(),
         rejections=pd.DataFrame(),
     )
 
@@ -360,6 +365,8 @@ def test_transactions_tab_renders_only_active_action(
     assert action_events == [
         expected_event
     ]
+
+    assert events[0] == "period"
 
     assert events[-3:] == [
         "query",
@@ -509,22 +516,14 @@ def test_completed_import_refreshes_data_before_query(
         ),
     )
 
-    transactions = build_transactions()
-
     app_module.render_transactions_tab(
-        period_transactions=(
-            transactions
-            .head(
-                1
-            )
-            .copy()
-        ),
-        all_transactions=transactions,
+        all_transactions=build_transactions(),
         rejections=pd.DataFrame(),
     )
 
     assert events == [
-        "import"
+        "period",
+        "import",
     ]
 
     assert cache_events == [

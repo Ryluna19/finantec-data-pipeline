@@ -141,7 +141,6 @@ def test_header_presents_finantec_as_local_application(
     monkeypatch,
 ) -> None:
     rendered_html: list[str] = []
-    rendered_alerts: list[tuple[str, str]] = []
 
     monkeypatch.setattr(
         header_module,
@@ -149,36 +148,33 @@ def test_header_presents_finantec_as_local_application(
         rendered_html.append,
     )
 
-    monkeypatch.setattr(
-        header_module,
-        "render_alert",
-        lambda *, text, variant: rendered_alerts.append(
-            (
-                text,
-                variant,
-            )
-        ),
+    header_module.render_header()
+
+    assert len(
+        rendered_html
+    ) == 1
+
+    header_html = rendered_html[0]
+
+    assert (
+        "Aplicativo local de organização financeira"
+        in header_html
     )
 
-    header_module.render_header(
-        period="Julho/2026",
+    assert (
+        "Assistente de organização financeira"
+        not in header_html
     )
 
-    assert "Aplicativo local de organização financeira" in rendered_html[0]
-    assert "Assistente de organização financeira" not in rendered_html[0]
+    assert (
+        "Projeto educativo de uso local"
+        not in header_html
+    )
 
-    assert rendered_alerts == [
-        (
-            "Projeto educativo de uso local. "
-            "O FinanTec não oferece recomendação personalizada "
-            "de investimento.",
-            "warning",
-        ),
-        (
-            "Período analisado: Julho/2026",
-            "info",
-        ),
-    ]
+    assert (
+        "Período analisado"
+        not in header_html
+    )
 
 
 def test_main_flows_render_without_configured_profile(
@@ -193,18 +189,20 @@ def test_main_flows_render_without_configured_profile(
         "st",
         fake_streamlit,
     )
+
     monkeypatch.setattr(
         app_module,
         "apply_visual_styles",
         lambda: None,
     )
+
     monkeypatch.setattr(
-    app_module,
-    "render_authentication_gate",
-    lambda: {
-        "user_id": "user-1",
-        "username": "Ryan",
-    },
+        app_module,
+        "render_authentication_gate",
+        lambda: {
+            "user_id": "user-1",
+            "username": "Ryan",
+        },
     )
 
     monkeypatch.setattr(
@@ -212,11 +210,13 @@ def test_main_flows_render_without_configured_profile(
         "render_account_sidebar",
         lambda account: None,
     )
+
     monkeypatch.setattr(
         app_module,
         "get_current_user_id",
         lambda: "user-1",
     )
+
     monkeypatch.setattr(
         app_module,
         "load_data",
@@ -233,39 +233,27 @@ def test_main_flows_render_without_configured_profile(
             pd.DataFrame(),
         ),
     )
+
     monkeypatch.setattr(
         app_module,
         "render_user_navigation",
         lambda profile, data_mode: "main",
     )
-    monkeypatch.setattr(
-        app_module,
-        "render_monthly_budget",
-        lambda **kwargs: events.append(
-            "budget"
-        ),
-    )
-    monkeypatch.setattr(
-        app_module,
-        "select_period",
-        lambda transactions: (
-            0,
-            "Sem dados",
-            transactions,
-        ),
-    )
+
     monkeypatch.setattr(
         app_module,
         "render_header",
         lambda *args, **kwargs: None,
     )
+
     monkeypatch.setattr(
         app_module,
-        "render_empty_dashboard",
-        lambda: events.append(
+        "render_dashboard_tab",
+        lambda **kwargs: events.append(
             "dashboard"
         ),
     )
+
     monkeypatch.setattr(
         app_module,
         "render_transactions_tab",
@@ -273,6 +261,23 @@ def test_main_flows_render_without_configured_profile(
             "transactions"
         ),
     )
+
+    monkeypatch.setattr(
+        app_module,
+        "render_monthly_budget",
+        lambda **kwargs: events.append(
+            "budget"
+        ),
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "build_current_month_summary",
+        lambda transactions: {
+            "saldo_disponivel": 0.0,
+        },
+    )
+
     monkeypatch.setattr(
         app_module,
         "render_goal_simulator",
@@ -289,13 +294,12 @@ def test_main_flows_render_without_configured_profile(
         "budget",
         "goals",
     ]
-    
+
+
 def test_main_stops_when_user_is_not_authenticated(
     monkeypatch,
 ) -> None:
-    fake_streamlit = (
-        MainStreamlit()
-    )
+    fake_streamlit = MainStreamlit()
 
     monkeypatch.setattr(
         app_module,

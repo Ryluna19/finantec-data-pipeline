@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import pandas as pd
@@ -34,6 +35,11 @@ from components.budget import (
     render_monthly_budget,
 )
 from components.header import render_header
+from components.period import (
+    ALL_MONTHS,
+    filter_transactions_by_period,
+    render_period_selector,
+)
 from components.metrics import (
     render_additional_metrics,
     render_financial_diagnosis,
@@ -58,10 +64,7 @@ from transaction_editor import (
     DATA_REFRESH_REQUESTED_KEY,
     exibir_editor_transacoes_manuais as render_manual_transaction_editor,
 )
-from ui_components import (
-    MONTH_NAMES_PT_BR,
-    apply_visual_styles,
-)
+from ui_components import apply_visual_styles
 
 from components.transaction_management import (
     render_persisted_transaction_management,
@@ -143,163 +146,102 @@ def load_data(
 def select_period(
     transactions: pd.DataFrame,
 ) -> tuple[int, str, pd.DataFrame]:
-    """Filtra transações sem bloquear a aplicação quando a base está vazia."""
-    st.sidebar.subheader(
-        "Filtros"
+    """Mantém compatibilidade com chamadas antigas do seletor."""
+    return render_period_selector(
+        transactions,
+        key_prefix="legacy",
     )
 
-    if transactions.empty:
-        st.sidebar.info(
-            "Adicione transações ou carregue "
-            "os dados de demonstração."
+
+def build_current_month_summary(
+    transactions: pd.DataFrame,
+    reference_date: date | None = None,
+) -> dict[str, Any]:
+    """Calcula o resumo do mês atual usado temporariamente em Metas."""
+    reference = reference_date or date.today()
+
+    current_transactions = (
+        filter_transactions_by_period(
+            transactions,
+            year=reference.year,
+            month=reference.month,
         )
-
-        return (
-            0,
-            "Sem dados",
-            transactions.copy(),
-        )
-
-    data = transactions.copy()
-
-    data["data"] = pd.to_datetime(
-        data["data"],
-        errors="coerce",
     )
 
-    data = data.dropna(
-        subset=["data"]
-    ).copy()
+    if current_transactions.empty:
+        return {
+            "saldo_disponivel": 0.0,
+        }
 
-    if data.empty:
-        st.sidebar.warning(
-            "Nenhuma transação possui uma data válida."
-        )
-
-        return (
-            0,
-            "Sem período válido",
-            data,
-        )
-
-    data["ano"] = (
-        data["data"]
-        .dt.year
-        .astype(int)
-    )
-
-    data["mes"] = (
-        data["data"]
-        .dt.month
-        .astype(int)
-    )
-
-    years = sorted(
-        data["ano"]
-        .unique()
-        .tolist()
-    )
-
-    selected_year = st.sidebar.selectbox(
-        "Ano",
-        years,
-        index=len(years) - 1,
-        key="year_filter",
-    )
-
-    months = sorted(
-        data.loc[
-            data["ano"] == selected_year,
-            "mes",
-        ]
-        .unique()
-        .tolist()
-    )
-
-    selected_month = st.sidebar.selectbox(
-        "Mês",
-        [0, *months],
-        format_func=lambda value: (
-            "Todos"
-            if value == 0
-            else MONTH_NAMES_PT_BR[value]
-        ),
-        key="month_filter",
-    )
-
-    year_filter = (
-        data["ano"] == selected_year
-    )
-
-    if selected_month == 0:
-        filtered_transactions = data.loc[
-            year_filter
-        ].copy()
-
-        return (
-            selected_month,
-            str(selected_year),
-            filtered_transactions,
-        )
-
-    month_filter = (
-        data["mes"] == selected_month
-    )
-
-    period_label = (
-        f"{MONTH_NAMES_PT_BR[selected_month]}"
-        f"/{selected_year}"
-    )
-
-    filtered_transactions = data.loc[
-        year_filter & month_filter
-    ].copy()
-
-    return (
-        selected_month,
-        period_label,
-        filtered_transactions,
+    return calculate_financial_summary(
+        current_transactions
     )
 
 
 def render_empty_dashboard() -> None:
-    """Exibe uma orientação quando ainda não existem transações."""
-    st.header(
-        "Visão geral"
-    )
-
+    """Exibe uma orientação quando o período não possui transações."""
     st.info(
-        "O dashboard ainda não possui transações para analisar."
+        "Não há transações registradas para o período selecionado."
     )
 
     st.markdown(
         """
-        Para começar, você pode:
+        Para continuar, você pode:
 
         - cadastrar uma transação na aba **Transações**;
         - importar um arquivo CSV ou Excel;
-        - carregar a base simulada em **Dados e privacidade**.
+        - selecionar outro período na **Visão geral**.
         """
-    )
-
-    st.caption(
-        "Os dados de demonstração são opcionais "
-        "e ficam separados dos dados reais."
     )
 
 
 def render_dashboard_tab(
     transactions: pd.DataFrame,
-    summary: dict[str, Any],
-    expenses_by_category: pd.Series,
-    show_yearly_evolution: bool,
     user_id: str,
     data_mode: str,
-    show_budget_summary: bool,
 ) -> None:
-    """Compõe a visão geral do dashboard."""
+    """Compõe a visão geral com período próprio."""
     st.header(
         "Visão geral"
+    )
+
+    st.caption(
+        "Acompanhe o resumo financeiro do período escolhido."
+    )
+
+    with st.container(
+        border=True,
+        key="dashboard-period-filter-card",
+    ):
+        st.markdown(
+            "### Período analisado"
+        )
+
+        (
+            selected_month,
+            period_label,
+            period_transactions,
+        ) = render_period_selector(
+            transactions,
+            key_prefix="dashboard",
+        )
+
+        st.caption(
+            f"Exibindo dados de {period_label}."
+        )
+
+    if period_transactions.empty:
+        render_empty_dashboard()
+        return
+
+    summary = calculate_financial_summary(
+        period_transactions
+    )
+
+    expenses_by_category = (
+        calculate_expenses_by_category(
+            period_transactions
+        )
     )
 
     with st.container(
@@ -315,12 +257,13 @@ def render_dashboard_tab(
         render_financial_diagnosis(
             summary
         )
-    if show_budget_summary:
+
+    if selected_month != ALL_MONTHS:
         with st.container(
             key="dashboard-budget-section",
         ):
             render_budget_dashboard_summary(
-                transactions=transactions,
+                transactions=period_transactions,
                 user_id=user_id,
                 data_mode=data_mode,
             )
@@ -329,7 +272,7 @@ def render_dashboard_tab(
         key="dashboard-metrics-section",
     ):
         render_additional_metrics(
-            transactions,
+            period_transactions,
             summary,
         )
 
@@ -352,20 +295,21 @@ def render_dashboard_tab(
                 expenses_by_category
             )
 
-    if show_yearly_evolution:
+    if selected_month == ALL_MONTHS:
         with st.container(
             key="dashboard-evolution-section",
         ):
             render_monthly_evolution(
-                transactions
+                period_transactions
             )
 
     with st.container(
         key="dashboard-latest-section",
     ):
         render_latest_transactions(
-            transactions
+            period_transactions
         )
+
 
 def _get_active_transaction_action() -> str | None:
     """Retorna a ação ativa e recupera painéis com feedback."""
@@ -547,11 +491,10 @@ def _render_transaction_action_panel(
 
 
 def render_transactions_tab(
-    period_transactions: pd.DataFrame,
     all_transactions: pd.DataFrame,
     rejections: pd.DataFrame,
 ) -> None:
-    """Compõe consulta e ações secundárias de transações."""
+    """Compõe consulta e ações com período próprio."""
     st.subheader(
         "Transações"
     )
@@ -560,6 +503,27 @@ def render_transactions_tab(
         "Consulte seus lançamentos ou use as ações "
         "para adicionar, importar e exportar dados."
     )
+
+    with st.container(
+        border=True,
+        key="transactions-period-filter-card",
+    ):
+        st.markdown(
+            "### Período da consulta"
+        )
+
+        (
+            _selected_month,
+            period_label,
+            period_transactions,
+        ) = render_period_selector(
+            all_transactions,
+            key_prefix="transactions",
+        )
+
+        st.caption(
+            f"Exibindo transações de {period_label}."
+        )
 
     active_action = (
         _render_transaction_action_bar()
@@ -660,6 +624,7 @@ def main() -> None:
         current_user_id,
         data_mode,
     )
+
     active_section = (
         render_user_navigation(
             personal_profile,
@@ -685,21 +650,7 @@ def main() -> None:
 
         return
 
-    (
-        selected_month,
-        period,
-        filtered_transactions,
-    ) = select_period(
-        transactions
-    )
-
-    has_transactions = (
-        not filtered_transactions.empty
-    )
-
-    render_header(
-        period
-    )
+    render_header()
 
     (
         dashboard_tab,
@@ -710,65 +661,19 @@ def main() -> None:
         MAIN_TAB_LABELS
     )
 
-    if not has_transactions:
-        with dashboard_tab:
-            render_empty_dashboard()
-
-        with transactions_tab:
-            render_transactions_tab(
-                period_transactions=filtered_transactions,
-                all_transactions=transactions,
-                rejections=rejections,
-            )
-        with budget_tab:
-            render_monthly_budget(
-                transactions=transactions,
-                user_id=current_user_id,
-                data_mode=data_mode,
-            )
-
-        with goals_tab:
-            render_goal_simulator(
-                user_profile=user_profile,
-                summary={
-                    "saldo_disponivel": 0.0,
-                },
-                user_id=current_user_id,
-                data_mode=data_mode,
-            )
-        return
-
-    summary = calculate_financial_summary(
-        filtered_transactions
-    )
-
-    expenses_by_category = (
-        calculate_expenses_by_category(
-            filtered_transactions
-        )
-    )
-
     with dashboard_tab:
         render_dashboard_tab(
-            transactions=filtered_transactions,
-            summary=summary,
-            expenses_by_category=expenses_by_category,
-            show_yearly_evolution=(
-                selected_month == 0
-            ),
+            transactions=transactions,
             user_id=current_user_id,
             data_mode=data_mode,
-            show_budget_summary=(
-                selected_month != 0
-            ),
         )
 
     with transactions_tab:
         render_transactions_tab(
-            period_transactions=filtered_transactions,
             all_transactions=transactions,
             rejections=rejections,
         )
+
     with budget_tab:
         render_monthly_budget(
             transactions=transactions,
@@ -776,13 +681,20 @@ def main() -> None:
             data_mode=data_mode,
         )
 
+    current_month_summary = (
+        build_current_month_summary(
+            transactions
+        )
+    )
+
     with goals_tab:
         render_goal_simulator(
             user_profile=user_profile,
-            summary=summary,
+            summary=current_month_summary,
             user_id=current_user_id,
             data_mode=data_mode,
         )
+
 
 if __name__ == "__main__":
     main()
