@@ -93,20 +93,23 @@
     h3 {
         font-size: 1.3rem;
     }
-        .st-key-expenses-category-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-category-ranking-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-monthly-evolution-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-latest-transactions-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-data-validation-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-period-transactions-card
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 0.9rem !important;
-    }
+    .st-key-expenses-category-card
+        [data-testid="stVerticalBlockBorderWrapper"],
+        .st-key-category-ranking-card
+        [data-testid="stVerticalBlockBorderWrapper"],
+        .st-key-monthly-evolution-card
+        [data-testid="stVerticalBlockBorderWrapper"],
+        .st-key-latest-transactions-card
+        [data-testid="stVerticalBlockBorderWrapper"],
+        .st-key-data-validation-card
+        [data-testid="stVerticalBlockBorderWrapper"],
+        .st-key-period-transactions-card
+        [data-testid="stVerticalBlockBorderWrapper"] {
+     padding:
+        0.9rem
+        0.9rem
+        1.25rem !important;
+}
 
     .finantec-ranking-item {
         grid-template-columns:
@@ -223,13 +226,181 @@
         min-height: auto;
     }
 
-    .finantec-table {
-        min-width: 620px;
-    }
-
     .finantec-table-panel {
-        overflow-x: auto;
-    }
+    overflow-x:
+        auto;
+
+    overscroll-behavior-inline:
+        contain;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        thin;
+}
+
+
+/*
+   Tabelas de transações continuam largas e usam
+   rolagem horizontal no celular.
+*/
+
+.finantec-table {
+    min-width:
+        720px;
+}
+
+
+/*
+   No resumo mensal, Mês e Receitas ficam totalmente
+   visíveis. Despesas permanece acessível deslizando.
+*/
+
+.finantec-table[
+    aria-label="Resumo mensal"
+] {
+    min-width:
+        430px;
+
+    table-layout:
+        fixed;
+}
+
+
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+th,
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+td {
+    padding:
+        0.72rem
+        0.65rem;
+
+    white-space:
+        nowrap;
+}
+
+
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+th:nth-child(1),
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+td:nth-child(1) {
+    width:
+        110px;
+}
+
+
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+th:nth-child(2),
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+td:nth-child(2),
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+th:nth-child(3),
+.finantec-table[
+    aria-label="Resumo mensal"
+]
+td:nth-child(3) {
+    width:
+        160px;
+}
+
+
+/*
+   Mantém larguras previsíveis na tabela de últimas
+   transações e evita que a descrição comprima tudo.
+*/
+
+.finantec-table[
+    aria-label="Últimas transações"
+] {
+    min-width:
+        760px;
+
+    table-layout:
+        fixed;
+}
+
+
+.finantec-table[
+    aria-label="Últimas transações"
+]
+th:nth-child(1),
+.finantec-table[
+    aria-label="Últimas transações"
+]
+td:nth-child(1) {
+    width:
+        110px;
+}
+
+
+.finantec-table[
+    aria-label="Últimas transações"
+]
+th:nth-child(2),
+.finantec-table[
+    aria-label="Últimas transações"
+]
+td:nth-child(2) {
+    width:
+        90px;
+}
+
+
+.finantec-table[
+    aria-label="Últimas transações"
+]
+th:nth-child(3),
+.finantec-table[
+    aria-label="Últimas transações"
+]
+td:nth-child(3) {
+    width:
+        260px;
+}
+
+
+.finantec-table[
+    aria-label="Últimas transações"
+]
+th:nth-child(4),
+.finantec-table[
+    aria-label="Últimas transações"
+]
+td:nth-child(4) {
+    width:
+        170px;
+}
+
+
+.finantec-table[
+    aria-label="Últimas transações"
+]
+th:nth-child(5),
+.finantec-table[
+    aria-label="Últimas transações"
+]
+td:nth-child(5) {
+    width:
+        130px;
+
+    white-space:
+        nowrap;
+}
       .finantec-goal-grid {
         grid-template-columns: 1fr;
     }
