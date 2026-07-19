@@ -735,88 +735,119 @@ def _render_edit_form(
         ]
     )
 
-    with st.form(
-        key=(
-            "persisted-transaction-edit-form-"
-            f"{widget_version}-"
-            f"{widget_token}"
-        ),
-        border=False,
+    with st.container(
+        key="persisted-edit-form-card",
     ):
-        transaction_date = st.date_input(
-            "Data",
-            value=(
-                _get_date_default(
-                    selected_transaction
+        with st.form(
+            key=(
+                "persisted-transaction-edit-form-"
+                f"{widget_version}-"
+                f"{widget_token}"
+            ),
+            border=False,
+        ):
+            with st.container(
+                key="persisted-edit-primary-row",
+            ):
+                (
+                    date_column,
+                    type_column,
+                ) = st.columns(
+                    2,
+                    gap="medium",
+                    vertical_alignment="bottom",
                 )
-            ),
-            format="DD/MM/YYYY",
-            key=(
-                "persisted-edit-date-"
-                f"{widget_version}-"
-                f"{widget_token}"
-            ),
-        )
 
-        transaction_type = st.selectbox(
-            "Tipo",
-            options=type_options,
-            index=type_index,
-            format_func=lambda value: (
-                TRANSACTION_TYPE_LABELS.get(
-                    value,
-                    value.title(),
+                with date_column:
+                    transaction_date = st.date_input(
+                        "Data",
+                        value=(
+                            _get_date_default(
+                                selected_transaction
+                            )
+                        ),
+                        format="DD/MM/YYYY",
+                        key=(
+                            "persisted-edit-date-"
+                            f"{widget_version}-"
+                            f"{widget_token}"
+                        ),
+                    )
+
+                with type_column:
+                    transaction_type = st.selectbox(
+                        "Tipo",
+                        options=type_options,
+                        index=type_index,
+                        format_func=lambda value: (
+                            TRANSACTION_TYPE_LABELS.get(
+                                value,
+                                value.title(),
+                            )
+                        ),
+                        key=(
+                            "persisted-edit-type-"
+                            f"{widget_version}-"
+                            f"{widget_token}"
+                        ),
+                    )
+
+            description = st.text_input(
+                "Descrição",
+                value=current_description,
+                key=(
+                    "persisted-edit-description-"
+                    f"{widget_version}-"
+                    f"{widget_token}"
+                ),
+            )
+
+            with st.container(
+                key="persisted-edit-secondary-row",
+            ):
+                (
+                    category_column,
+                    amount_column,
+                ) = st.columns(
+                    2,
+                    gap="medium",
+                    vertical_alignment="bottom",
                 )
-            ),
-            key=(
-                "persisted-edit-type-"
-                f"{widget_version}-"
-                f"{widget_token}"
-            ),
-        )
 
-        description = st.text_input(
-            "Descrição",
-            value=current_description,
-            key=(
-                "persisted-edit-description-"
-                f"{widget_version}-"
-                f"{widget_token}"
-            ),
-        )
+                with category_column:
+                    category = st.selectbox(
+                        "Categoria",
+                        options=category_options,
+                        index=category_index,
+                        key=(
+                            "persisted-edit-category-"
+                            f"{widget_version}-"
+                            f"{widget_token}"
+                        ),
+                    )
 
-        category = st.selectbox(
-            "Categoria",
-            options=category_options,
-            index=category_index,
-            key=(
-                "persisted-edit-category-"
-                f"{widget_version}-"
-                f"{widget_token}"
-            ),
-        )
+                with amount_column:
+                    amount = st.number_input(
+                        "Valor",
+                        min_value=0.01,
+                        value=(
+                            _get_amount_default(
+                                selected_transaction
+                            )
+                        ),
+                        step=1.00,
+                        format="%.2f",
+                        key=(
+                            "persisted-edit-amount-"
+                            f"{widget_version}-"
+                            f"{widget_token}"
+                        ),
+                    )
 
-        amount = st.number_input(
-            "Valor",
-            min_value=0.01,
-            value=(
-                _get_amount_default(
-                    selected_transaction
-                )
-            ),
-            step=1.00,
-            format="%.2f",
-            key=(
-                "persisted-edit-amount-"
-                f"{widget_version}-"
-                f"{widget_token}"
-            ),
-        )
-
-        submitted = st.form_submit_button(
-            "Salvar alterações",
-            type="primary",
-        )
+            submitted = st.form_submit_button(
+                "Salvar alterações",
+                type="primary",
+            )
 
     if not submitted:
         return

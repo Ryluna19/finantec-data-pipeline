@@ -553,24 +553,38 @@ def render_manual_transaction_form(
         ),
         border=False,
     ):
-        transaction_date = st.date_input(
-            "Data",
-            value=defaults["data"],
-            format="DD/MM/YYYY",
-            help=(
-                "Data em que a transação aconteceu."
-            ),
-        )
+        with st.container(
+            key="manual-form-primary-row",
+        ):
+            (
+                date_column,
+                type_column,
+            ) = st.columns(
+                2,
+                gap="medium",
+                vertical_alignment="bottom",
+            )
 
-        transaction_type = st.selectbox(
-            "Tipo",
-            options=type_options,
-            index=type_index,
-            help=(
-                "Receita representa uma entrada; "
-                "despesa representa uma saída."
-            ),
-        )
+            with date_column:
+                transaction_date = st.date_input(
+                    "Data",
+                    value=defaults["data"],
+                    format="DD/MM/YYYY",
+                    help=(
+                        "Data em que a transação aconteceu."
+                    ),
+                )
+
+            with type_column:
+                transaction_type = st.selectbox(
+                    "Tipo",
+                    options=type_options,
+                    index=type_index,
+                    help=(
+                        "Receita representa uma entrada; "
+                        "despesa representa uma saída."
+                    ),
+                )
 
         description = st.text_input(
             "Descrição",
@@ -583,28 +597,42 @@ def render_manual_transaction_form(
             ),
         )
 
-        category = st.selectbox(
-            "Categoria",
-            options=category_options,
-            index=category_index,
-            help=(
-                "Categoria usada nos indicadores "
-                "e gráficos financeiros."
-            ),
-        )
+        with st.container(
+            key="manual-form-secondary-row",
+        ):
+            (
+                category_column,
+                amount_column,
+            ) = st.columns(
+                2,
+                gap="medium",
+                vertical_alignment="bottom",
+            )
 
-        amount = st.number_input(
-            "Valor",
-            min_value=0.01,
-            value=float(
-                defaults["valor"]
-            ),
-            step=1.00,
-            format="%.2f",
-            help=(
-                "Informe um valor maior que zero."
-            ),
-        )
+            with category_column:
+                category = st.selectbox(
+                    "Categoria",
+                    options=category_options,
+                    index=category_index,
+                    help=(
+                        "Categoria usada nos indicadores "
+                        "e gráficos financeiros."
+                    ),
+                )
+
+            with amount_column:
+                amount = st.number_input(
+                    "Valor",
+                    min_value=0.01,
+                    value=float(
+                        defaults["valor"]
+                    ),
+                    step=1.00,
+                    format="%.2f",
+                    help=(
+                        "Informe um valor maior que zero."
+                    ),
+                )
 
         submit_label = (
             "Salvar alteração"
@@ -920,17 +948,20 @@ def exibir_editor_transacoes_manuais() -> bool:
     """Exibe a entrada manual adaptada ao celular."""
     initialize_manual_transaction_state()
 
-    st.subheader(
-        "Entrada manual de transações"
-    )
+    with st.container(
+        key="manual-entry-heading",
+    ):
+        st.subheader(
+            "Entrada manual de transações"
+        )
 
-    exibir_resultado_etl_salvo()
-    show_manual_feedback()
+        exibir_resultado_etl_salvo()
+        show_manual_feedback()
 
-    st.caption(
-        "Adicione as transações pelo formulário, "
-        "revise o rascunho e salve o lote no banco local."
-    )
+        st.caption(
+            "Adicione as transações pelo formulário, "
+            "revise o rascunho e salve o lote no banco local."
+        )
 
     transactions = get_manual_draft()
 
@@ -1000,13 +1031,13 @@ def exibir_editor_transacoes_manuais() -> bool:
         key="manual-actions",
     ):
         (
-        save_column,
-        clear_column,
-    ) = st.columns(
-        2,
-        gap="small",
-        vertical_alignment="bottom",
-    )
+            save_column,
+            clear_column,
+        ) = st.columns(
+            2,
+            gap="small",
+            vertical_alignment="bottom",
+        )
 
         with save_column:
             st.button(

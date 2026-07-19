@@ -510,33 +510,256 @@ button:focus-visible {
    INPUTS, SELECTS E MENUS NO TEMA CLARO
    ========================================================= */
 
+/*
+   Os selects do conteúdo principal são identificados pelos
+   aria-labels reais vistos no navegador. Ano e Mês da sidebar
+   não entram nesta lista e permanecem grafite.
+*/
+
 :root:has(.finantec-theme-light)
 .stTextInput input,
 :root:has(.finantec-theme-light)
 .stNumberInput input,
 :root:has(.finantec-theme-light)
-.stDateInput input,
-:root:has(.finantec-theme-light)
 .stTextArea textarea,
 :root:has(.finantec-theme-light)
-[data-baseweb="input"] > div,
+[data-baseweb="textarea"] > div {
+    background:
+        #ffffff !important;
+
+    color:
+        var(--text-main) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+/* Selects Tipo, Categoria, Transação e Mês do planejamento */
+
+/*
+   A inspeção mostrou que a superfície escura está no elemento
+   com role="group". Por isso a correção agora mira esse
+   elemento diretamente, em vez de todas as divs do BaseWeb.
+*/
+
 :root:has(.finantec-theme-light)
-[data-baseweb="textarea"] > div,
+.stSelectbox:has(
+    input[aria-label="Tipo"]
+)
+[role="group"],
 :root:has(.finantec-theme-light)
-[data-baseweb="select"] > div {
-    background: #ffffff !important;
-    color: var(--text-main) !important;
+.stSelectbox:has(
+    input[aria-label="Categoria"]
+)
+[role="group"],
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Transação"]
+)
+[role="group"],
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Mês do planejamento"]
+)
+[role="group"] {
+    min-height:
+        35px !important;
+
+    height:
+        35px !important;
+
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        var(--text-main) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-sm) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+
+    box-sizing:
+        border-box;
+}
+
+
+/* Camadas internas permanecem transparentes. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tipo"]
+)
+[role="group"] > div,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Categoria"]
+)
+[role="group"] > div,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Transação"]
+)
+[role="group"] > div,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Mês do planejamento"]
+)
+[role="group"] > div {
+    background:
+        transparent !important;
+
+    background-color:
+        transparent !important;
+}
+
+
+/* Texto do controle fechado. */
+
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Tipo"],
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Categoria"],
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Transação"],
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Mês do planejamento"] {
+    min-height:
+        33px !important;
+
+    height:
+        33px !important;
+
+    padding:
+        0
+        0.7rem !important;
+
+    background:
+        transparent !important;
+
+    color:
+        var(--text-main) !important;
+
+    -webkit-text-fill-color:
+        var(--text-main) !important;
+
+    opacity:
+        1 !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+
+    box-sizing:
+        border-box;
+}
+
+
+/* Seta do select. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tipo"]
+)
+[role="group"] svg,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Categoria"]
+)
+[role="group"] svg,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Transação"]
+)
+[role="group"] svg,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Mês do planejamento"]
+)
+[role="group"] svg {
+    color:
+        var(--text-soft) !important;
+
+    fill:
+        currentColor !important;
+}
+
+
+/* Foco sem alterar o tamanho físico. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tipo"]
+)
+[role="group"]:focus-within,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Categoria"]
+)
+[role="group"]:focus-within,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Transação"]
+)
+[role="group"]:focus-within,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Mês do planejamento"]
+)
+[role="group"]:focus-within {
+    border-color:
+        var(--accent) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        0
+        0
+        0
+        2px
+        var(--accent-focus) !important;
+}
+
+/* Campo de data no tema claro */
+
+:root:has(.finantec-theme-light)
+.stDateInput
+[data-baseweb="input"] > div {
+    background:
+        #ffffff !important;
 
     border-color:
         var(--border-light) !important;
 }
 
 :root:has(.finantec-theme-light)
-[data-baseweb="select"] span,
-:root:has(.finantec-theme-light)
-[data-baseweb="select"] input {
-    color: var(--text-main) !important;
+.stDateInput input {
+    background:
+        transparent !important;
+
+    color:
+        var(--text-main) !important;
 }
+
+
+/* Placeholders */
 
 :root:has(.finantec-theme-light)
 .stTextInput input::placeholder,
@@ -546,51 +769,66 @@ button:focus-visible {
 .stDateInput input::placeholder,
 :root:has(.finantec-theme-light)
 .stTextArea textarea::placeholder {
-    color: var(--text-disabled) !important;
+    color:
+        var(--text-disabled) !important;
 }
+
+
+/* Botões do campo numérico */
 
 :root:has(.finantec-theme-light)
 .stNumberInput button {
-    background: var(--bg-panel-soft) !important;
-    color: var(--text-soft) !important;
+    background:
+        var(--bg-panel-soft) !important;
+
+    color:
+        var(--text-soft) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+
+/* Menu aberto */
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"] > div,
+:root:has(.finantec-theme-light)
+[data-baseweb="menu"],
+:root:has(.finantec-theme-light)
+[role="listbox"] {
+    background:
+        #ffffff !important;
+
+    color:
+        var(--text-main) !important;
 
     border-color:
         var(--border-light) !important;
 }
 
 :root:has(.finantec-theme-light)
-[data-baseweb="popover"],
+[data-baseweb="menu"] li,
 :root:has(.finantec-theme-light)
-[data-baseweb="menu"] {
-    background: #ffffff !important;
+[role="option"] {
+    background:
+        #ffffff !important;
 
-    border-color:
-        var(--border-light) !important;
+    color:
+        var(--text-soft) !important;
 }
 
 :root:has(.finantec-theme-light)
-[data-baseweb="menu"] li {
-    color: var(--text-soft) !important;
-}
-
+[data-baseweb="menu"] li:hover,
 :root:has(.finantec-theme-light)
-[data-baseweb="menu"] li:hover {
-    background: var(--accent-soft) !important;
-    color: var(--text-main) !important;
-}
+[role="option"]:hover,
+:root:has(.finantec-theme-light)
+[role="option"][aria-selected="true"] {
+    background:
+        var(--accent-soft) !important;
 
-.stTextInput input:focus,
-.stNumberInput input:focus,
-.stDateInput input:focus,
-.stTextArea textarea:focus,
-[data-baseweb="input"] > div:focus-within,
-[data-baseweb="textarea"] > div:focus-within,
-[data-baseweb="select"] > div:focus-within {
-    border-color: var(--accent) !important;
-
-    outline:
-        2px solid
-        var(--accent-focus) !important;
+    color:
+        var(--text-main) !important;
 }
 
 /* =========================================================
@@ -886,10 +1124,12 @@ label,
 
 :root:has(.finantec-theme-light)
 .finantec-table-panel {
-    background: #fffdf9 !important;
+    background:
+        #fffdf9 !important;
 
-    border-color:
-        var(--border) !important;
+    border:
+        1px solid
+        var(--border-light) !important;
 
     box-shadow:
         var(--shadow-soft) !important;
@@ -907,11 +1147,12 @@ label,
 
 :root:has(.finantec-theme-light)
 .finantec-table tbody td {
-    color: #2d2621 !important;
+    color:
+        #2d2621 !important;
 
     border-bottom:
         1px solid
-        #e6dbd0 !important;
+        #ded0c3 !important;
 }
 
 :root:has(.finantec-theme-light)
@@ -948,6 +1189,24 @@ label,
         var(--shadow-soft) !important;
 }
 
+
+/* Valores monetários semânticos */
+
+:root:has(.finantec-theme-light)
+.finantec-table
+tbody
+td.finantec-value-income {
+    color:
+        var(--success) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-table
+tbody
+td.finantec-value-expense {
+    color:
+        var(--danger) !important;
+}
 
 /* =========================================================
    PAINÉIS ANALÍTICOS NO TEMA CLARO
@@ -1063,6 +1322,177 @@ div[class*="st-key-monthly-evolution-card"]
         10px !important;
 }
 
+/* =========================================================
+   FORMULÁRIOS DE TRANSAÇÃO NO TEMA CLARO
+   ========================================================= */
+
+/* Textos auxiliares */
+
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-heading
+[data-testid="stCaptionContainer"],
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card
+[data-testid="stCaptionContainer"],
+:root:has(.finantec-theme-light)
+.st-key-persisted-transaction-management
+[data-testid="stCaptionContainer"] {
+    color:
+        #6f6258 !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Formulário de nova transação */
+
+:root:has(.finantec-theme-light)
+div[class*="st-key-manual-entry-card"] {
+    background:
+        rgba(
+            255,
+            253,
+            249,
+            0.84
+        ) !important;
+
+    box-shadow:
+        inset
+        0
+        0
+        0
+        1px
+        var(--border-light),
+        var(--shadow) !important;
+}
+
+:root:has(.finantec-theme-light)
+div[class*="st-key-manual-entry-card"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        transparent !important;
+
+    border:
+        1px solid
+        transparent !important;
+}
+
+
+/* Gerenciamento persistido */
+
+:root:has(.finantec-theme-light)
+.st-key-persisted-transaction-management
+[data-testid="stExpander"] {
+    background:
+        rgba(
+            255,
+            253,
+            249,
+            0.82
+        ) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    box-shadow:
+        var(--shadow) !important;
+}
+
+:root:has(.finantec-theme-light)
+div[class*="st-key-persisted-edit-form-card"] {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Rótulos */
+
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card label,
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card
+[data-testid="stWidgetLabel"] p,
+:root:has(.finantec-theme-light)
+.st-key-persisted-transaction-management label,
+:root:has(.finantec-theme-light)
+.st-key-persisted-transaction-management
+[data-testid="stWidgetLabel"] p {
+    color:
+        #4f443b !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Ações principais */
+
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled),
+:root:has(.finantec-theme-light)
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background:
+        var(--accent) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-active) !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover,
+:root:has(.finantec-theme-light)
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background:
+        var(--accent-hover) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-hover) !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+:root:has(.finantec-theme-light)
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span,
+:root:has(.finantec-theme-light)
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+:root:has(.finantec-theme-light)
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+}
 
 /* =========================================================
    UPLOAD NO TEMA CLARO
@@ -1165,4 +1595,1410 @@ div[class*="st-key-monthly-evolution-card"]
 
     border-color:
         var(--border) !important;
+}
+
+/* =========================================================
+   CONSISTÊNCIA DA CONSULTA NO TEMA CLARO
+   ========================================================= */
+
+/*
+   No fundo marfim, a borda padrão ficava próxima demais
+   da cor da página. Um limite levemente mais visível mantém
+   consistência com os demais painéis analíticos.
+*/
+
+:root:has(.finantec-theme-light)
+div[class*="st-key-period-transactions-card"] {
+    background:
+        rgba(
+            255,
+            253,
+            249,
+            0.72
+        ) !important;
+
+    box-shadow:
+        inset
+        0
+        0
+        0
+        1px
+        var(--border-light),
+        var(--shadow) !important;
+}
+
+:root:has(.finantec-theme-light)
+div[class*="st-key-period-transactions-card"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        rgba(
+            255,
+            253,
+            249,
+            0.72
+        ) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    box-shadow:
+        var(--shadow) !important;
+}
+
+
+/*
+   Garante que o formulário persistido continue plano no
+   tema claro, sem a antiga barra lateral de destaque.
+*/
+
+:root:has(.finantec-theme-light)
+div[class*="st-key-persisted-edit-form-card"] {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+/* ---------------------------------------------------------
+   TEMA ESCURO MAIS LIMPO
+   --------------------------------------------------------- */
+
+/*
+   Remove o cinza chapado que dava aparência empoeirada.
+   A iluminação fica restrita ao topo e o corpo permanece escuro.
+*/
+
+:root:has(.finantec-theme-dark)
+div[class*="st-key-manual-entry-card"],
+:root:has(.finantec-theme-dark)
+div[class*="st-key-period-transactions-card"],
+:root:has(.finantec-theme-dark)
+div[class*="st-key-persisted-transaction-management"]
+[data-testid="stExpander"] {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.022),
+            rgba(255, 255, 255, 0)
+            150px
+        ),
+        #151517 !important;
+
+    border-color:
+        #34343a !important;
+
+    box-shadow:
+        inset
+        0
+        1px
+        0
+        rgba(255, 255, 255, 0.018) !important;
+}
+
+:root:has(.finantec-theme-dark)
+div[class*="st-key-manual-entry-card"]
+[data-testid="stVerticalBlockBorderWrapper"],
+:root:has(.finantec-theme-dark)
+div[class*="st-key-period-transactions-card"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.022),
+            rgba(255, 255, 255, 0)
+            150px
+        ),
+        #151517 !important;
+
+    border-color:
+        #34343a !important;
+
+    box-shadow:
+        inset
+        0
+        1px
+        0
+        rgba(255, 255, 255, 0.018) !important;
+}
+
+
+/* Métricas internas mais escuras e sem névoa cinza. */
+
+:root:has(.finantec-theme-dark)
+div[class*="st-key-period-transactions-card"]
+[data-testid="stMetric"] {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.016),
+            rgba(255, 255, 255, 0)
+        ),
+        #19191b !important;
+
+    border-color:
+        #303034 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* A tabela acompanha a superfície escura do painel. */
+
+:root:has(.finantec-theme-dark)
+div[class*="st-key-period-transactions-card"]
+.finantec-table-panel {
+    background:
+        #121214 !important;
+
+    border-color:
+        #303034 !important;
+
+    box-shadow:
+        none !important;
+}
+
+/* =========================================================
+   POPOVER DE APARÊNCIA
+   ========================================================= */
+
+.finantec-appearance-panel-marker {
+    display: none;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]:has(
+    .finantec-appearance-panel-marker
+),
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]:has(
+    .finantec-appearance-panel-marker
+),
+:root:has(.finantec-theme-light)
+[role="dialog"]:has(
+    .finantec-appearance-panel-marker
+),
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]:has(
+    .finantec-appearance-panel-marker
+) > div {
+    background:
+        #fffdfb !important;
+
+    color:
+        var(--text-main) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        14px !important;
+
+    box-shadow:
+        0
+        14px
+        36px
+        rgba(45, 38, 33, 0.14) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]:has(
+    .finantec-appearance-panel-marker
+)
+[data-testid="stMarkdownContainer"]
+strong,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]:has(
+    .finantec-appearance-panel-marker
+)
+[data-testid="stMarkdownContainer"]
+strong,
+:root:has(.finantec-theme-light)
+[role="dialog"]:has(
+    .finantec-appearance-panel-marker
+)
+[data-testid="stMarkdownContainer"]
+strong {
+    color:
+        var(--text-main) !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]:has(
+    .finantec-appearance-panel-marker
+)
+label,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]:has(
+    .finantec-appearance-panel-marker
+)
+label,
+:root:has(.finantec-theme-light)
+[role="dialog"]:has(
+    .finantec-appearance-panel-marker
+)
+label {
+    color:
+        var(--text-soft) !important;
+}
+
+
+/* =========================================================
+   ORÇAMENTO MENSAL
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   FORMULÁRIO
+   --------------------------------------------------------- */
+
+.st-key-monthly-budget-form-card {
+    overflow:
+        hidden;
+
+    background:
+        var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-left:
+        3px solid
+        var(--accent);
+
+    border-radius:
+        16px;
+
+    box-shadow:
+        none;
+}
+
+.st-key-monthly-budget-form-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0.95rem
+        1rem
+        0.9rem !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-monthly-budget-form-card {
+    background:
+        #fffdfb;
+
+    border-color:
+        #c7b5a5;
+
+    border-left-color:
+        var(--accent);
+
+    box-shadow:
+        0
+        8px
+        22px
+        rgba(45, 38, 33, 0.055);
+}
+
+
+/* ---------------------------------------------------------
+   RESUMO DO MÊS
+   --------------------------------------------------------- */
+
+.st-key-monthly-budget-summary-grid
+[data-testid="stMetric"],
+[class*="st-key-monthly-budget-summary-"]
+[data-testid="stMetric"] {
+    min-height:
+        88px !important;
+
+    padding:
+        0.72rem
+        0.88rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        13px !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-monthly-budget-summary-grid
+[data-testid="stMetricLabel"],
+[class*="st-key-monthly-budget-summary-"]
+[data-testid="stMetricLabel"] {
+    font-size:
+        0.78rem !important;
+
+    line-height:
+        1.25 !important;
+}
+
+.st-key-monthly-budget-summary-grid
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-summary-"]
+[data-testid="stMetricValue"] {
+    font-size:
+        1.62rem !important;
+
+    line-height:
+        1.06 !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-monthly-budget-summary-grid
+[data-testid="stMetric"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-"]
+[data-testid="stMetric"] {
+    background:
+        #ffffff !important;
+
+    border-color:
+        #d7c9bc !important;
+}
+
+
+/* ---------------------------------------------------------
+   CARD DE CATEGORIA
+   --------------------------------------------------------- */
+
+[class*="st-key-monthly-budget-card-"] {
+    overflow:
+        hidden;
+
+    margin-bottom:
+        0.75rem;
+
+    background:
+        var(--bg-deep);
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius:
+        16px;
+
+    box-shadow:
+        none;
+}
+
+[class*="st-key-monthly-budget-card-"]
+[data-testid="stVerticalBlockBorderWrapper"],
+[class*="st-key-monthly-budget-card-"][data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0.8rem
+        0.85rem
+        0.78rem !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-card-"] {
+    background:
+        rgba(255, 253, 250, 0.88);
+
+    border-color:
+        #c9b8a9;
+
+    box-shadow:
+        0
+        5px
+        16px
+        rgba(45, 38, 33, 0.035);
+}
+
+
+/* Métricas internas */
+
+[class*="st-key-monthly-budget-metric-"]
+[data-testid="stMetric"],
+[class*="st-key-monthly-budget-metric-"][data-testid="stMetric"] {
+    min-height:
+        84px !important;
+
+    padding:
+        0.66rem
+        0.78rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border) !important;
+
+    border-radius:
+        12px !important;
+
+    box-shadow:
+        none !important;
+}
+
+[class*="st-key-monthly-budget-metric-"]
+[data-testid="stMetricLabel"] {
+    font-size:
+        0.76rem !important;
+
+    line-height:
+        1.25 !important;
+}
+
+[class*="st-key-monthly-budget-metric-"]
+[data-testid="stMetricValue"] {
+    font-size:
+        1.52rem !important;
+
+    line-height:
+        1.06 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-"]
+[data-testid="stMetric"] {
+    background:
+        #ffffff !important;
+
+    border-color:
+        #d7c9bc !important;
+}
+
+
+/* ---------------------------------------------------------
+   STATUS COMPACTO
+   --------------------------------------------------------- */
+
+[class*="st-key-monthly-budget-status-"] {
+    width:
+        fit-content !important;
+
+    min-width:
+        0 !important;
+
+    margin-left:
+        auto !important;
+
+    padding:
+        0.3rem
+        0.62rem;
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius:
+        999px;
+}
+
+[class*="st-key-monthly-budget-status-"]
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0 !important;
+}
+
+[class*="st-key-monthly-budget-status-"]
+[data-testid="stMarkdownContainer"] p,
+[class*="st-key-monthly-budget-status-"]
+[data-testid="stMarkdownContainer"] {
+    margin:
+        0 !important;
+
+    font-size:
+        0.72rem !important;
+
+    font-weight:
+        700 !important;
+
+    line-height:
+        1.2 !important;
+
+    white-space:
+        nowrap;
+}
+
+[class*="st-key-monthly-budget-status-success-"] {
+    background:
+        var(--success-soft);
+
+    border-color:
+        rgba(34, 197, 94, 0.34);
+}
+
+[class*="st-key-monthly-budget-status-success-"]
+[data-testid="stMarkdownContainer"] p {
+    color:
+        var(--success) !important;
+}
+
+[class*="st-key-monthly-budget-status-warning-"] {
+    background:
+        var(--warning-soft);
+
+    border-color:
+        rgba(245, 158, 11, 0.38);
+}
+
+[class*="st-key-monthly-budget-status-warning-"]
+[data-testid="stMarkdownContainer"] p {
+    color:
+        var(--warning) !important;
+}
+
+[class*="st-key-monthly-budget-status-danger-"] {
+    background:
+        var(--danger-soft);
+
+    border-color:
+        rgba(239, 68, 68, 0.38);
+}
+
+[class*="st-key-monthly-budget-status-danger-"]
+[data-testid="stMarkdownContainer"] p {
+    color:
+        var(--danger) !important;
+}
+
+
+/* ---------------------------------------------------------
+   PROGRESSO E AÇÕES
+   --------------------------------------------------------- */
+
+[class*="st-key-monthly-budget-progress-"]
+[data-testid="stProgressBar"] {
+    height:
+        7px !important;
+
+    overflow:
+        hidden;
+
+    background:
+        var(--bg-elevated) !important;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:
+        999px !important;
+}
+
+[class*="st-key-monthly-budget-progress-success-"]
+[data-testid="stProgressBar"] > div {
+    background:
+        var(--success) !important;
+}
+
+[class*="st-key-monthly-budget-progress-warning-"]
+[data-testid="stProgressBar"] > div {
+    background:
+        var(--warning) !important;
+}
+
+[class*="st-key-monthly-budget-progress-danger-"]
+[data-testid="stProgressBar"] > div {
+    background:
+        var(--danger) !important;
+}
+
+[class*="st-key-monthly-budget-card-"]
+.stButton > button,
+.st-key-monthly-budget-form-card
+.stButton > button {
+    min-height:
+        40px !important;
+
+    padding:
+        0.58rem
+        0.8rem !important;
+}
+
+
+/* ---------------------------------------------------------
+   RESPONSIVIDADE DO ORÇAMENTO
+   --------------------------------------------------------- */
+
+@media (max-width: 700px) {
+    [class*="st-key-monthly-budget-status-"] {
+        margin-left:
+            0 !important;
+    }
+
+    .st-key-monthly-budget-summary-grid
+    [data-testid="stMetric"],
+    [class*="st-key-monthly-budget-summary-"]
+    [data-testid="stMetric"] {
+        min-height:
+            82px !important;
+    }
+
+    [class*="st-key-monthly-budget-metric-"]
+    [data-testid="stMetric"] {
+        min-height:
+            80px !important;
+    }
+
+    [class*="st-key-monthly-budget-metric-"]
+    [data-testid="stMetricValue"] {
+        font-size:
+            1.4rem !important;
+    }
+}
+
+
+/* =========================================================
+   METAS — CONTORNOS NO TEMA CLARO
+   ========================================================= */
+
+[class*="st-key-financial-goal-form-"],
+[class*="st-key-financial-goal-card-"] {
+    overflow:
+        hidden;
+
+    border-radius:
+        16px;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-form-"] {
+    background:
+        #fffdfb;
+
+    border:
+        1px solid
+        #c7b5a5;
+
+    border-left:
+        3px solid
+        var(--accent);
+
+    box-shadow:
+        0
+        8px
+        22px
+        rgba(45, 38, 33, 0.05);
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-card-"] {
+    background:
+        rgba(255, 253, 250, 0.88);
+
+    border:
+        1px solid
+        #c9b8a9;
+
+    box-shadow:
+        0
+        5px
+        16px
+        rgba(45, 38, 33, 0.035);
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-form-"]
+[data-testid="stForm"],
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-form-"]
+[data-testid="stVerticalBlockBorderWrapper"],
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-card-"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+/* =========================================================
+   BUILD V7 — ACABAMENTO ESTÁVEL DO ORÇAMENTO
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   SELECTS DENTRO DE POPOVERS NO TEMA CLARO
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[role="dialog"]
+[data-baseweb="select"] > div {
+    background:
+        #ffffff !important;
+
+    color:
+        #2f2925 !important;
+
+    border-color:
+        #cdbdaf !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[role="dialog"]
+[data-baseweb="select"] span {
+    color:
+        #2f2925 !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]
+[data-baseweb="select"] svg,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]
+[data-baseweb="select"] svg,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]
+[data-baseweb="select"] svg,
+:root:has(.finantec-theme-light)
+[role="dialog"]
+[data-baseweb="select"] svg {
+    color:
+        #665b53 !important;
+
+    fill:
+        currentColor !important;
+}
+
+
+/* ---------------------------------------------------------
+   CORES SEMÂNTICAS DO RESUMO
+   --------------------------------------------------------- */
+
+.st-key-monthly-budget-summary-spent
+[data-testid="stMetricValue"],
+.st-key-monthly-budget-summary-spent
+[data-testid="stMetricValue"] * {
+    color:
+        var(--accent) !important;
+}
+
+[class*="st-key-monthly-budget-summary-remaining-positive"]
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-summary-remaining-positive"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--success) !important;
+}
+
+[class*="st-key-monthly-budget-summary-remaining-danger"]
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-summary-remaining-danger"]
+[data-testid="stMetricValue"] *,
+[class*="st-key-monthly-budget-summary-exceeded-danger"]
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-summary-exceeded-danger"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--danger) !important;
+}
+
+
+/* ---------------------------------------------------------
+   CORES SEMÂNTICAS DAS CATEGORIAS
+   --------------------------------------------------------- */
+
+[class*="st-key-monthly-budget-metric-spent-"]
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-metric-spent-"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--accent) !important;
+}
+
+[class*="st-key-monthly-budget-metric-available-"]
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-metric-available-"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--success) !important;
+}
+
+[class*="st-key-monthly-budget-metric-exceeded-"]
+[data-testid="stMetricValue"],
+[class*="st-key-monthly-budget-metric-exceeded-"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--danger) !important;
+}
+
+
+/* ---------------------------------------------------------
+   LINHA DE UTILIZAÇÃO
+   --------------------------------------------------------- */
+
+[class*="st-key-monthly-budget-usage-"]
+[data-testid="stCaptionContainer"] {
+    margin-top:
+        -0.15rem;
+
+    margin-bottom:
+        0.25rem;
+}
+
+[class*="st-key-monthly-budget-usage-"]
+[data-testid="stCaptionContainer"] p {
+    color:
+        var(--text-muted) !important;
+
+    font-size:
+        0.76rem !important;
+
+    line-height:
+        1.35 !important;
+}
+
+
+/* ---------------------------------------------------------
+   PILLS MAIS FORTES NO TEMA CLARO
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-status-success-"] {
+    background:
+        #e5f7ec;
+
+    border-color:
+        #4cae72;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-status-success-"]
+[data-testid="stMarkdownContainer"] p {
+    color:
+        #0f6a38 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-status-warning-"] {
+    background:
+        #fff2d3;
+
+    border-color:
+        #d29a27;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-status-warning-"]
+[data-testid="stMarkdownContainer"] p {
+    color:
+        #815400 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-status-danger-"] {
+    background:
+        #ffebec;
+
+    border-color:
+        #e36a70;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-status-danger-"]
+[data-testid="stMarkdownContainer"] p {
+    color:
+        #ac1f28 !important;
+}
+
+
+/* ---------------------------------------------------------
+   BARRA DE PROGRESSO PERSONALIZADA
+   --------------------------------------------------------- */
+
+.finantec-budget-progress-track {
+    width:
+        100%;
+
+    height:
+        8px;
+
+    margin:
+        0.3rem
+        0
+        0.75rem;
+
+    overflow:
+        hidden;
+
+    background:
+        var(--bg-elevated);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:
+        999px;
+}
+
+.finantec-budget-progress-fill {
+    height:
+        100%;
+
+    border-radius:
+        inherit;
+
+    transition:
+        width
+        180ms
+        ease;
+}
+
+.finantec-budget-progress-fill.success {
+    background:
+        var(--success);
+}
+
+.finantec-budget-progress-fill.warning {
+    background:
+        var(--warning);
+}
+
+.finantec-budget-progress-fill.danger {
+    background:
+        var(--danger);
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-progress-track {
+    background:
+        #e6ddd5;
+
+    border-color:
+        #d1c2b6;
+}
+
+/* =========================================================
+   BUILD V8 — LEGIBILIDADE E SELECTS DE APARÊNCIA
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   LINHA DE UTILIZAÇÃO DO ORÇAMENTO
+   --------------------------------------------------------- */
+
+.finantec-budget-usage-text {
+    margin:
+        -0.15rem
+        0
+        0.45rem !important;
+
+    color:
+        var(--text-soft) !important;
+
+    font-size:
+        0.8rem !important;
+
+    font-weight:
+        500;
+
+    line-height:
+        1.4 !important;
+}
+
+.finantec-budget-usage-text strong {
+    color:
+        var(--text-main) !important;
+
+    font-weight:
+        700;
+}
+
+.finantec-budget-usage-text
+.finantec-budget-usage-success {
+    color:
+        var(--success) !important;
+}
+
+.finantec-budget-usage-text
+.finantec-budget-usage-warning {
+    color:
+        var(--warning) !important;
+}
+
+.finantec-budget-usage-text
+.finantec-budget-usage-danger {
+    color:
+        var(--danger) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-usage-text {
+    color:
+        #665b53 !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-usage-text strong {
+    color:
+        #302925 !important;
+}
+
+
+/* ---------------------------------------------------------
+   CAMPOS DO POPOVER DE APARÊNCIA NO TEMA CLARO
+   --------------------------------------------------------- */
+
+/*
+   As chaves dos dois selectboxes são estáveis e geram classes
+   st-key-*. Isso evita depender apenas da estrutura do portal
+   usado pelo popover do Streamlit.
+*/
+
+:root:has(.finantec-theme-light)
+:is(
+    [class*="st-key-finantec_appearance_selector"],
+    [class*="st-key-finantec-appearance-selector"],
+    [class*="st-key-finantec_accent_selector"],
+    [class*="st-key-finantec-accent-selector"]
+)
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+:is(
+    [class*="st-key-finantec_appearance_selector"],
+    [class*="st-key-finantec-appearance-selector"],
+    [class*="st-key-finantec_accent_selector"],
+    [class*="st-key-finantec-accent-selector"]
+)
+[data-baseweb="select"] > div > div {
+    background:
+        #ffffff !important;
+
+    color:
+        #2f2925 !important;
+
+    border-color:
+        #c9b8a9 !important;
+}
+
+:root:has(.finantec-theme-light)
+:is(
+    [class*="st-key-finantec_appearance_selector"],
+    [class*="st-key-finantec-appearance-selector"],
+    [class*="st-key-finantec_accent_selector"],
+    [class*="st-key-finantec-accent-selector"]
+)
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+:is(
+    [class*="st-key-finantec_appearance_selector"],
+    [class*="st-key-finantec-appearance-selector"],
+    [class*="st-key-finantec_accent_selector"],
+    [class*="st-key-finantec-accent-selector"]
+)
+[data-baseweb="select"] input {
+    color:
+        #2f2925 !important;
+
+    -webkit-text-fill-color:
+        #2f2925 !important;
+}
+
+:root:has(.finantec-theme-light)
+:is(
+    [class*="st-key-finantec_appearance_selector"],
+    [class*="st-key-finantec-appearance-selector"],
+    [class*="st-key-finantec_accent_selector"],
+    [class*="st-key-finantec-accent-selector"]
+)
+[data-baseweb="select"] svg {
+    color:
+        #665b53 !important;
+
+    fill:
+        currentColor !important;
+}
+
+
+/* Fallback para a estrutura em que a classe st-key fica no pai. */
+
+:root:has(.finantec-theme-light)
+:is(
+    [class*="st-key-finantec_appearance_selector"],
+    [class*="st-key-finantec-appearance-selector"],
+    [class*="st-key-finantec_accent_selector"],
+    [class*="st-key-finantec-accent-selector"]
+)
+[data-baseweb="select"] {
+    background:
+        #ffffff !important;
+
+    border-radius:
+        var(--radius-sm) !important;
+}
+
+/* =========================================================
+   BUILD V9 — CORREÇÕES ESPECÍFICAS DO TEMA CLARO
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   CORES SEMÂNTICAS COM PRIORIDADE SOBRE A REGRA GLOBAL CLARA
+   --------------------------------------------------------- */
+
+/*
+   O tema claro possui uma regra global para stMetricValue com
+   alta especificidade. Estas regras repetem o marcador do tema
+   para garantir que os estados semânticos prevaleçam.
+*/
+
+:root:has(.finantec-theme-light)
+.st-key-monthly-budget-summary-spent
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+.st-key-monthly-budget-summary-spent
+[data-testid="stMetricValue"] * {
+    color:
+        #b84d08 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-positive"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-positive"]
+[data-testid="stMetricValue"] *,
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-available-"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-available-"]
+[data-testid="stMetricValue"] * {
+    color:
+        #147a43 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-danger"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-danger"]
+[data-testid="stMetricValue"] *,
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-exceeded-danger"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-exceeded-danger"]
+[data-testid="stMetricValue"] *,
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-exceeded-"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-exceeded-"]
+[data-testid="stMetricValue"] * {
+    color:
+        #bd2932 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-spent-"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-spent-"]
+[data-testid="stMetricValue"] * {
+    color:
+        #b84d08 !important;
+}
+
+
+/* ---------------------------------------------------------
+   SELECTS TEMA E COR DE DESTAQUE NO TEMA CLARO
+   --------------------------------------------------------- */
+
+/*
+   Os controles são identificados pelos aria-labels reais,
+   seguindo a mesma estratégia já usada nos outros selectboxes.
+*/
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tema"]
+)
+[role="group"],
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Cor de destaque"]
+)
+[role="group"] {
+    min-height:
+        35px !important;
+
+    height:
+        35px !important;
+
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        #2f2925 !important;
+
+    border:
+        1px solid
+        #c9b8a9 !important;
+
+    border-radius:
+        var(--radius-sm) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Todas as camadas internas ficam transparentes. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tema"]
+)
+[role="group"] > div,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Cor de destaque"]
+)
+[role="group"] > div {
+    background:
+        transparent !important;
+
+    background-color:
+        transparent !important;
+}
+
+
+/* Texto selecionado. */
+
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Tema"],
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Cor de destaque"] {
+    min-height:
+        33px !important;
+
+    height:
+        33px !important;
+
+    padding:
+        0
+        0.7rem !important;
+
+    background:
+        transparent !important;
+
+    color:
+        #2f2925 !important;
+
+    -webkit-text-fill-color:
+        #2f2925 !important;
+
+    opacity:
+        1 !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Seta dos selects. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tema"]
+)
+[role="group"] svg,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Cor de destaque"]
+)
+[role="group"] svg {
+    color:
+        #665b53 !important;
+
+    fill:
+        currentColor !important;
+}
+
+
+/* Foco usando a cor de destaque atual. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Tema"]
+)
+[role="group"]:focus-within,
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Cor de destaque"]
+)
+[role="group"]:focus-within {
+    border-color:
+        var(--accent) !important;
+
+    box-shadow:
+        0
+        0
+        0
+        2px
+        var(--accent-focus) !important;
 }

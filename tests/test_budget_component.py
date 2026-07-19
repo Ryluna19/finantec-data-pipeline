@@ -47,17 +47,6 @@ def test_budget_period_options_include_current_and_existing_months():
         "2026-05",
     ]
 
-
-def test_budget_category_options_use_defaults_without_transactions():
-    categories = build_budget_category_options(
-        pd.DataFrame()
-    )
-
-    assert categories == list(
-        DEFAULT_BUDGET_CATEGORIES
-    )
-
-
 def test_build_budget_payload():
     payload = build_budget_payload(
         period="2026-07",

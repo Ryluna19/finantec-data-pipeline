@@ -67,6 +67,67 @@ CellStyleResolver = Callable[
 ]
 
 
+def resolve_table_cell_classes(
+    column: str,
+    row: pd.Series,
+) -> str:
+    """Define classes semânticas sem depender de estilo inline."""
+    classes = [
+        "finantec-table-cell",
+    ]
+
+    normalized_column = (
+        str(column)
+        .strip()
+        .casefold()
+    )
+
+    if normalized_column in {
+        "valor",
+        "receitas",
+        "despesas",
+    }:
+        classes.append(
+            "finantec-table-value"
+        )
+
+    if normalized_column == "receitas":
+        classes.append(
+            "finantec-value-income"
+        )
+
+    elif normalized_column == "despesas":
+        classes.append(
+            "finantec-value-expense"
+        )
+
+    elif normalized_column == "valor":
+        transaction_type = (
+            str(
+                row.get(
+                    "Tipo",
+                    "",
+                )
+            )
+            .strip()
+            .casefold()
+        )
+
+        if transaction_type == "receita":
+            classes.append(
+                "finantec-value-income"
+            )
+
+        elif transaction_type == "despesa":
+            classes.append(
+                "finantec-value-expense"
+            )
+
+    return " ".join(
+        classes
+    )
+
+
 def build_read_only_table_html(
     table: pd.DataFrame,
     *,
@@ -108,8 +169,21 @@ def build_read_only_table_html(
                 else ""
             )
 
+            class_attribute = (
+                ' class="'
+                + escape(
+                    resolve_table_cell_classes(
+                        str(column),
+                        row,
+                    ),
+                    quote=True,
+                )
+                + '"'
+            )
+
             cells.append(
                 "<td"
+                f"{class_attribute}"
                 f"{style_attribute}"
                 ">"
                 f"{escape(str(value))}"
@@ -186,21 +260,25 @@ def transaction_cell_style(
     if column != "Valor":
         return ""
 
-    transaction_type = str(
-        row.get(
-            "Tipo",
-            "",
+    transaction_type = (
+        str(
+            row.get(
+                "Tipo",
+                "",
+            )
         )
-    ).strip()
+        .strip()
+        .casefold()
+    )
 
-    if transaction_type == "Receita":
+    if transaction_type == "receita":
         return (
             f"color: {INCOME_COLOR} !important; "
             "font-weight: 700; "
             "text-align: right;"
         )
 
-    if transaction_type == "Despesa":
+    if transaction_type == "despesa":
         return (
             f"color: {EXPENSE_COLOR} !important; "
             "font-weight: 700; "

@@ -816,7 +816,19 @@ button:hover {
 
 .finantec-table-panel {
     padding: 0;
-    overflow: hidden;
+
+    overflow:
+        hidden;
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius:
+        var(--radius);
+
+    box-shadow:
+        none;
 }
 
 .finantec-table {
@@ -834,21 +846,36 @@ button:hover {
         1px solid
         var(--border-light);
 
-    font-size: 0.9rem !important;
-    font-weight: 700 !important;
-    text-align: left;
+    font-size:
+        0.94rem !important;
+
+    font-weight:
+        750 !important;
+
+    line-height:
+        1.35;
+
+    text-align:
+        left;
 }
 
 .finantec-table tbody td {
     padding: 0.95rem 1rem;
 
-    color: #f4f4f5 !important;
+    color: var(--text-main) !important;
 
     border-bottom:
         1px solid
         var(--border);
 
-    font-size: 0.92rem !important;
+    font-size:
+        0.98rem !important;
+
+    font-weight:
+        500;
+
+    line-height:
+        1.4;
 }
 
 .finantec-table tbody tr:nth-child(odd) {
@@ -861,6 +888,40 @@ button:hover {
 
 .finantec-table tbody tr:hover {
     background: var(--bg-table-hover);
+}
+
+/* Valores monetários semânticos */
+
+.finantec-table
+tbody
+td.finantec-value-income {
+    color:
+        var(--success) !important;
+
+    font-weight:
+        750;
+
+    letter-spacing:
+        0.005em;
+
+    text-align:
+        right;
+}
+
+.finantec-table
+tbody
+td.finantec-value-expense {
+    color:
+        var(--danger) !important;
+
+    font-weight:
+        750;
+
+    letter-spacing:
+        0.005em;
+
+    text-align:
+        right;
 }
 
 [data-testid="stDataFrame"],
@@ -887,14 +948,55 @@ button:hover {
 .st-key-latest-transactions-card,
 .st-key-data-validation-card,
 .st-key-period-transactions-card {
-    width: 100%;
-    height: 100%;
+    width:
+        100%;
+}
+
+
+/*
+   Somente o par gráfico/ranking precisa ocupar a mesma altura.
+   Cards com tabelas crescem conforme o conteúdo para não deixar
+   a tabela ultrapassar a borda do container.
+*/
+
+.st-key-expenses-category-card,
+.st-key-category-ranking-card {
+    height:
+        100%;
+}
+
+.st-key-monthly-evolution-card,
+.st-key-latest-transactions-card,
+.st-key-data-validation-card,
+.st-key-period-transactions-card {
+    height:
+        auto !important;
+
+    min-height:
+        0;
 }
 
 .st-key-expenses-category-card
 [data-testid="stVerticalBlockBorderWrapper"],
 .st-key-category-ranking-card
-[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stVerticalBlockBorderWrapper"] {
+    height:
+        100%;
+
+    padding:
+        1.1rem
+        1.2rem !important;
+
+    background:
+        var(--bg-panel);
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius);
+}
+
 .st-key-monthly-evolution-card
 [data-testid="stVerticalBlockBorderWrapper"],
 .st-key-latest-transactions-card
@@ -903,15 +1005,25 @@ button:hover {
 [data-testid="stVerticalBlockBorderWrapper"],
 .st-key-period-transactions-card
 [data-testid="stVerticalBlockBorderWrapper"] {
-    height: 100%;
-    padding: 1.1rem 1.2rem !important;
+    height:
+        auto !important;
 
-    background: var(--bg-panel);
+    min-height:
+        0;
+
+    padding:
+        1.1rem
+        1.2rem
+        1.55rem !important;
+
+    background:
+        var(--bg-panel);
 
     border-color:
         var(--border-light) !important;
 
-    border-radius: var(--radius);
+    border-radius:
+        var(--radius);
 }
 
 .st-key-expenses-category-card h3,
@@ -1179,59 +1291,126 @@ button {
    AÇÕES DA ENTRADA MANUAL
    ========================================================= */
 
-/* Card do formulário manual */
+/* Cabeçalho e card do formulário manual */
+
+.st-key-manual-entry-heading {
+    margin-bottom: 0.9rem;
+}
+
+.st-key-manual-entry-heading
+[data-testid="stCaptionContainer"] {
+    margin-top: 0.15rem;
+}
 
 .st-key-manual-entry-card {
     margin-bottom: 1.25rem;
+
+    background:
+        var(--bg-panel);
+
+    border-radius:
+        var(--radius);
+
+    box-shadow:
+        inset
+        0
+        0
+        0
+        1px
+        var(--border-light);
 }
 
 .st-key-manual-entry-card
 [data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 1.15rem 1.2rem !important;
+    padding:
+        1.15rem
+        1.2rem !important;
 
-    background: var(--bg-panel);
+    background:
+        transparent !important;
 
-    border-color:
-        var(--border-light) !important;
+    border:
+        1px solid
+        transparent !important;
 
-    border-radius: var(--radius);
+    border-radius:
+        var(--radius) !important;
 }
 
 .st-key-manual-entry-card h3 {
     margin-top: 0;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.65rem;
 }
 
 .st-key-manual-entry-card
 [data-testid="stForm"] {
-    padding-bottom: 0 !important;
+    padding-bottom:
+        0 !important;
 }
 
 .st-key-manual-entry-card
-[data-testid="stFormSubmitButton"]
-button {
-    width: auto !important;
-    min-width: 170px;
+[data-testid="stForm"]
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0.85rem;
 }
+
+
+/* Linhas responsivas do formulário manual */
+
+.st-key-manual-form-primary-row
+[data-testid="stHorizontalBlock"],
+.st-key-manual-form-secondary-row
+[data-testid="stHorizontalBlock"] {
+    gap:
+        1rem;
+}
+
+.st-key-manual-form-primary-row
+[data-testid="stColumn"],
+.st-key-manual-form-secondary-row
+[data-testid="stColumn"] {
+    min-width:
+        0;
+}
+
 
 /* Ação principal do formulário manual */
 
 .st-key-manual-entry-card
 [data-testid="stFormSubmitButton"]
-button:not(:disabled) {
-    background: var(--accent-active) !important;
-    color: #ffffff !important;
+button {
+    width:
+        auto !important;
 
-    border-color: var(--accent) !important;
+    min-width:
+        180px;
+}
+
+.st-key-manual-entry-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background:
+        var(--accent-active) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent) !important;
 }
 
 .st-key-manual-entry-card
 [data-testid="stFormSubmitButton"]
 button:not(:disabled):hover {
-    background: var(--accent) !important;
-    color: #ffffff !important;
+    background:
+        var(--accent) !important;
 
-    border-color: var(--accent-hover) !important;
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-hover) !important;
 }
 
 .st-key-manual-entry-card
@@ -1243,103 +1422,215 @@ button:not(:disabled) span,
 .st-key-manual-entry-card
 [data-testid="stFormSubmitButton"]
 button:not(:disabled) svg {
-    color: #ffffff !important;
-    fill: currentColor !important;
+    color:
+        #ffffff !important;
+
+    fill:
+        currentColor !important;
 }
 
+
+/* Ações do rascunho */
+
 .st-key-manual-actions {
-    margin-top: 0.25rem;
+    margin-top:
+        0.25rem;
 }
 
 .st-key-manual-actions
 [data-testid="stHorizontalBlock"] {
-    gap: 0.75rem;
+    gap:
+        0.75rem;
 }
 
 .st-key-manual-actions
 .stButton > button {
-    width: 100% !important;
+    width:
+        100% !important;
 }
 
 .st-key-manual-clear-all {
-    margin-top: 0.75rem;
+    margin-top:
+        0.75rem;
 }
 
 .st-key-manual-clear-all
 button:not(:disabled) {
-    background: transparent !important;
-    color: #fca5a5 !important;
+    background:
+        transparent !important;
 
-    border-color: #7f1d1d !important;
+    color:
+        #fca5a5 !important;
+
+    border-color:
+        #7f1d1d !important;
 }
 
 .st-key-manual-clear-all
 button:not(:disabled):hover {
     background:
-        rgba(239, 68, 68, 0.10) !important;
+        rgba(
+            239,
+            68,
+            68,
+            0.10
+        ) !important;
 
-    color: #fecaca !important;
+    color:
+        #fecaca !important;
 
-    border-color: var(--danger) !important;
+    border-color:
+        var(--danger) !important;
 }
 
 
-/* Ações dos cartões */
+/* Ações dos cartões do rascunho */
 
 [class*="st-key-edit_manual_"]
 button:not(:disabled) {
-    background: #202226 !important;
-    color: var(--text-main) !important;
+    background:
+        #202226 !important;
 
-    border-color: var(--border-strong) !important;
+    color:
+        var(--text-main) !important;
+
+    border-color:
+        var(--border-strong) !important;
 }
 
 [class*="st-key-edit_manual_"]
 button:not(:disabled):hover {
-    background: var(--bg-hover) !important;
-    color: #ffffff !important;
+    background:
+        var(--bg-hover) !important;
 
-    border-color: var(--accent) !important;
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent) !important;
 }
 
 [class*="st-key-delete_manual_"]
 button:not(:disabled) {
     background:
-        rgba(239, 68, 68, 0.06) !important;
+        rgba(
+            239,
+            68,
+            68,
+            0.06
+        ) !important;
 
-    color: #fca5a5 !important;
+    color:
+        #fca5a5 !important;
 
-    border-color: #7f1d1d !important;
+    border-color:
+        #7f1d1d !important;
 }
 
 [class*="st-key-delete_manual_"]
 button:not(:disabled):hover {
     background:
-        rgba(239, 68, 68, 0.14) !important;
+        rgba(
+            239,
+            68,
+            68,
+            0.14
+        ) !important;
 
-    color: #fecaca !important;
+    color:
+        #fecaca !important;
 
-    border-color: var(--danger) !important;
+    border-color:
+        var(--danger) !important;
 }
+
 
 /* =========================================================
    GERENCIAMENTO DE TRANSAÇÕES PERSISTIDAS
    ========================================================= */
 
 .st-key-persisted-transaction-management {
-    margin-top: 1rem;
+    margin-top:
+        1rem;
 }
 
 .st-key-persisted-transaction-management
 [data-testid="stExpander"] {
+    background:
+        var(--bg-panel);
+
     border-color:
         var(--border-light) !important;
+
+    border-radius:
+        var(--radius) !important;
 }
 
 .st-key-persisted-transaction-management
 [data-testid="stExpander"]
 [data-testid="stAlert"] {
-    margin-top: 0.75rem;
+    margin-top:
+        0.75rem;
+}
+
+.st-key-persisted-transaction-management
+[data-testid="stCaptionContainer"] {
+    opacity:
+        1;
+}
+
+
+/* Formulário de edição persistida */
+
+.st-key-persisted-edit-form-card {
+    margin-top:
+        0.8rem;
+
+    padding:
+        1rem;
+
+    background:
+        var(--bg-panel-2);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:
+        var(--radius);
+}
+
+.st-key-persisted-edit-form-card
+[data-testid="stForm"]
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0.85rem;
+}
+
+.st-key-persisted-edit-primary-row
+[data-testid="stHorizontalBlock"],
+.st-key-persisted-edit-secondary-row
+[data-testid="stHorizontalBlock"] {
+    gap:
+        1rem;
+}
+
+.st-key-persisted-edit-primary-row
+[data-testid="stColumn"],
+.st-key-persisted-edit-secondary-row
+[data-testid="stColumn"] {
+    min-width:
+        0;
+}
+
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button {
+    width:
+        auto !important;
+
+    min-width:
+        180px;
 }
 
 
@@ -1347,10 +1638,14 @@ button:not(:disabled):hover {
 
 [class*="st-key-delete-persisted-transaction-"]
 button:not(:disabled) {
-    min-width: 180px;
+    min-width:
+        180px;
 
-    background: #b91c1c !important;
-    color: #ffffff !important;
+    background:
+        #b91c1c !important;
+
+    color:
+        #ffffff !important;
 
     border-color:
         var(--danger) !important;
@@ -1358,7 +1653,8 @@ button:not(:disabled) {
 
 [class*="st-key-delete-persisted-transaction-"]
 button:not(:disabled):hover {
-    background: #dc2626 !important;
+    background:
+        #dc2626 !important;
 
     border-color:
         #f87171 !important;
@@ -1370,12 +1666,81 @@ button:not(:disabled):hover {
 [class*="st-key-delete-persisted-transaction-"]
 button:disabled {
     background:
-        rgba(127, 29, 29, 0.10) !important;
+        rgba(
+            127,
+            29,
+            29,
+            0.10
+        ) !important;
 
-    color: #86585d !important;
+    color:
+        #86585d !important;
 
     border-color:
-        rgba(127, 29, 29, 0.50) !important;
+        rgba(
+            127,
+            29,
+            29,
+            0.50
+        ) !important;
+}
+
+
+/* Formulários de transação em telas estreitas */
+
+@media (max-width: 700px) {
+    .st-key-manual-form-primary-row
+    [data-testid="stHorizontalBlock"],
+    .st-key-manual-form-secondary-row
+    [data-testid="stHorizontalBlock"],
+    .st-key-persisted-edit-primary-row
+    [data-testid="stHorizontalBlock"],
+    .st-key-persisted-edit-secondary-row
+    [data-testid="stHorizontalBlock"] {
+        flex-direction:
+            column !important;
+
+        gap:
+            0.75rem !important;
+    }
+
+    .st-key-manual-form-primary-row
+    [data-testid="stColumn"],
+    .st-key-manual-form-secondary-row
+    [data-testid="stColumn"],
+    .st-key-persisted-edit-primary-row
+    [data-testid="stColumn"],
+    .st-key-persisted-edit-secondary-row
+    [data-testid="stColumn"] {
+        width:
+            100% !important;
+
+        flex:
+            1
+            1
+            100% !important;
+    }
+
+    .st-key-manual-entry-card
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding:
+            1rem !important;
+    }
+
+    .st-key-persisted-edit-form-card {
+        padding:
+            0.9rem;
+    }
+
+    .st-key-manual-entry-card
+    [data-testid="stFormSubmitButton"]
+    button,
+    .st-key-persisted-edit-form-card
+    [data-testid="stFormSubmitButton"]
+    button {
+        width:
+            100% !important;
+    }
 }
 
 
@@ -1538,4 +1903,421 @@ hr {
 .st-key-dashboard-latest-section,
 .st-key-transactions-period-section {
     margin-bottom: 0;
+}
+
+/* =========================================================
+   TOTAIS SEMÂNTICOS DO PERÍODO
+   ========================================================= */
+
+/*
+   Algumas versões do Streamlit colocam o texto do valor em
+   elementos internos. A cor é aplicada ao valor e aos filhos
+   para funcionar nos dois temas.
+*/
+
+div[class*="st-key-period-income-metric"]
+[data-testid="stMetricValue"],
+div[class*="st-key-period-income-metric"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--success) !important;
+
+    -webkit-text-fill-color:
+        var(--success) !important;
+}
+
+div[class*="st-key-period-expense-metric"]
+[data-testid="stMetricValue"],
+div[class*="st-key-period-expense-metric"]
+[data-testid="stMetricValue"] * {
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+}
+
+
+/* Cobertura quando a classe st-key fica em um wrapper externo. */
+
+div[class*="st-key-period-income-metric"]
+[data-testid="stMetricValue"],
+div[class*="st-key-period-income-metric"]
+[data-testid="stMetricValue"] div,
+div[class*="st-key-period-income-metric"]
+[data-testid="stMetricValue"] span {
+    color:
+        var(--success) !important;
+
+    -webkit-text-fill-color:
+        var(--success) !important;
+}
+
+div[class*="st-key-period-expense-metric"]
+[data-testid="stMetricValue"],
+div[class*="st-key-period-expense-metric"]
+[data-testid="stMetricValue"] div,
+div[class*="st-key-period-expense-metric"]
+[data-testid="stMetricValue"] span {
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+}
+
+/* =========================================================
+   ACABAMENTO DA TELA DE TRANSAÇÕES
+   ========================================================= */
+
+/* Foco das abas de edição e exclusão */
+
+.st-key-persisted-transaction-management
+.stTabs
+[data-baseweb="tab"]:focus:not(:focus-visible) {
+    outline:
+        none !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-persisted-transaction-management
+.stTabs
+[data-baseweb="tab"]:focus-visible {
+    border-radius:
+        6px;
+
+    outline:
+        2px solid
+        var(--accent-focus) !important;
+
+    outline-offset:
+        2px !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Botão de salvar da edição persistida */
+
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    width:
+        auto !important;
+
+    min-width:
+        180px;
+
+    background:
+        var(--accent-active) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent) !important;
+}
+
+.st-key-persisted-edit-form-card
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background:
+        var(--accent) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-hover) !important;
+}
+
+
+/*
+   A ação "Nova transação" já possui um card próprio.
+   O painel externo fica neutro para evitar borda duplicada.
+*/
+
+div[class*="st-key-transaction-action-panel-new"] {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+div[class*="st-key-transaction-action-panel-new"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0 !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    border-radius:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* O expander já delimita o gerenciamento persistido. */
+
+div[class*="st-key-persisted-edit-form-card"] {
+    margin-top:
+        0.65rem !important;
+
+    padding:
+        0.2rem
+        0
+        0.15rem !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    border-radius:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Painel da consulta do período */
+
+div[class*="st-key-period-transactions-card"] {
+    width:
+        100%;
+
+    background:
+        var(--bg-panel);
+
+    border-radius:
+        var(--radius);
+}
+
+div[class*="st-key-period-transactions-card"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    height:
+        auto !important;
+
+    min-height:
+        0;
+
+    padding:
+        1.1rem
+        1.2rem
+        1.8rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius) !important;
+
+    box-shadow:
+        var(--shadow-soft) !important;
+}
+
+div[class*="st-key-period-transactions-card"]
+.finantec-table,
+.st-key-monthly-evolution-card
+.finantec-table {
+    margin-bottom:
+        0.75rem;
+}
+
+div[class*="st-key-period-transactions-card"]
+.finantec-table-panel,
+.st-key-monthly-evolution-card
+.finantec-table-panel {
+    margin-bottom:
+        0.35rem;
+
+    padding-bottom:
+        0.2rem;
+}
+
+
+/* Distância entre consulta e gerenciamento persistido */
+
+.st-key-transactions-period-section
+> [data-testid="stVerticalBlock"] {
+    gap:
+        1rem !important;
+}
+
+/* Campo de data com uma única borda e altura uniforme */
+
+/*
+   A inspeção mostrou três níveis:
+   - wrapper externo: 42 px;
+   - superfície interna: 40 px;
+   - input: 38 px.
+
+   O wrapper externo fica neutro e somente a superfície interna
+   recebe borda. A altura final passa a acompanhar o select
+   fechado, que mede aproximadamente 35 px.
+*/
+
+.stDateInput
+[data-baseweb="input"] {
+    width:
+        100%;
+
+    min-height:
+        35px !important;
+
+    height:
+        35px !important;
+
+    padding:
+        0 !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+.stDateInput
+[data-baseweb="input"] > div {
+    width:
+        100%;
+
+    min-height:
+        35px !important;
+
+    height:
+        35px !important;
+
+    padding:
+        0 !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-sm) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+
+    box-sizing:
+        border-box;
+}
+
+.stDateInput input {
+    min-height:
+        33px !important;
+
+    height:
+        33px !important;
+
+    padding:
+        0
+        0.7rem !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    border-radius:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+
+    box-sizing:
+        border-box;
+}
+
+.stDateInput input:hover,
+.stDateInput input:focus,
+.stDateInput input:focus-visible {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+.stDateInput
+[data-baseweb="input"]:hover,
+.stDateInput
+[data-baseweb="input"]:focus-within {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+.stDateInput
+[data-baseweb="input"] > div:hover {
+    border-color:
+        var(--border-strong) !important;
+}
+
+.stDateInput
+[data-baseweb="input"] > div:focus-within {
+    border-color:
+        var(--accent) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        0
+        0
+        0
+        2px
+        var(--accent-focus) !important;
 }

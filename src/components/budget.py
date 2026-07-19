@@ -531,28 +531,32 @@ def _render_budget_form(
         else "Novo limite"
     )
 
-    st.markdown(
-        f"### {title}"
-    )
-
-    st.caption(
-        "Defina quanto pretende gastar em uma categoria "
-        f"durante {format_budget_period(selected_period)}."
-    )
-
     form_version = (
         _get_form_version()
     )
 
-    with st.form(
-        key=(
-            "monthly-budget-form-"
-            f"{selected_period}-"
-            f"{form_version}"
-        ),
+    with st.container(
         border=True,
+        key="monthly-budget-form-card",
     ):
-        selected_category = st.selectbox(
+        st.markdown(
+            f"### {title}"
+        )
+
+        st.caption(
+            "Defina quanto pretende gastar em uma categoria "
+            f"durante {format_budget_period(selected_period)}."
+        )
+
+        with st.form(
+            key=(
+                "monthly-budget-form-"
+                f"{selected_period}-"
+                f"{form_version}"
+            ),
+            border=False,
+        ):
+            selected_category = st.selectbox(
                 "Categoria",
                 options=selectable_categories,
                 index=default_category_index,
@@ -562,55 +566,55 @@ def _render_budget_form(
                 ),
             )
 
-        custom_category = st.text_input(
-            "Ou informe uma categoria personalizada",
-            max_chars=100,
-            placeholder="Ex.: Pet, Viagem ou Academia",
-        )
-
-        st.caption(
-            "Quando uma nova categoria for informada, "
-            "ela substitui a opção selecionada acima."
-        )
-
-        planned_amount = (
-            st.number_input(
-                "Valor planejado",
-                min_value=1.0,
-                value=default_amount,
-                step=50.0,
-                format="%.2f",
+            custom_category = st.text_input(
+                "Ou informe uma categoria personalizada",
+                max_chars=100,
+                placeholder="Ex.: Pet, Viagem ou Academia",
             )
-        )
 
-        (
-            save_column,
-            cancel_column,
-        ) = st.columns(
-            2,
-            gap="small",
-        )
+            st.caption(
+                "Quando uma nova categoria for informada, "
+                "ela substitui a opção selecionada acima."
+            )
 
-        with save_column:
-            submitted = (
-                st.form_submit_button(
-                    (
-                        "Salvar alterações"
-                        if is_editing
-                        else "Criar limite"
-                    ),
-                    type="primary",
-                    use_container_width=True,
+            planned_amount = (
+                st.number_input(
+                    "Valor planejado",
+                    min_value=1.0,
+                    value=default_amount,
+                    step=50.0,
+                    format="%.2f",
                 )
             )
 
-        with cancel_column:
-            cancelled = (
-                st.form_submit_button(
-                    "Cancelar",
-                    use_container_width=True,
-                )
+            (
+                save_column,
+                cancel_column,
+            ) = st.columns(
+                2,
+                gap="small",
             )
+
+            with save_column:
+                submitted = (
+                    st.form_submit_button(
+                        (
+                            "Salvar alterações"
+                            if is_editing
+                            else "Criar limite"
+                        ),
+                        type="primary",
+                        use_container_width=True,
+                    )
+                )
+
+            with cancel_column:
+                cancelled = (
+                    st.form_submit_button(
+                        "Cancelar",
+                        use_container_width=True,
+                    )
+                )
 
     if cancelled:
         _close_budget_form()
@@ -689,67 +693,100 @@ def _render_budget_summary(
     summary: dict[str, float | int],
 ) -> None:
     """Exibe os totais das categorias planejadas."""
-    (
-        planned_column,
-        spent_column,
-    ) = st.columns(
-        2,
-        gap="small",
+    total_remaining = float(
+        summary["total_remaining"]
     )
 
-    with planned_column:
-        st.metric(
-            "Total planejado",
-            format_currency(
-                float(
-                    summary[
-                        "total_planned"
-                    ]
-                )
-            ),
-        )
-
-    with spent_column:
-        st.metric(
-            "Gasto nas categorias",
-            format_currency(
-                float(
-                    summary[
-                        "total_spent"
-                    ]
-                )
-            ),
-        )
-
-    (
-        remaining_column,
-        exceeded_column,
-    ) = st.columns(
-        2,
-        gap="small",
+    categories_over_limit = int(
+        summary["categories_over_limit"]
     )
 
-    with remaining_column:
-        st.metric(
-            "Saldo planejado",
-            format_currency(
-                float(
-                    summary[
-                        "total_remaining"
-                    ]
-                )
-            ),
+    remaining_tone = (
+        "positive"
+        if total_remaining >= 0
+        else "danger"
+    )
+
+    exceeded_tone = (
+        "danger"
+        if categories_over_limit > 0
+        else "neutral"
+    )
+
+    with st.container(
+        key="monthly-budget-summary-grid",
+    ):
+        (
+            planned_column,
+            spent_column,
+        ) = st.columns(
+            2,
+            gap="small",
         )
 
-    with exceeded_column:
-        st.metric(
-            "Categorias acima do limite",
-            int(
-                summary[
-                    "categories_over_limit"
-                ]
-            ),
+        with planned_column:
+            with st.container(
+                key="monthly-budget-summary-planned",
+            ):
+                st.metric(
+                    "Total planejado",
+                    format_currency(
+                        float(
+                            summary[
+                                "total_planned"
+                            ]
+                        )
+                    ),
+                )
+
+        with spent_column:
+            with st.container(
+                key="monthly-budget-summary-spent",
+            ):
+                st.metric(
+                    "Gasto nas categorias",
+                    format_currency(
+                        float(
+                            summary[
+                                "total_spent"
+                            ]
+                        )
+                    ),
+                )
+
+        (
+            remaining_column,
+            exceeded_column,
+        ) = st.columns(
+            2,
+            gap="small",
         )
+
+        with remaining_column:
+            with st.container(
+                key=(
+                    "monthly-budget-summary-remaining-"
+                    f"{remaining_tone}"
+                ),
+            ):
+                st.metric(
+                    "Saldo planejado",
+                    format_currency(
+                        total_remaining
+                    ),
+                )
+
+        with exceeded_column:
+            with st.container(
+                key=(
+                    "monthly-budget-summary-exceeded-"
+                    f"{exceeded_tone}"
+                ),
+            ):
+                st.metric(
+                    "Categorias acima do limite",
+                    categories_over_limit,
+                )
 
     st.caption(
         "Os totais consideram somente as categorias "
@@ -798,59 +835,124 @@ def _render_budget_cards(
 ) -> None:
     """Exibe o acompanhamento e as ações por categoria."""
     if not tracking:
-        st.info("Nenhum limite foi cadastrado para este mês.")
-
+        st.info(
+            "Nenhum limite foi cadastrado para este mês."
+        )
         return
 
-    pending_delete_id = st.session_state.get(BUDGET_DELETE_ID_KEY)
+    pending_delete_id = st.session_state.get(
+        BUDGET_DELETE_ID_KEY
+    )
 
     for item in tracking:
-        budget_id = str(item["budget_id"])
+        budget_id = str(
+            item["budget_id"]
+        )
 
-        category = str(item["category"])
+        category = str(
+            item["category"]
+        )
 
-        planned_amount = float(item["planned_amount"])
+        planned_amount = float(
+            item["planned_amount"]
+        )
 
-        spent_amount = float(item["spent_amount"])
+        spent_amount = float(
+            item["spent_amount"]
+        )
 
-        remaining_amount = float(item["remaining_amount"])
+        remaining_amount = float(
+            item["remaining_amount"]
+        )
 
-        usage_percentage = float(item["usage_percentage"])
+        usage_percentage = float(
+            item["usage_percentage"]
+        )
 
-        status = str(item["status"])
+        status = str(
+            item["status"]
+        )
 
         status_label = get_budget_status_label(
             status,
             usage_percentage,
         )
 
+        if status == "over_limit":
+            status_tone = "danger"
+
+        elif status == "near_limit":
+            status_tone = "warning"
+
+        else:
+            status_tone = "success"
+
         with st.container(
             border=True,
-            key=("monthly-budget-card-" f"{budget_id}"),
+            key=(
+                "monthly-budget-card-"
+                f"{budget_id}"
+            ),
         ):
             (
                 title_column,
                 status_column,
             ) = st.columns(
                 [
-                    3,
+                    4,
                     1,
                 ],
                 gap="small",
             )
 
             with title_column:
-                st.markdown(f"### {category}")
+                st.markdown(
+                    f"### {category}"
+                )
+
+                with st.container(
+                    key=(
+                        "monthly-budget-usage-"
+                        f"{budget_id}"
+                    ),
+                ):
+                    spent_text = format_currency(
+                        spent_amount
+                    )
+
+                    planned_text = format_currency(
+                        planned_amount
+                    )
+
+                    usage_html = (
+                        '<p class="finantec-budget-usage-text">'
+                        f'<strong>{spent_text}</strong> '
+                        f'de <strong>{planned_text}</strong> '
+                        'utilizados '
+                        '<span aria-hidden="true">·</span> '
+                        '<strong class="finantec-budget-usage-'
+                        f'{status_tone}">'
+                        f'{usage_percentage:.1f}%'
+                        '</strong>'
+                        '</p>'
+                    )
+
+                    st.markdown(
+                        usage_html,
+                        unsafe_allow_html=True,
+                    )
 
             with status_column:
-                if status == "over_limit":
-                    st.error(status_label)
-
-                elif status == "near_limit":
-                    st.warning(status_label)
-
-                else:
-                    st.success(status_label)
+                with st.container(
+                    key=(
+                        "monthly-budget-status-"
+                        f"{status_tone}-"
+                        f"{budget_id}"
+                    ),
+                ):
+                    st.markdown(
+                        status_label
+                    )
 
             (
                 planned_column,
@@ -862,41 +964,86 @@ def _render_budget_cards(
             )
 
             with planned_column:
-                st.metric(
-                    "Planejado",
-                    format_currency(planned_amount),
-                )
+                with st.container(
+                    key=(
+                        "monthly-budget-metric-"
+                        f"planned-{budget_id}"
+                    ),
+                ):
+                    st.metric(
+                        "Planejado",
+                        format_currency(
+                            planned_amount
+                        ),
+                    )
 
             with spent_column:
-                st.metric(
-                    "Gasto",
-                    format_currency(spent_amount),
-                )
+                with st.container(
+                    key=(
+                        "monthly-budget-metric-"
+                        f"spent-{budget_id}"
+                    ),
+                ):
+                    st.metric(
+                        "Gasto",
+                        format_currency(
+                            spent_amount
+                        ),
+                    )
 
             with balance_column:
-                if remaining_amount >= 0:
-                    st.metric(
-                        "Disponível",
-                        format_currency(remaining_amount),
-                    )
+                balance_key = (
+                    "available"
+                    if remaining_amount >= 0
+                    else "exceeded"
+                )
 
-                else:
-                    st.metric(
-                        "Ultrapassado",
-                        format_currency(abs(remaining_amount)),
-                    )
+                with st.container(
+                    key=(
+                        "monthly-budget-metric-"
+                        f"{balance_key}-"
+                        f"{budget_id}"
+                    ),
+                ):
+                    if remaining_amount >= 0:
+                        st.metric(
+                            "Disponível",
+                            format_currency(
+                                remaining_amount
+                            ),
+                        )
+
+                    else:
+                        st.metric(
+                            "Ultrapassado",
+                            format_currency(
+                                abs(
+                                    remaining_amount
+                                )
+                            ),
+                        )
 
             visual_progress = min(
                 max(
-                    usage_percentage / 100,
+                    usage_percentage,
                     0.0,
                 ),
-                1.0,
+                100.0,
             )
 
-            st.progress(visual_progress)
+            progress_html = (
+                '<div class="finantec-budget-progress-track">'
+                '<div class="finantec-budget-progress-fill '
+                f'{status_tone}" '
+                f'style="width: {visual_progress:.2f}%">'
+                '</div>'
+                '</div>'
+            )
 
-            st.caption(f"{usage_percentage:.1f}% do limite utilizado.")
+            st.markdown(
+                progress_html,
+                unsafe_allow_html=True,
+            )
 
             (
                 edit_column,
@@ -909,20 +1056,30 @@ def _render_budget_cards(
             with edit_column:
                 if st.button(
                     "Editar",
-                    key=("edit-monthly-budget-" f"{budget_id}"),
+                    key=(
+                        "edit-monthly-budget-"
+                        f"{budget_id}"
+                    ),
                     use_container_width=True,
                 ):
-                    _open_budget_form(budget_id)
+                    _open_budget_form(
+                        budget_id
+                    )
 
                     st.rerun()
 
             with delete_column:
                 if st.button(
                     "Excluir",
-                    key=("delete-monthly-budget-" f"{budget_id}"),
+                    key=(
+                        "delete-monthly-budget-"
+                        f"{budget_id}"
+                    ),
                     use_container_width=True,
                 ):
-                    st.session_state[BUDGET_DELETE_ID_KEY] = budget_id
+                    st.session_state[
+                        BUDGET_DELETE_ID_KEY
+                    ] = budget_id
 
                     st.rerun()
 
@@ -943,7 +1100,10 @@ def _render_budget_cards(
                 with confirm_column:
                     if st.button(
                         "Sim, excluir",
-                        key=("confirm-delete-budget-" f"{budget_id}"),
+                        key=(
+                            "confirm-delete-budget-"
+                            f"{budget_id}"
+                        ),
                         type="primary",
                         use_container_width=True,
                     ):
@@ -955,10 +1115,15 @@ def _render_budget_cards(
                 with cancel_column:
                     if st.button(
                         "Manter limite",
-                        key=("cancel-delete-budget-" f"{budget_id}"),
+                        key=(
+                            "cancel-delete-budget-"
+                            f"{budget_id}"
+                        ),
                         use_container_width=True,
                     ):
-                        st.session_state[BUDGET_DELETE_ID_KEY] = None
+                        st.session_state[
+                            BUDGET_DELETE_ID_KEY
+                        ] = None
 
                         st.rerun()
 
@@ -1028,7 +1193,7 @@ def render_monthly_budget(
     with action_column:
         if st.button(
             "Novo limite",
-            key="open-new-monthly-budget",
+            key="open-new-monthly-budget-v6",
             type="primary",
             use_container_width=True,
         ):

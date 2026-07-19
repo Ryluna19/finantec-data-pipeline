@@ -33,14 +33,24 @@ def get_visual_preferences(
     session_state: MutableMapping[str, Any] | None = None,
 ) -> tuple[str, str]:
     """Obtém e normaliza as preferências visuais da sessão."""
-    state = st.session_state if session_state is None else session_state
+    state = (
+        st.session_state
+        if session_state is None
+        else session_state
+    )
 
     appearance = str(
-        state.get(APPEARANCE_KEY, DEFAULT_APPEARANCE)
+        state.get(
+            APPEARANCE_KEY,
+            DEFAULT_APPEARANCE,
+        )
     ).strip()
 
     accent_palette = str(
-        state.get(ACCENT_PALETTE_KEY, DEFAULT_ACCENT_PALETTE)
+        state.get(
+            ACCENT_PALETTE_KEY,
+            DEFAULT_ACCENT_PALETTE,
+        )
     ).strip()
 
     if appearance not in APPEARANCE_OPTIONS.values():
@@ -53,6 +63,7 @@ def get_visual_preferences(
     state[ACCENT_PALETTE_KEY] = accent_palette
 
     return appearance, accent_palette
+
 
 def clear_session_preserving_visual_preferences(
     session_state: MutableMapping[str, Any] | None = None,
@@ -211,6 +222,14 @@ def render_appearance_controls(
                 icon=":material/palette:",
             ):
                 st.markdown(
+                    (
+                        '<span class="finantec-appearance-'
+                        'panel-marker"></span>'
+                    ),
+                    unsafe_allow_html=True,
+                )
+
+                st.markdown(
                     "**Aparência**"
                 )
 
@@ -227,7 +246,8 @@ def render_appearance_controls(
         _render_visual_preference_fields(
             show_caption=True
         )
-        
+
+
 def render_appearance_toolbar(
     *,
     key: str,
