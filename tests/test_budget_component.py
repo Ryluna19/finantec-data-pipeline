@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from src.components.budget import (
     CATEGORY_PLACEHOLDER,
@@ -10,15 +11,18 @@ from src.components.budget import (
     _find_budget,
     build_budget_category_options,
     build_budget_dashboard_summary,
+    build_budget_end_period_options,
     build_budget_payload,
     build_budget_period_options,
     format_budget_period,
+    format_budget_validity,
     get_budget_status_label,
+    is_budget_inherited_period,
     resolve_budget_category,
 )
 
 
-def test_budget_period_options_include_current_and_existing_months():
+def test_budget_period_options_include_future_and_existing_months():
     transactions = pd.DataFrame(
         {
             "data": pd.to_datetime(
@@ -34,20 +38,94 @@ def test_budget_period_options_include_current_and_existing_months():
         }
     )
 
-    periods = (
-        build_budget_period_options(
-            transactions,
-            reference_period="2026-07",
-        )
+    periods = build_budget_period_options(
+        transactions,
+        budget_periods=[
+            "2025-10",
+            "2027-09",
+        ],
+        reference_period="2026-07",
+        future_months=2,
     )
 
     assert periods == [
         "2026-07",
+        "2026-08",
+        "2026-09",
+        "2027-09",
         "2026-06",
         "2026-05",
+        "2025-10",
     ]
 
-def test_build_budget_payload():
+
+def test_budget_period_options_work_without_transactions_or_budgets():
+    periods = build_budget_period_options(
+        pd.DataFrame(),
+        reference_period="2026-12",
+        future_months=2,
+    )
+
+    assert periods == [
+        "2026-12",
+        "2027-01",
+        "2027-02",
+    ]
+
+
+def test_budget_period_options_reject_negative_future_horizon():
+    with pytest.raises(
+        ValueError,
+        match="não pode ser negativa",
+    ):
+        build_budget_period_options(
+            pd.DataFrame(),
+            reference_period="2026-07",
+            future_months=-1,
+        )
+
+
+def test_budget_end_period_options_include_start_and_future_months():
+    periods = build_budget_end_period_options(
+        "2026-11",
+        future_months=3,
+    )
+
+    assert periods == [
+        "2026-11",
+        "2026-12",
+        "2027-01",
+        "2027-02",
+    ]
+
+
+def test_budget_end_period_options_keep_existing_end_outside_horizon():
+    periods = build_budget_end_period_options(
+        "2026-07",
+        current_end_period="2027-12",
+        future_months=2,
+    )
+
+    assert periods == [
+        "2026-07",
+        "2026-08",
+        "2026-09",
+        "2027-12",
+    ]
+
+
+def test_budget_end_period_options_reject_negative_future_horizon():
+    with pytest.raises(
+        ValueError,
+        match="não pode ser negativa",
+    ):
+        build_budget_end_period_options(
+            "2026-07",
+            future_months=-1,
+        )
+
+
+def test_build_budget_payload_defaults_to_continuous():
     payload = build_budget_payload(
         period="2026-07",
         category="Alimentação",
@@ -56,6 +134,23 @@ def test_build_budget_payload():
 
     assert payload == {
         "period": "2026-07",
+        "end_period": None,
+        "category": "Alimentação",
+        "planned_amount": 800.0,
+    }
+
+
+def test_build_budget_payload_accepts_temporary_end_period():
+    payload = build_budget_payload(
+        period="2026-07",
+        end_period="2026-12",
+        category="Alimentação",
+        planned_amount=800.0,
+    )
+
+    assert payload == {
+        "period": "2026-07",
+        "end_period": "2026-12",
         "category": "Alimentação",
         "planned_amount": 800.0,
     }
@@ -67,6 +162,39 @@ def test_formats_budget_period():
             "2026-07"
         )
         == "Julho/2026"
+    )
+
+
+def test_formats_continuous_budget_validity():
+    validity = format_budget_validity(
+        start_period="2026-07",
+        end_period=None,
+    )
+
+    assert validity == (
+        "Contínuo desde Julho/2026"
+    )
+
+
+def test_formats_single_month_budget_validity():
+    validity = format_budget_validity(
+        start_period="2026-07",
+        end_period="2026-07",
+    )
+
+    assert validity == (
+        "Temporário · somente Julho/2026"
+    )
+
+
+def test_formats_temporary_budget_validity():
+    validity = format_budget_validity(
+        start_period="2026-07",
+        end_period="2026-12",
+    )
+
+    assert validity == (
+        "Temporário · Julho/2026 até Dezembro/2026"
     )
 
 
@@ -102,7 +230,8 @@ def test_budget_status_labels():
         )
         == "Limite ultrapassado"
     )
-    
+
+
 def test_build_budget_dashboard_summary():
     transactions = pd.DataFrame(
         {
@@ -125,50 +254,35 @@ def test_build_budget_dashboard_summary():
         {
             "budget_id": "budget-1",
             "period": "2026-07",
+            "end_period": None,
             "category": "Alimentação",
             "planned_amount": 300.0,
         },
         {
             "budget_id": "budget-2",
             "period": "2026-07",
+            "end_period": "2026-07",
             "category": "Transporte",
             "planned_amount": 200.0,
         },
     ]
 
-    summary = (
-        build_budget_dashboard_summary(
-            transactions=transactions,
-            budgets=budgets,
-        )
+    summary = build_budget_dashboard_summary(
+        transactions=transactions,
+        budgets=budgets,
     )
 
-    assert (
-        summary["remaining_amount"]
-        == 50.0
-    )
-
-    assert (
-        summary["planned_categories"]
-        == 2
-    )
-
-    assert (
-        summary[
-            "over_limit_categories"
-        ]
-        == [
-            "Alimentação",
-        ]
-    )
+    assert summary["remaining_amount"] == 50.0
+    assert summary["planned_categories"] == 2
+    assert summary["over_limit_categories"] == [
+        "Alimentação",
+    ]
 
 
 def test_build_budget_dashboard_summary_without_limits():
-    summary = (
-        build_budget_dashboard_summary(
-            transactions=pd.DataFrame(),
-            budgets=[],
-        )
+    summary = build_budget_dashboard_summary(
+        transactions=pd.DataFrame(),
+        budgets=[],
     )
 
     assert summary == {
@@ -176,7 +290,8 @@ def test_build_budget_dashboard_summary_without_limits():
         "over_limit_categories": [],
         "planned_categories": 0,
     }
-    
+
+
 def test_budget_category_options_combine_defaults_and_expenses():
     transactions = pd.DataFrame(
         {
@@ -207,10 +322,7 @@ def test_budget_category_options_combine_defaults_and_expenses():
     assert "Moradia" in categories
     assert "Reserva" not in categories
     assert "Trabalho" not in categories
-
-    assert categories.count(
-        "Alimentação"
-    ) == 1
+    assert categories.count("Alimentação") == 1
 
 
 def test_budget_category_options_use_defaults_without_transactions():
@@ -228,23 +340,9 @@ def test_resolve_budget_category_uses_selected_option():
         selected_category=(
             "Alimentação"
         ),
-        custom_category="",
     )
 
     assert category == "Alimentação"
-
-
-def test_resolve_budget_category_prefers_custom_value():
-    category = resolve_budget_category(
-        selected_category=(
-            "Alimentação"
-        ),
-        custom_category=(
-            "  Saúde   Mental  "
-        ),
-    )
-
-    assert category == "Saúde Mental"
 
 
 def test_resolve_budget_category_rejects_empty_selection():
@@ -252,7 +350,19 @@ def test_resolve_budget_category_rejects_empty_selection():
         selected_category=(
             CATEGORY_PLACEHOLDER
         ),
-        custom_category="",
     )
 
     assert category == ""
+
+def test_budget_period_is_inherited_when_started_before_selected_month():
+    assert is_budget_inherited_period(
+        start_period="2026-07",
+        selected_period="2026-09",
+    ) is True
+
+
+def test_budget_period_is_not_inherited_in_start_month():
+    assert is_budget_inherited_period(
+        start_period="2026-07",
+        selected_period="2026-07",
+    ) is False

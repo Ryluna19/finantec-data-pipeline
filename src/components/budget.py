@@ -22,7 +22,9 @@ from src.budget_repository import (
     MonthlyBudgetNotFoundError,
     create_monthly_budget,
     delete_monthly_budget,
-    list_monthly_budgets,
+    list_active_monthly_budgets,
+    list_monthly_budget_periods,
+    split_monthly_budget_from_period,
     update_monthly_budget,
 )
 from ui_components import MONTH_NAMES_PT_BR
@@ -43,6 +45,12 @@ CATEGORY_PLACEHOLDER = (
     "Selecione uma categoria"
 )
 
+BUDGET_DURATION_CONTINUOUS = "Contínuo"
+
+BUDGET_DURATION_TEMPORARY = "Temporário"
+
+BUDGET_TEMPORARY_FUTURE_MONTHS = 12
+
 DEFAULT_BUDGET_CATEGORIES = (
     "Alimentação",
     "Moradia",
@@ -56,27 +64,198 @@ DEFAULT_BUDGET_CATEGORIES = (
     "Outros",
 )
 
+def _shift_budget_period(
+    period: str,
+    month_offset: int,
+) -> str:
+    """Desloca um período mensal sem depender de transações."""
+    try:
+        year_text, month_text = period.split(
+            "-",
+            maxsplit=1,
+        )
+
+        year = int(year_text)
+        month = int(month_text)
+
+    except (
+        AttributeError,
+        TypeError,
+        ValueError,
+    ) as error:
+        raise ValueError(
+            "O período de referência deve estar no formato AAAA-MM."
+        ) from error
+
+    canonical_period = (
+        f"{year:04d}-"
+        f"{month:02d}"
+    )
+
+    if (
+        month not in range(1, 13)
+        or canonical_period != period
+    ):
+        raise ValueError(
+            "O período de referência deve estar no formato AAAA-MM."
+        )
+
+    absolute_month = (
+        year
+        * 12
+        + month
+        - 1
+        + int(month_offset)
+    )
+
+    shifted_year, shifted_month_index = divmod(
+        absolute_month,
+        12,
+    )
+
+    return (
+        f"{shifted_year:04d}-"
+        f"{shifted_month_index + 1:02d}"
+    )
+
+
+def _is_valid_budget_period(
+    period: object,
+) -> bool:
+    """Indica se um valor representa um período mensal válido."""
+    normalized_period = str(
+        period
+        if period is not None
+        else ""
+    ).strip()
+
+    try:
+        return (
+            _shift_budget_period(
+                normalized_period,
+                0,
+            )
+            == normalized_period
+        )
+
+    except ValueError:
+        return False
+
+
 def build_budget_period_options(
     transactions: pd.DataFrame,
+    *,
+    budget_periods: list[str] | tuple[str, ...] | None = None,
     reference_period: str | None = None,
+    future_months: int = 12,
 ) -> list[str]:
-    """Lista os meses disponíveis e inclui o mês atual."""
-    current_period = reference_period or datetime.now().strftime("%Y-%m")
-
-    available_periods = (
-        list_available_months(transactions) if not transactions.empty else []
+    """Lista o mês atual, meses futuros e períodos com histórico."""
+    current_period = (
+        reference_period
+        or datetime.now().strftime(
+            "%Y-%m"
+        )
     )
+
+    if future_months < 0:
+        raise ValueError(
+            "A quantidade de meses futuros não pode ser negativa."
+        )
+
+    generated_periods = [
+        _shift_budget_period(
+            current_period,
+            month_offset,
+        )
+        for month_offset in range(
+            future_months + 1
+        )
+    ]
+
+    transaction_periods = (
+        list_available_months(
+            transactions
+        )
+        if not transactions.empty
+        else []
+    )
+
+    stored_periods = [
+        *(budget_periods or []),
+        *transaction_periods,
+    ]
 
     periods = {
-        str(period).strip() for period in available_periods if str(period).strip()
+        *generated_periods,
+        *(
+            str(period).strip()
+            for period in stored_periods
+            if _is_valid_budget_period(
+                period
+            )
+        ),
     }
 
-    periods.add(current_period)
+    current_and_future = sorted(
+        (
+            period
+            for period in periods
+            if period >= current_period
+        )
+    )
 
-    return sorted(
-        periods,
+    historical = sorted(
+        (
+            period
+            for period in periods
+            if period < current_period
+        ),
         reverse=True,
     )
+
+    return [
+        *current_and_future,
+        *historical,
+    ]
+
+
+def build_budget_end_period_options(
+    start_period: str,
+    *,
+    current_end_period: str | None = None,
+    future_months: int = BUDGET_TEMPORARY_FUTURE_MONTHS,
+) -> list[str]:
+    """Lista possíveis meses finais para um limite temporário."""
+    if future_months < 0:
+        raise ValueError(
+            "A quantidade de meses futuros não pode ser negativa."
+        )
+
+    periods = {
+        _shift_budget_period(
+            start_period,
+            month_offset,
+        )
+        for month_offset in range(
+            future_months + 1
+        )
+    }
+
+    if (
+        current_end_period
+        and _is_valid_budget_period(
+            current_end_period
+        )
+        and current_end_period >= start_period
+    ):
+        periods.add(
+            current_end_period
+        )
+
+    return sorted(
+        periods
+    )
+
 
 def _normalize_category_key(
     value: object,
@@ -179,39 +358,24 @@ def build_budget_category_options(
 def resolve_budget_category(
     *,
     selected_category: str,
-    custom_category: str,
 ) -> str:
-    """Define a categoria final usada pelo orçamento."""
-    normalized_custom_category = (
-        " ".join(
-            str(
-                custom_category
-            )
-            .strip()
-            .split()
+    """Normaliza a categoria selecionada no orçamento."""
+    category = " ".join(
+        str(
+            selected_category
         )
-    )
-
-    if normalized_custom_category:
-        return normalized_custom_category
-
-    normalized_selected_category = (
-        " ".join(
-            str(
-                selected_category
-            )
-            .strip()
-            .split()
-        )
+        .strip()
+        .split()
     )
 
     if (
-        normalized_selected_category
+        category
         == CATEGORY_PLACEHOLDER
     ):
         return ""
 
-    return normalized_selected_category
+    return category
+
 
 def format_budget_period(
     period: str,
@@ -242,13 +406,72 @@ def build_budget_payload(
     period: str,
     category: str,
     planned_amount: float,
+    end_period: str | None = None,
 ) -> dict[str, Any]:
     """Monta o orçamento enviado ao repositório."""
     return {
         "period": period,
+        "end_period": end_period,
         "category": category,
-        "planned_amount": float(planned_amount),
+        "planned_amount": float(
+            planned_amount
+        ),
     }
+
+
+def format_budget_validity(
+    *,
+    start_period: str,
+    end_period: str | None,
+) -> str:
+    """Descreve a vigência mensal de um limite."""
+    formatted_start = format_budget_period(
+        start_period
+    )
+
+    if end_period is None:
+        return (
+            "Contínuo desde "
+            f"{formatted_start}"
+        )
+
+    formatted_end = format_budget_period(
+        end_period
+    )
+
+    if end_period == start_period:
+        return (
+            "Temporário · somente "
+            f"{formatted_start}"
+        )
+
+    return (
+        "Temporário · "
+        f"{formatted_start} até "
+        f"{formatted_end}"
+    )
+
+
+def is_budget_inherited_period(
+    *,
+    start_period: str,
+    selected_period: str,
+) -> bool:
+    """Indica se o limite começou antes do mês selecionado."""
+    normalized_start = _shift_budget_period(
+        start_period,
+        0,
+    )
+
+    normalized_selected = _shift_budget_period(
+        selected_period,
+        0,
+    )
+
+    return (
+        normalized_start
+        < normalized_selected
+    )
 
 
 def get_budget_status_label(
@@ -407,7 +630,7 @@ def _show_budget_feedback() -> None:
 def _render_budget_form(
     *,
     budgets: list[dict[str, Any]],
-    period_transactions: pd.DataFrame,
+    transactions: pd.DataFrame,
     user_id: str,
     selected_period: str,
 ) -> None:
@@ -431,6 +654,24 @@ def _render_budget_form(
 
     is_editing = (
         editing_budget is not None
+    )
+
+    editing_start_period = (
+        str(
+            editing_budget[
+                "period"
+            ]
+        )
+        if editing_budget
+        else selected_period
+    )
+
+    is_split_edit = (
+        is_editing
+        and is_budget_inherited_period(
+            start_period=editing_start_period,
+            selected_period=selected_period,
+        )
     )
 
     if (
@@ -468,9 +709,17 @@ def _render_budget_form(
         else 100.0
     )
 
+    default_end_period = (
+        editing_budget.get(
+            "end_period"
+        )
+        if editing_budget
+        else None
+    )
+
     category_options = (
         build_budget_category_options(
-            period_transactions
+            transactions
         )
     )
 
@@ -525,14 +774,24 @@ def _render_budget_form(
 
                 break
 
-    title = (
-        "Editar limite"
-        if is_editing
-        else "Novo limite"
-    )
+    if is_split_edit:
+        title = (
+            "Alterar limite a partir deste mês"
+        )
+
+    elif is_editing:
+        title = "Editar limite"
+
+    else:
+        title = "Novo limite"
 
     form_version = (
         _get_form_version()
+    )
+
+    widget_key_suffix = (
+        f"{selected_period}-"
+        f"{form_version}"
     )
 
     with st.container(
@@ -543,78 +802,174 @@ def _render_budget_form(
             f"### {title}"
         )
 
-        st.caption(
-            "Defina quanto pretende gastar em uma categoria "
-            f"durante {format_budget_period(selected_period)}."
-        )
-
-        with st.form(
-            key=(
-                "monthly-budget-form-"
-                f"{selected_period}-"
-                f"{form_version}"
-            ),
-            border=False,
-        ):
-            selected_category = st.selectbox(
-                "Categoria",
-                options=selectable_categories,
-                index=default_category_index,
-                help=(
-                    "Escolha uma categoria sugerida ou "
-                    "uma categoria já usada nas transações."
-                ),
+        if is_split_edit:
+            st.caption(
+                "A nova configuração valerá a partir de "
+                f"{format_budget_period(selected_period)}. "
+                "Os meses anteriores permanecerão inalterados."
             )
 
-            custom_category = st.text_input(
-                "Ou informe uma categoria personalizada",
-                max_chars=100,
-                placeholder="Ex.: Pet, Viagem ou Academia",
+        else:
+            st.caption(
+                "Defina quanto pretende gastar em uma categoria "
+                f"durante {format_budget_period(selected_period)}."
+            )
+
+        selected_category = st.selectbox(
+            "Categoria",
+            options=selectable_categories,
+            index=default_category_index,
+            key=(
+                "monthly-budget-category-"
+                f"{widget_key_suffix}"
+            ),
+            help=(
+                "Escolha uma categoria sugerida ou "
+                "uma categoria já usada nas transações."
+            ),
+        )
+
+        st.caption(
+            "Categorias novas ficam disponíveis aqui "
+            "depois de serem usadas em uma transação "
+            "de despesa."
+        )
+
+        planned_amount = st.number_input(
+            "Valor planejado",
+            min_value=1.0,
+            value=default_amount,
+            step=50.0,
+            format="%.2f",
+            key=(
+                "monthly-budget-amount-"
+                f"{widget_key_suffix}"
+            ),
+        )
+
+        default_duration_index = (
+            0
+            if default_end_period is None
+            else 1
+        )
+
+        duration = st.radio(
+            "Duração do limite",
+            options=(
+                BUDGET_DURATION_CONTINUOUS,
+                BUDGET_DURATION_TEMPORARY,
+            ),
+            index=default_duration_index,
+            horizontal=True,
+            key=(
+                "monthly-budget-duration-"
+                f"{widget_key_suffix}"
+            ),
+        )
+
+        if (
+            duration
+            == BUDGET_DURATION_TEMPORARY
+        ):
+            end_period_options = (
+                build_budget_end_period_options(
+                    selected_period,
+                    current_end_period=(
+                        str(
+                            default_end_period
+                        )
+                        if default_end_period
+                        else None
+                    ),
+                )
+            )
+
+            default_end_period_value = (
+                str(
+                    default_end_period
+                )
+                if (
+                    default_end_period
+                    and str(
+                        default_end_period
+                    )
+                    in end_period_options
+                )
+                else selected_period
+            )
+
+            end_period = str(
+                st.selectbox(
+                    "Válido até",
+                    options=end_period_options,
+                    index=(
+                        end_period_options.index(
+                            default_end_period_value
+                        )
+                    ),
+                    format_func=(
+                        format_budget_period
+                    ),
+                    key=(
+                        "monthly-budget-end-period-"
+                        f"{widget_key_suffix}"
+                    ),
+                    help=(
+                        "O limite será aplicado em todos "
+                        "os meses até o período escolhido."
+                    ),
+                )
             )
 
             st.caption(
-                "Quando uma nova categoria for informada, "
-                "ela substitui a opção selecionada acima."
+                "Escolha o mesmo mês inicial para criar "
+                "um limite válido somente neste mês."
             )
 
-            planned_amount = (
-                st.number_input(
-                    "Valor planejado",
-                    min_value=1.0,
-                    value=default_amount,
-                    step=50.0,
-                    format="%.2f",
-                )
+        else:
+            end_period = None
+
+            st.caption(
+                "O limite continuará nos próximos meses "
+                "até ser encerrado manualmente."
             )
 
-            (
-                save_column,
-                cancel_column,
-            ) = st.columns(
-                2,
-                gap="small",
-            )
+        (
+            save_column,
+            cancel_column,
+        ) = st.columns(
+            2,
+            gap="small",
+        )
 
-            with save_column:
-                submitted = (
-                    st.form_submit_button(
-                        (
-                            "Salvar alterações"
-                            if is_editing
-                            else "Criar limite"
-                        ),
-                        type="primary",
-                        use_container_width=True,
+        with save_column:
+            submitted = st.button(
+                (
+                    "Aplicar a partir deste mês"
+                    if is_split_edit
+                    else (
+                        "Salvar alterações"
+                        if is_editing
+                        else "Criar limite"
                     )
-                )
+                ),
+                key=(
+                    "save-monthly-budget-"
+                    f"{widget_key_suffix}"
+                ),
+                type="primary",
+                use_container_width=True,
+            )
 
-            with cancel_column:
-                cancelled = (
-                    st.form_submit_button(
-                        "Cancelar",
-                        use_container_width=True,
-                    )
-                )
+        with cancel_column:
+            cancelled = st.button(
+                "Cancelar",
+                key=(
+                    "cancel-monthly-budget-"
+                    f"{widget_key_suffix}"
+                ),
+                use_container_width=True,
+            )
 
     if cancelled:
         _close_budget_form()
@@ -627,19 +982,35 @@ def _render_budget_form(
         selected_category=(
             selected_category
         ),
-        custom_category=(
-            custom_category
-        ),
     )
 
     payload = build_budget_payload(
         period=selected_period,
         category=category,
         planned_amount=planned_amount,
+        end_period=end_period,
     )
 
     try:
-        if is_editing:
+        if is_split_edit:
+            split_monthly_budget_from_period(
+                database_path=ARQUIVO_BANCO,
+                user_id=user_id,
+                budget_id=str(
+                    editing_budget[
+                        "budget_id"
+                    ]
+                ),
+                split_period=selected_period,
+                budget=payload,
+            )
+
+            feedback_message = (
+                "Limite alterado a partir de "
+                f"{format_budget_period(selected_period)}."
+            )
+
+        elif is_editing:
             update_monthly_budget(
                 database_path=ARQUIVO_BANCO,
                 user_id=user_id,
@@ -794,34 +1165,89 @@ def _render_budget_summary(
     )
 
 
-def _delete_budget(
+def _remove_budget_from_period(
     *,
-    budget_id: str,
+    budget: dict[str, Any],
     user_id: str,
+    selected_period: str,
 ) -> None:
-    """Exclui um limite mensal após confirmação."""
+    """Exclui ou encerra um limite a partir do mês selecionado."""
+    budget_id = str(
+        budget["budget_id"]
+    )
+
+    start_period = str(
+        budget["period"]
+    )
+
     try:
-        deleted = delete_monthly_budget(
-            database_path=ARQUIVO_BANCO,
-            user_id=user_id,
-            budget_id=budget_id,
+        if selected_period <= start_period:
+            deleted = delete_monthly_budget(
+                database_path=ARQUIVO_BANCO,
+                user_id=user_id,
+                budget_id=budget_id,
+            )
+
+            if not deleted:
+                st.error(
+                    "O limite informado não foi encontrado."
+                )
+
+                return
+
+            feedback_message = (
+                "Limite excluído com sucesso."
+            )
+
+        else:
+            previous_period = (
+                _shift_budget_period(
+                    selected_period,
+                    -1,
+                )
+            )
+
+            update_monthly_budget(
+                database_path=ARQUIVO_BANCO,
+                user_id=user_id,
+                budget_id=budget_id,
+                budget=build_budget_payload(
+                    period=start_period,
+                    end_period=previous_period,
+                    category=str(
+                        budget["category"]
+                    ),
+                    planned_amount=float(
+                        budget[
+                            "planned_amount"
+                        ]
+                    ),
+                ),
+            )
+
+            feedback_message = (
+                "Limite encerrado a partir de "
+                f"{format_budget_period(selected_period)}."
+            )
+
+    except (
+        MonthlyBudgetNotFoundError,
+        ValueError,
+        RuntimeError,
+    ) as error:
+        st.error(
+            str(error)
         )
 
-    except RuntimeError as error:
-        st.error(str(error))
-
         return
 
-    if not deleted:
-        st.error("O limite informado não foi encontrado.")
-
-        return
-
-    st.session_state[BUDGET_DELETE_ID_KEY] = None
+    st.session_state[
+        BUDGET_DELETE_ID_KEY
+    ] = None
 
     _set_budget_feedback(
         "success",
-        "Limite excluído com sucesso.",
+        feedback_message,
     )
 
     st.cache_data.clear()
@@ -831,7 +1257,9 @@ def _delete_budget(
 def _render_budget_cards(
     *,
     tracking: list[dict[str, Any]],
+    budgets: list[dict[str, Any]],
     user_id: str,
+    selected_period: str,
 ) -> None:
     """Exibe o acompanhamento e as ações por categoria."""
     if not tracking:
@@ -849,8 +1277,32 @@ def _render_budget_cards(
             item["budget_id"]
         )
 
+        budget = _find_budget(
+            budgets,
+            budget_id,
+        )
+
+        if budget is None:
+            continue
+
         category = str(
             item["category"]
+        )
+
+        start_period = str(
+            budget["period"]
+        )
+
+        raw_end_period = budget.get(
+            "end_period"
+        )
+
+        end_period = (
+            str(
+                raw_end_period
+            )
+            if raw_end_period is not None
+            else None
         )
 
         planned_amount = float(
@@ -878,6 +1330,11 @@ def _render_budget_cards(
             usage_percentage,
         )
 
+        validity_label = format_budget_validity(
+            start_period=start_period,
+            end_period=end_period,
+        )
+
         if status == "over_limit":
             status_tone = "danger"
 
@@ -886,6 +1343,13 @@ def _render_budget_cards(
 
         else:
             status_tone = "success"
+
+        is_inherited_period = (
+            is_budget_inherited_period(
+                start_period=start_period,
+                selected_period=selected_period,
+            )
+        )
 
         with st.container(
             border=True,
@@ -908,6 +1372,10 @@ def _render_budget_cards(
             with title_column:
                 st.markdown(
                     f"### {category}"
+                )
+
+                st.caption(
+                    validity_label
                 )
 
                 with st.container(
@@ -1053,14 +1521,26 @@ def _render_budget_cards(
                 gap="small",
             )
 
+            edit_label = (
+                "Alterar a partir deste mês"
+                if is_inherited_period
+                else "Editar"
+            )
+
             with edit_column:
                 if st.button(
-                    "Editar",
+                    edit_label,
                     key=(
                         "edit-monthly-budget-"
                         f"{budget_id}"
                     ),
                     use_container_width=True,
+                    help=(
+                        "Cria uma nova vigência sem modificar "
+                        "os meses anteriores."
+                        if is_inherited_period
+                        else None
+                    ),
                 ):
                     _open_budget_form(
                         budget_id
@@ -1068,9 +1548,15 @@ def _render_budget_cards(
 
                     st.rerun()
 
+            remove_label = (
+                "Encerrar"
+                if is_inherited_period
+                else "Excluir"
+            )
+
             with delete_column:
                 if st.button(
-                    "Excluir",
+                    remove_label,
                     key=(
                         "delete-monthly-budget-"
                         f"{budget_id}"
@@ -1084,9 +1570,30 @@ def _render_budget_cards(
                     st.rerun()
 
             if pending_delete_id == budget_id:
+                if is_inherited_period:
+                    confirmation_message = (
+                        f"**Encerrar o limite de “{category}” "
+                        f"a partir de "
+                        f"{format_budget_period(selected_period)}?** "
+                        "Os meses anteriores serão mantidos."
+                    )
+
+                    confirm_label = (
+                        "Sim, encerrar"
+                    )
+
+                else:
+                    confirmation_message = (
+                        f"**Excluir o limite de “{category}”?** "
+                        "Essa ação não pode ser desfeita."
+                    )
+
+                    confirm_label = (
+                        "Sim, excluir"
+                    )
+
                 st.markdown(
-                    f"**Excluir o limite de “{category}”?** "
-                    "Essa ação não pode ser desfeita."
+                    confirmation_message
                 )
 
                 (
@@ -1099,7 +1606,7 @@ def _render_budget_cards(
 
                 with confirm_column:
                     if st.button(
-                        "Sim, excluir",
+                        confirm_label,
                         key=(
                             "confirm-delete-budget-"
                             f"{budget_id}"
@@ -1107,9 +1614,12 @@ def _render_budget_cards(
                         type="primary",
                         use_container_width=True,
                     ):
-                        _delete_budget(
-                            budget_id=budget_id,
+                        _remove_budget_from_period(
+                            budget=budget,
                             user_id=user_id,
+                            selected_period=(
+                                selected_period
+                            ),
                         )
 
                 with cancel_column:
@@ -1148,7 +1658,19 @@ def render_monthly_budget(
 
     _show_budget_feedback()
 
-    period_options = build_budget_period_options(transactions)
+    budget_periods = (
+        list_monthly_budget_periods(
+            database_path=ARQUIVO_BANCO,
+            user_id=user_id,
+        )
+    )
+
+    period_options = (
+        build_budget_period_options(
+            transactions,
+            budget_periods=budget_periods,
+        )
+    )
 
     selected_period = str(
         st.selectbox(
@@ -1159,7 +1681,7 @@ def render_monthly_budget(
         )
     )
 
-    budgets = list_monthly_budgets(
+    budgets = list_active_monthly_budgets(
         database_path=ARQUIVO_BANCO,
         user_id=user_id,
         period=selected_period,
@@ -1187,7 +1709,9 @@ def render_monthly_budget(
         st.markdown("### Planejamento do mês")
 
         st.caption(
-            "Consulte primeiro os limites existentes " "ou adicione uma nova categoria."
+            "Consulte os limites de "
+            f"{format_budget_period(selected_period)} "
+            "ou adicione uma nova categoria."
         )
 
     with action_column:
@@ -1202,13 +1726,11 @@ def render_monthly_budget(
             st.rerun()
 
     _render_budget_form(
-            budgets=budgets,
-            period_transactions=(
-                period_transactions
-            ),
-            user_id=user_id,
-            selected_period=selected_period,
-         )
+        budgets=budgets,
+        transactions=transactions,
+        user_id=user_id,
+        selected_period=selected_period,
+    )
 
     if tracking:
         summary = calculate_budget_summary(tracking)
@@ -1217,7 +1739,9 @@ def render_monthly_budget(
 
     _render_budget_cards(
         tracking=tracking,
+        budgets=budgets,
         user_id=user_id,
+        selected_period=selected_period,
     )
 
 
@@ -1238,7 +1762,7 @@ def render_budget_dashboard_summary(
 
     selected_period = str(available_periods[0])
 
-    budgets = list_monthly_budgets(
+    budgets = list_active_monthly_budgets(
         database_path=ARQUIVO_BANCO,
         user_id=user_id,
         period=selected_period,
