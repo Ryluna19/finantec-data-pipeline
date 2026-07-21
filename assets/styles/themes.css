@@ -2275,142 +2275,6 @@ label {
     }
 }
 
-
-/* =========================================================
-   METAS — CONTORNOS NO TEMA CLARO
-   ========================================================= */
-
-[class*="st-key-financial-goal-form-"],
-[class*="st-key-financial-goal-card-"] {
-    overflow:
-        hidden;
-
-    border-radius:
-        16px;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-financial-goal-form-"] {
-    background:
-        #fffdfb;
-
-    border:
-        1px solid
-        #c7b5a5;
-
-    border-left:
-        3px solid
-        var(--accent);
-
-    box-shadow:
-        0
-        8px
-        22px
-        rgba(45, 38, 33, 0.05);
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-financial-goal-card-"] {
-    background:
-        rgba(255, 253, 250, 0.88);
-
-    border:
-        1px solid
-        #c9b8a9;
-
-    box-shadow:
-        0
-        5px
-        16px
-        rgba(45, 38, 33, 0.035);
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-financial-goal-form-"]
-[data-testid="stForm"],
-:root:has(.finantec-theme-light)
-[class*="st-key-financial-goal-form-"]
-[data-testid="stVerticalBlockBorderWrapper"],
-:root:has(.finantec-theme-light)
-[class*="st-key-financial-goal-card-"]
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background:
-        transparent !important;
-
-    border:
-        0 !important;
-
-    box-shadow:
-        none !important;
-}
-
-/* =========================================================
-   BUILD V7 — ACABAMENTO ESTÁVEL DO ORÇAMENTO
-   ========================================================= */
-
-
-/* ---------------------------------------------------------
-   SELECTS DENTRO DE POPOVERS NO TEMA CLARO
-   --------------------------------------------------------- */
-
-:root:has(.finantec-theme-light)
-[data-baseweb="popover"]
-[data-baseweb="select"] > div,
-:root:has(.finantec-theme-light)
-[data-testid="stPopoverBody"]
-[data-baseweb="select"] > div,
-:root:has(.finantec-theme-light)
-[data-testid="stPopoverContent"]
-[data-baseweb="select"] > div,
-:root:has(.finantec-theme-light)
-[role="dialog"]
-[data-baseweb="select"] > div {
-    background:
-        #ffffff !important;
-
-    color:
-        #2f2925 !important;
-
-    border-color:
-        #cdbdaf !important;
-}
-
-:root:has(.finantec-theme-light)
-[data-baseweb="popover"]
-[data-baseweb="select"] span,
-:root:has(.finantec-theme-light)
-[data-testid="stPopoverBody"]
-[data-baseweb="select"] span,
-:root:has(.finantec-theme-light)
-[data-testid="stPopoverContent"]
-[data-baseweb="select"] span,
-:root:has(.finantec-theme-light)
-[role="dialog"]
-[data-baseweb="select"] span {
-    color:
-        #2f2925 !important;
-}
-
-:root:has(.finantec-theme-light)
-[data-baseweb="popover"]
-[data-baseweb="select"] svg,
-:root:has(.finantec-theme-light)
-[data-testid="stPopoverBody"]
-[data-baseweb="select"] svg,
-:root:has(.finantec-theme-light)
-[data-testid="stPopoverContent"]
-[data-baseweb="select"] svg,
-:root:has(.finantec-theme-light)
-[role="dialog"]
-[data-baseweb="select"] svg {
-    color:
-        #665b53 !important;
-
-    fill:
-        currentColor !important;
-}
-
-
 /* ---------------------------------------------------------
    CORES SEMÂNTICAS DO RESUMO
    --------------------------------------------------------- */
@@ -2619,11 +2483,6 @@ label {
         #d1c2b6;
 }
 
-/* =========================================================
-   BUILD V8 — LEGIBILIDADE E SELECTS DE APARÊNCIA
-   ========================================================= */
-
-
 /* ---------------------------------------------------------
    LINHA DE UTILIZAÇÃO DO ORÇAMENTO
    --------------------------------------------------------- */
@@ -2685,10 +2544,211 @@ label {
         #302925 !important;
 }
 
+/* ---------------------------------------------------------
+   CORES SEMÂNTICAS COM PRIORIDADE SOBRE A REGRA GLOBAL CLARA
+   --------------------------------------------------------- */
+
+/*
+   O tema claro possui uma regra global para stMetricValue com
+   alta especificidade. Estas regras repetem o marcador do tema
+   para garantir que os estados semânticos prevaleçam.
+*/
+
+:root:has(.finantec-theme-light)
+.st-key-monthly-budget-summary-spent
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+.st-key-monthly-budget-summary-spent
+[data-testid="stMetricValue"] * {
+    color:
+        #b84d08 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-positive"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-positive"]
+[data-testid="stMetricValue"] *,
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-available-"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-available-"]
+[data-testid="stMetricValue"] * {
+    color:
+        #147a43 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-danger"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-remaining-danger"]
+[data-testid="stMetricValue"] *,
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-exceeded-danger"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-summary-exceeded-danger"]
+[data-testid="stMetricValue"] *,
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-exceeded-"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-exceeded-"]
+[data-testid="stMetricValue"] * {
+    color:
+        #bd2932 !important;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-spent-"]
+[data-testid="stMetricValue"],
+:root:has(.finantec-theme-light)
+[class*="st-key-monthly-budget-metric-spent-"]
+[data-testid="stMetricValue"] * {
+    color:
+        #b84d08 !important;
+}
+
+/* =========================================================
+   METAS — CONTORNOS NO TEMA CLARO
+   ========================================================= */
+
+[class*="st-key-financial-goal-form-"],
+[class*="st-key-financial-goal-card-"] {
+    overflow:
+        hidden;
+
+    border-radius:
+        16px;
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-form-"] {
+    background:
+        #fffdfb;
+
+    border:
+        1px solid
+        #c7b5a5;
+
+    border-left:
+        3px solid
+        var(--accent);
+
+    box-shadow:
+        0
+        8px
+        22px
+        rgba(45, 38, 33, 0.05);
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-card-"] {
+    background:
+        rgba(255, 253, 250, 0.88);
+
+    border:
+        1px solid
+        #c9b8a9;
+
+    box-shadow:
+        0
+        5px
+        16px
+        rgba(45, 38, 33, 0.035);
+}
+
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-form-"]
+[data-testid="stForm"],
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-form-"]
+[data-testid="stVerticalBlockBorderWrapper"],
+:root:has(.finantec-theme-light)
+[class*="st-key-financial-goal-card-"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+/* =========================================================
+   SELECTS EM POPOVERS E DIÁLOGOS — TEMA CLARO
+   ========================================================= */
+
 
 /* ---------------------------------------------------------
-   CAMPOS DO POPOVER DE APARÊNCIA NO TEMA CLARO
+   SELECTS DENTRO DE POPOVERS NO TEMA CLARO
    --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]
+[data-baseweb="select"] > div,
+:root:has(.finantec-theme-light)
+[role="dialog"]
+[data-baseweb="select"] > div {
+    background:
+        #ffffff !important;
+
+    color:
+        #2f2925 !important;
+
+    border-color:
+        #cdbdaf !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]
+[data-baseweb="select"] span,
+:root:has(.finantec-theme-light)
+[role="dialog"]
+[data-baseweb="select"] span {
+    color:
+        #2f2925 !important;
+}
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"]
+[data-baseweb="select"] svg,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"]
+[data-baseweb="select"] svg,
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverContent"]
+[data-baseweb="select"] svg,
+:root:has(.finantec-theme-light)
+[role="dialog"]
+[data-baseweb="select"] svg {
+    color:
+        #665b53 !important;
+
+    fill:
+        currentColor !important;
+}
+
+/* =========================================================
+   CONTROLES DE APARÊNCIA — FALLBACK POR CHAVES
+   ========================================================= */
 
 /*
    As chaves dos dois selectboxes são estáveis e geram classes
@@ -2779,82 +2839,8 @@ label {
 }
 
 /* =========================================================
-   BUILD V9 — CORREÇÕES ESPECÍFICAS DO TEMA CLARO
+   CONTROLES DE APARÊNCIA — REACT ARIA
    ========================================================= */
-
-
-/* ---------------------------------------------------------
-   CORES SEMÂNTICAS COM PRIORIDADE SOBRE A REGRA GLOBAL CLARA
-   --------------------------------------------------------- */
-
-/*
-   O tema claro possui uma regra global para stMetricValue com
-   alta especificidade. Estas regras repetem o marcador do tema
-   para garantir que os estados semânticos prevaleçam.
-*/
-
-:root:has(.finantec-theme-light)
-.st-key-monthly-budget-summary-spent
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-.st-key-monthly-budget-summary-spent
-[data-testid="stMetricValue"] * {
-    color:
-        #b84d08 !important;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-positive"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-positive"]
-[data-testid="stMetricValue"] *,
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-available-"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-available-"]
-[data-testid="stMetricValue"] * {
-    color:
-        #147a43 !important;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-danger"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-danger"]
-[data-testid="stMetricValue"] *,
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-exceeded-danger"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-exceeded-danger"]
-[data-testid="stMetricValue"] *,
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-exceeded-"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-exceeded-"]
-[data-testid="stMetricValue"] * {
-    color:
-        #bd2932 !important;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-spent-"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-spent-"]
-[data-testid="stMetricValue"] * {
-    color:
-        #b84d08 !important;
-}
-
-
-/* ---------------------------------------------------------
-   SELECTS TEMA E COR DE DESTAQUE NO TEMA CLARO
-   --------------------------------------------------------- */
 
 /*
    Os controles são identificados pelos aria-labels reais,

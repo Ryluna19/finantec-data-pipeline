@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import calendar
+import math
 import sqlite3
 import unicodedata
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -11,6 +14,8 @@ from uuid import uuid4
 
 GOAL_TABLE_NAME = "financial_goals"
 GOAL_SEED_TABLE_NAME = "financial_goal_seed_state"
+
+AVERAGE_DAYS_PER_MONTH = 365.2425 / 12
 
 VALID_PRIORITIES = {
     "baixa",
@@ -56,6 +61,69 @@ def _connect(
     return connection
 
 
+
+def _get_goal_table_columns(
+    connection: sqlite3.Connection,
+) -> set[str]:
+    """Obtém as colunas existentes na tabela de metas."""
+    rows = connection.execute(
+        f"PRAGMA table_info({GOAL_TABLE_NAME})"
+    ).fetchall()
+
+    return {
+        str(
+            row["name"]
+        )
+        for row in rows
+    }
+
+
+def _ensure_deadline_date_column(
+    connection: sqlite3.Connection,
+) -> None:
+    """Adiciona e preenche a data limite em bancos antigos."""
+    columns = _get_goal_table_columns(
+        connection
+    )
+
+    if "deadline_date" not in columns:
+        connection.execute(
+            f"""
+            ALTER TABLE {GOAL_TABLE_NAME}
+            ADD COLUMN deadline_date TEXT
+            """
+        )
+
+    missing_deadline = connection.execute(
+        f"""
+        SELECT 1
+        FROM {GOAL_TABLE_NAME}
+        WHERE
+            deadline_date IS NULL
+            OR TRIM(deadline_date) = ''
+        LIMIT 1
+        """
+    ).fetchone()
+
+    if missing_deadline is None:
+        return
+
+    connection.execute(
+        f"""
+        UPDATE {GOAL_TABLE_NAME}
+        SET deadline_date = date(
+            created_at,
+            printf(
+                '+%d months',
+                deadline_months
+            )
+        )
+        WHERE
+            deadline_date IS NULL
+            OR TRIM(deadline_date) = ''
+        """
+    )
+
 def _ensure_goal_tables(
     connection: sqlite3.Connection,
 ) -> None:
@@ -70,6 +138,7 @@ def _ensure_goal_tables(
             target_amount REAL NOT NULL,
             current_amount REAL NOT NULL DEFAULT 0,
             deadline_months INTEGER NOT NULL,
+            deadline_date TEXT,
             priority TEXT NOT NULL DEFAULT 'média',
             status TEXT NOT NULL DEFAULT 'active',
             sort_order INTEGER NOT NULL DEFAULT 0,
@@ -127,6 +196,10 @@ def _ensure_goal_tables(
                     DEFAULT CURRENT_TIMESTAMP
             );
         """
+    )
+
+    _ensure_deadline_date_column(
+        connection
     )
 
 
@@ -313,6 +386,240 @@ def _normalize_deadline_months(
     return deadline_months
 
 
+
+def _add_months(
+    base_date: date,
+    months: int,
+) -> date:
+    """Adiciona meses preservando o dia quando possível."""
+    month_index = (
+        base_date.month
+        - 1
+        + months
+    )
+
+    target_year = (
+        base_date.year
+        + month_index // 12
+    )
+
+    target_month = (
+        month_index % 12
+        + 1
+    )
+
+    target_day = min(
+        base_date.day,
+        calendar.monthrange(
+            target_year,
+            target_month,
+        )[1],
+    )
+
+    return date(
+        target_year,
+        target_month,
+        target_day,
+    )
+
+
+def _parse_deadline_date(
+    value: object,
+) -> date:
+    """Converte uma data limite recebida pela aplicação."""
+    if isinstance(
+        value,
+        datetime,
+    ):
+        return value.date()
+
+    if isinstance(
+        value,
+        date,
+    ):
+        return value
+
+    normalized_value = str(
+        value
+        if value is not None
+        else ""
+    ).strip()
+
+    if not normalized_value:
+        raise ValueError(
+            "A data limite da meta "
+            "não pode ser vazia."
+        )
+
+    try:
+        return date.fromisoformat(
+            normalized_value
+        )
+
+    except ValueError:
+        try:
+            return datetime.strptime(
+                normalized_value,
+                "%d/%m/%Y",
+            ).date()
+
+        except ValueError as error:
+            raise ValueError(
+                "A data limite deve ser "
+                "uma data válida."
+            ) from error
+
+
+def _calculate_remaining_months(
+    deadline_date: date,
+    *,
+    reference_date: date | None = None,
+) -> int:
+    """Converte os dias restantes em meses de planejamento."""
+    current_date = (
+        reference_date
+        if reference_date is not None
+        else date.today()
+    )
+
+    remaining_days = max(
+        (
+            deadline_date
+            - current_date
+        ).days,
+        0,
+    )
+
+    return max(
+        1,
+        math.ceil(
+            remaining_days
+            / AVERAGE_DAYS_PER_MONTH
+        ),
+    )
+
+
+def _normalize_deadline(
+    goal: dict[str, Any],
+) -> tuple[str, int]:
+    """Normaliza a data limite mantendo o prazo legado."""
+    current_date = date.today()
+
+    raw_deadline = goal.get(
+        "data_limite"
+    )
+
+    if raw_deadline in {
+        None,
+        "",
+    }:
+        legacy_months = (
+            _normalize_deadline_months(
+                goal.get(
+                    "prazo_meses"
+                )
+            )
+        )
+
+        deadline_date = _add_months(
+            current_date,
+            legacy_months,
+        )
+
+    else:
+        deadline_date = (
+            _parse_deadline_date(
+                raw_deadline
+            )
+        )
+
+    if deadline_date < current_date:
+        raise ValueError(
+            "A data limite da meta "
+            "não pode estar no passado."
+        )
+
+    maximum_deadline = _add_months(
+        current_date,
+        600,
+    )
+
+    if deadline_date > maximum_deadline:
+        raise ValueError(
+            "A data limite da meta deve estar "
+            "dentro dos próximos 600 meses."
+        )
+
+    remaining_months = (
+        _calculate_remaining_months(
+            deadline_date,
+            reference_date=current_date,
+        )
+    )
+
+    return (
+        deadline_date.isoformat(),
+        remaining_months,
+    )
+
+
+def _resolve_stored_deadline(
+    row: sqlite3.Row,
+) -> date:
+    """Obtém a data limite de uma linha já persistida."""
+    deadline_value = (
+        row["deadline_date"]
+        if (
+            "deadline_date"
+            in row.keys()
+        )
+        else None
+    )
+
+    if deadline_value:
+        try:
+            return date.fromisoformat(
+                str(deadline_value)
+            )
+
+        except ValueError:
+            pass
+
+    created_at_value = (
+        row["created_at"]
+        if "created_at" in row.keys()
+        else None
+    )
+
+    if created_at_value:
+        try:
+            created_at = (
+                datetime.fromisoformat(
+                    str(created_at_value)
+                ).date()
+            )
+
+            return _add_months(
+                created_at,
+                int(
+                    row["deadline_months"]
+                ),
+            )
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            pass
+
+    return _add_months(
+        date.today(),
+        int(
+            row["deadline_months"]
+        ),
+    )
+
+
 def _normalize_priority(
     value: object,
 ) -> str:
@@ -385,12 +692,11 @@ def normalize_financial_goal(
         )
     )
 
-    deadline_months = (
-        _normalize_deadline_months(
-            goal.get(
-                "prazo_meses"
-            )
-        )
+    (
+        deadline_date,
+        deadline_months,
+    ) = _normalize_deadline(
+        goal
     )
 
     priority = _normalize_priority(
@@ -414,6 +720,7 @@ def normalize_financial_goal(
         "valor_meta": target_amount,
         "valor_atual": current_amount,
         "prazo_meses": deadline_months,
+        "data_limite": deadline_date,
         "prioridade": priority,
         "status": status,
     }
@@ -423,6 +730,12 @@ def _row_to_goal(
     row: sqlite3.Row,
 ) -> dict[str, Any]:
     """Converte uma linha do banco para o formato da aplicação."""
+    deadline_date = (
+        _resolve_stored_deadline(
+            row
+        )
+    )
+
     return {
         "goal_id": str(
             row["goal_id"]
@@ -436,8 +749,13 @@ def _row_to_goal(
         "valor_atual": float(
             row["current_amount"]
         ),
-        "prazo_meses": int(
-            row["deadline_months"]
+        "prazo_meses": (
+            _calculate_remaining_months(
+                deadline_date
+            )
+        ),
+        "data_limite": (
+            deadline_date.isoformat()
         ),
         "prioridade": str(
             row["priority"]
@@ -446,7 +764,6 @@ def _row_to_goal(
             row["status"]
         ),
     }
-
 
 def _get_next_sort_order(
     connection: sqlite3.Connection,
@@ -508,8 +825,10 @@ def list_financial_goals(
                     target_amount,
                     current_amount,
                     deadline_months,
+                    deadline_date,
                     priority,
-                    status
+                    status,
+                    created_at
                 FROM {GOAL_TABLE_NAME}
                 WHERE
                     user_id = ?
@@ -572,8 +891,10 @@ def get_financial_goal(
                     target_amount,
                     current_amount,
                     deadline_months,
+                    deadline_date,
                     priority,
-                    status
+                    status,
+                    created_at
                 FROM {GOAL_TABLE_NAME}
                 WHERE
                     user_id = ?
@@ -647,13 +968,14 @@ def create_financial_goal(
                         target_amount,
                         current_amount,
                         deadline_months,
+                        deadline_date,
                         priority,
                         status,
                         sort_order
                     )
                     VALUES (
                         ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?
+                        ?, ?, ?, ?, ?
                     )
                     """,
                     (
@@ -673,6 +995,9 @@ def create_financial_goal(
                         ],
                         normalized_goal[
                             "prazo_meses"
+                        ],
+                        normalized_goal[
+                            "data_limite"
                         ],
                         normalized_goal[
                             "prioridade"
@@ -757,6 +1082,7 @@ def update_financial_goal(
                         target_amount = ?,
                         current_amount = ?,
                         deadline_months = ?,
+                        deadline_date = ?,
                         priority = ?,
                         status = ?,
                         updated_at = CURRENT_TIMESTAMP
@@ -779,6 +1105,9 @@ def update_financial_goal(
                         ],
                         normalized_goal[
                             "prazo_meses"
+                        ],
+                        normalized_goal[
+                            "data_limite"
                         ],
                         normalized_goal[
                             "prioridade"
@@ -975,13 +1304,14 @@ def seed_financial_goals_if_needed(
                             target_amount,
                             current_amount,
                             deadline_months,
+                            deadline_date,
                             priority,
                             status,
                             sort_order
                         )
                         VALUES (
                             ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?
+                            ?, ?, ?, ?, ?
                         )
                         """,
                         (
@@ -1003,6 +1333,9 @@ def seed_financial_goals_if_needed(
                             ],
                             normalized_goal[
                                 "prazo_meses"
+                            ],
+                            normalized_goal[
+                                "data_limite"
                             ],
                             normalized_goal[
                                 "prioridade"

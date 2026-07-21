@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 import components.goals as goals_module
 
 from components.goals import (
+    build_free_simulation_goal,
     build_goal_payload,
     calculate_estimated_months,
+    calculate_goal_deadline,
     calculate_goal_overview,
     calculate_goal_progress,
+    get_goal_reference_date,
 )
 
 
@@ -236,6 +241,148 @@ def test_calculate_goal_overview_for_completed_goal():
     }
 
 
+def test_goal_deadline_changes_with_reference_date():
+    deadline = date(
+        2026,
+        10,
+        1,
+    )
+
+    july_result = calculate_goal_deadline(
+        deadline_date=deadline,
+        reference_date=date(
+            2026,
+            7,
+            1,
+        ),
+    )
+
+    august_result = calculate_goal_deadline(
+        deadline_date=deadline,
+        reference_date=date(
+            2026,
+            8,
+            1,
+        ),
+    )
+
+    assert july_result["days_remaining"] == 92
+    assert august_result["days_remaining"] == 61
+
+    assert (
+        august_result["planning_months"]
+        < july_result["planning_months"]
+    )
+
+
+def test_monthly_goal_increases_as_deadline_approaches():
+    july_overview = calculate_goal_overview(
+        target_amount=6500.0,
+        current_amount=500.0,
+        deadline_date=date(
+            2026,
+            10,
+            1,
+        ),
+        reference_date=date(
+            2026,
+            7,
+            1,
+        ),
+    )
+
+    august_overview = calculate_goal_overview(
+        target_amount=6500.0,
+        current_amount=500.0,
+        deadline_date=date(
+            2026,
+            10,
+            1,
+        ),
+        reference_date=date(
+            2026,
+            8,
+            1,
+        ),
+    )
+
+    assert (
+        august_overview["monthly_amount"]
+        > july_overview["monthly_amount"]
+    )
+
+
+def test_reference_date_can_be_overridden(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv(
+        goals_module.GOAL_REFERENCE_DATE_ENV,
+        "2026-09-20",
+    )
+
+    assert get_goal_reference_date() == date(
+        2026,
+        9,
+        20,
+    )
+
+
+def test_build_free_simulation_goal():
+    goal = build_free_simulation_goal(
+        name="Notebook",
+        target_amount=6000.0,
+        current_amount=500.0,
+        deadline_date=date(
+            2027,
+            1,
+            20,
+        ),
+        reference_date=date(
+            2026,
+            7,
+            21,
+        ),
+    )
+
+    assert goal == {
+        "goal_id": "free-goal-simulation",
+        "nome": "Notebook",
+        "valor_meta": 6000.0,
+        "valor_atual": 500.0,
+        "data_limite": "2027-01-20",
+        "prazo_meses": 7,
+        "prioridade": "média",
+        "status": "active",
+    }
+
+
+def test_free_simulation_rejects_past_deadline():
+    try:
+        build_free_simulation_goal(
+            name="Viagem",
+            target_amount=2000.0,
+            current_amount=0.0,
+            deadline_date=date(
+                2026,
+                7,
+                20,
+            ),
+            reference_date=date(
+                2026,
+                7,
+                21,
+            ),
+        )
+
+    except ValueError as error:
+        assert "passado" in str(error)
+
+    else:
+        raise AssertionError(
+            "A data no passado deveria ser rejeitada."
+        )
+
+
 def test_calculate_estimated_months():
     assert (
         calculate_estimated_months(
@@ -282,6 +429,67 @@ def test_build_goal_payload():
         "prazo_meses": 18,
         "prioridade": "alta",
     }
+
+
+def test_build_goal_payload_with_deadline_date():
+    payload = build_goal_payload(
+        name="Viagem",
+        target_amount=5000.0,
+        current_amount=500.0,
+        deadline_date=date(
+            2027,
+            1,
+            20,
+        ),
+        priority="alta",
+    )
+
+    assert payload == {
+        "nome": "Viagem",
+        "valor_meta": 5000.0,
+        "valor_atual": 500.0,
+        "data_limite": "2027-01-20",
+        "prioridade": "alta",
+    }
+
+
+def test_simulator_without_saved_goal_uses_free_mode(
+    monkeypatch,
+) -> None:
+    fake_streamlit = FakeStreamlit()
+    events: list[float] = []
+
+    monkeypatch.setattr(
+        goals_module,
+        "st",
+        fake_streamlit,
+    )
+
+    monkeypatch.setattr(
+        goals_module,
+        "_render_free_goal_simulation",
+        lambda summary: events.append(
+            float(
+                summary.get(
+                    "saldo_disponivel",
+                    0.0,
+                )
+            )
+        ),
+    )
+
+    goals_module._render_goal_simulator_view(
+        [],
+        {
+            "saldo_disponivel": 850.0,
+        },
+    )
+
+    assert events == [850.0]
+
+    assert fake_streamlit.session_state[
+        goals_module.GOAL_SIMULATION_SOURCE_KEY
+    ] == goals_module.SIMULATION_SOURCE_FREE
 
 
 def test_goal_screen_starts_with_saved_goals(

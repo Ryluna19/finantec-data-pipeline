@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import calendar
+import sqlite3
+from datetime import date
+
 import pytest
 
 from src.goal_repository import (
@@ -17,6 +21,42 @@ from src.goal_repository import (
 )
 
 
+def add_months(
+    base_date: date,
+    months: int,
+) -> date:
+    """Adiciona meses para montar datas estáveis nos testes."""
+    month_index = (
+        base_date.month
+        - 1
+        + months
+    )
+
+    target_year = (
+        base_date.year
+        + month_index // 12
+    )
+
+    target_month = (
+        month_index % 12
+        + 1
+    )
+
+    target_day = min(
+        base_date.day,
+        calendar.monthrange(
+            target_year,
+            target_month,
+        )[1],
+    )
+
+    return date(
+        target_year,
+        target_month,
+        target_day,
+    )
+
+
 def build_goal(
     name: str = "Comprar notebook",
 ) -> dict:
@@ -25,7 +65,10 @@ def build_goal(
         "nome": name,
         "valor_meta": 3000.0,
         "valor_atual": 500.0,
-        "prazo_meses": 10,
+        "data_limite": add_months(
+            date.today(),
+            10,
+        ).isoformat(),
         "prioridade": "alta",
     }
 
@@ -62,6 +105,19 @@ def test_create_and_load_goal(
         == "active"
     )
 
+    assert (
+        loaded["data_limite"]
+        == add_months(
+            date.today(),
+            10,
+        ).isoformat()
+    )
+
+    assert (
+        loaded["prazo_meses"]
+        == 10
+    )
+
 
 def test_update_goal(
     tmp_path,
@@ -85,6 +141,13 @@ def test_update_goal(
         "valor_atual"
     ] = 3000.0
 
+    updated_payload[
+        "data_limite"
+    ] = add_months(
+        date.today(),
+        14,
+    ).isoformat()
+
     updated = update_financial_goal(
         database_path=database_path,
         user_id="user-1",
@@ -100,6 +163,13 @@ def test_update_goal(
     assert (
         updated["status"]
         == "completed"
+    )
+
+    assert (
+        updated["data_limite"]
+        == updated_payload[
+            "data_limite"
+        ]
     )
 
 
@@ -296,7 +366,10 @@ def test_normalizes_medium_priority():
                 "nome": "Viagem",
                 "valor_meta": 2000.0,
                 "valor_atual": 0.0,
-                "prazo_meses": 12,
+                "data_limite": add_months(
+                    date.today(),
+                    12,
+                ),
                 "prioridade": "media",
             }
         )
@@ -306,6 +379,150 @@ def test_normalizes_medium_priority():
         normalized["prioridade"]
         == "média"
     )
+
+    assert (
+        normalized["prazo_meses"]
+        == 12
+    )
+
+
+def test_accepts_legacy_deadline_months():
+    normalized = (
+        normalize_financial_goal(
+            {
+                "nome": "Viagem",
+                "valor_meta": 2000.0,
+                "valor_atual": 0.0,
+                "prazo_meses": 12,
+                "prioridade": "média",
+            }
+        )
+    )
+
+    assert (
+        normalized["data_limite"]
+        == add_months(
+            date.today(),
+            12,
+        ).isoformat()
+    )
+
+    assert (
+        normalized["prazo_meses"]
+        == 12
+    )
+
+
+def test_rejects_past_deadline():
+    with pytest.raises(
+        ValueError,
+        match="não pode estar no passado",
+    ):
+        normalize_financial_goal(
+            {
+                "nome": "Viagem",
+                "valor_meta": 2000.0,
+                "valor_atual": 0.0,
+                "data_limite": "2020-01-01",
+                "prioridade": "média",
+            }
+        )
+
+
+def test_migrates_legacy_goal_deadline(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "finantec.db"
+    )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE financial_goals (
+                goal_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                name_key TEXT NOT NULL,
+                target_amount REAL NOT NULL,
+                current_amount REAL NOT NULL DEFAULT 0,
+                deadline_months INTEGER NOT NULL,
+                priority TEXT NOT NULL DEFAULT 'média',
+                status TEXT NOT NULL DEFAULT 'active',
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (
+                    user_id,
+                    name_key
+                )
+            );
+
+            CREATE TABLE financial_goal_seed_state (
+                user_id TEXT PRIMARY KEY,
+                seeded_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP
+            );
+
+            INSERT INTO financial_goals (
+                goal_id,
+                user_id,
+                name,
+                name_key,
+                target_amount,
+                current_amount,
+                deadline_months,
+                priority,
+                status,
+                sort_order,
+                created_at
+            )
+            VALUES (
+                'legacy-goal',
+                'user-1',
+                'Meta antiga',
+                'meta antiga',
+                3000,
+                500,
+                3,
+                'média',
+                'active',
+                0,
+                '2026-01-15 10:00:00'
+            );
+            """
+        )
+
+    loaded = list_financial_goals(
+        database_path=database_path,
+        user_id="user-1",
+    )
+
+    assert len(
+        loaded
+    ) == 1
+
+    assert (
+        loaded[0]["data_limite"]
+        == "2026-04-15"
+    )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(financial_goals)"
+            ).fetchall()
+        }
+
+    assert "deadline_date" in columns
 
 
 def test_rejects_invalid_values():
