@@ -99,11 +99,12 @@ def test_demo_keeps_personal_identity_and_shows_mode(
     )
 
     assert fake_streamlit.menu_labels == [
-        "Ryan",
+    "Painel",
     ]
     assert fake_streamlit.captions == [
-        "Navegação",
-        "Modo demonstração ativo",
+    "Navegação principal",
+    "Perfil ativo: Ryan",
+    "Modo demonstração ativo",
     ]
 
 
@@ -128,8 +129,9 @@ def test_unconfigured_profile_uses_navigation_fallback(
     )
 
     assert fake_streamlit.menu_labels == [
-        "Meu perfil",
+    "Painel",
     ]
     assert fake_streamlit.captions == [
-        "Navegação",
+    "Navegação principal",
+    "Perfil ativo: Perfil local",
     ]

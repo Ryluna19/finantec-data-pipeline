@@ -208,8 +208,69 @@
         padding: 4rem 0.8rem 2.5rem;
     }
 
+    .st-key-finantec-global-header-shell {
+        padding:
+            0.72rem !important;
+
+        border-radius:
+            14px;
+    }
+
+    .st-key-finantec-global-header-shell
+    [data-testid="stHorizontalBlock"] {
+        flex-direction:
+            row !important;
+
+        align-items:
+            center !important;
+
+        gap:
+            0.55rem !important;
+    }
+
+    .st-key-finantec-global-header-shell
+    [data-testid="stColumn"]:first-child {
+        width:
+            auto !important;
+
+        flex:
+            1 1 auto !important;
+    }
+
+    .st-key-finantec-global-header-shell
+    [data-testid="stColumn"]:last-child {
+        width:
+            auto !important;
+
+        flex:
+            0 0 auto !important;
+    }
+
+    .st-key-finantec-global-header-actions
+    > [data-testid="stVerticalBlock"],
+    .st-key-finantec-global-header-actions
+    [data-testid="stVerticalBlock"] {
+        align-items:
+            flex-end !important;
+    }
+
+    .st-key-finantec-global-header-actions
+    .st-key-finantec-appearance-popover
+    button {
+        min-height:
+            32px !important;
+
+        padding:
+            0.35rem
+            0.6rem !important;
+
+        font-size:
+            0.72rem !important;
+    }
+
     .finantec-brand-header {
-        margin-bottom: 0.55rem;
+        margin:
+            0;
     }
 
     .finantec-brand-title-row {
@@ -238,8 +299,8 @@
     }
 
     .finantec-brand-header::after {
-        width: 34px;
-        margin-top: 0.55rem;
+        content:
+            none;
     }
 
     .finantec-alert {
@@ -797,5 +858,71 @@
     .finantec-transaction-summary-item strong {
         font-size:
             1.22rem;
+    }
+}
+
+/* =========================================================
+   SIDEBAR — AJUSTES RESPONSIVOS
+   ========================================================= */
+
+@media (max-width: 560px) {
+    [data-testid="stSidebar"]
+    [data-testid="stSidebarUserContent"] {
+        padding:
+            0.85rem
+            0.7rem
+            1.25rem !important;
+    }
+
+    .st-key-finantec-sidebar-account {
+        margin-bottom:
+            0.85rem;
+
+        padding:
+            0.72rem;
+
+        border-radius:
+            13px;
+    }
+
+    .finantec-sidebar-account-avatar {
+        width:
+            36px;
+
+        height:
+            36px;
+
+        flex-basis:
+            36px;
+
+        border-radius:
+            10px;
+    }
+
+    .finantec-sidebar-account-copy strong {
+        font-size:
+            0.86rem;
+    }
+
+    .st-key-finantec-sidebar-account
+    .stButton > button {
+        min-height:
+            36px !important;
+
+        padding:
+            0.35rem
+            0.48rem !important;
+
+        font-size:
+            0.72rem !important;
+    }
+
+    .st-key-finantec-sidebar-navigation
+    button {
+        min-height:
+            42px !important;
+
+        padding-inline:
+            0.72rem !important;
     }
 }

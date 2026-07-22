@@ -63,13 +63,15 @@ class FakeStreamlit:
         *args,
         **kwargs,
     ):
+        column_count = (
+            len(count)
+            if isinstance(count, (list, tuple))
+            else int(count)
+        )
+
         return tuple(
             DummyContext()
-            for _ in range(
-                int(
-                    count
-                )
-            )
+            for _ in range(column_count)
         )
 
     def button(

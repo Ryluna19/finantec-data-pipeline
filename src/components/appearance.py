@@ -120,6 +120,50 @@ def _find_label(
         if value == selected_value
     )
 
+def _sync_appearance_preference() -> None:
+    """Sincroniza o tema selecionado antes da nova execução."""
+    selected_label = str(
+        st.session_state.get(
+            APPEARANCE_WIDGET_KEY,
+            "",
+        )
+    ).strip()
+
+    selected_appearance = (
+        APPEARANCE_OPTIONS.get(
+            selected_label
+        )
+    )
+
+    if selected_appearance is None:
+        return
+
+    st.session_state[
+        APPEARANCE_KEY
+    ] = selected_appearance
+
+
+def _sync_accent_palette_preference() -> None:
+    """Sincroniza a paleta selecionada antes da nova execução."""
+    selected_label = str(
+        st.session_state.get(
+            ACCENT_WIDGET_KEY,
+            "",
+        )
+    ).strip()
+
+    selected_palette = (
+        ACCENT_PALETTE_OPTIONS.get(
+            selected_label
+        )
+    )
+
+    if selected_palette is None:
+        return
+
+    st.session_state[
+        ACCENT_PALETTE_KEY
+    ] = selected_palette
 
 def _render_visual_preference_fields(
     *,
@@ -146,6 +190,9 @@ def _render_visual_preference_fields(
             )
         ),
         key=APPEARANCE_WIDGET_KEY,
+        on_change=(
+            _sync_appearance_preference
+        ),
     )
 
     accent_label = st.selectbox(
@@ -158,29 +205,10 @@ def _render_visual_preference_fields(
             )
         ),
         key=ACCENT_WIDGET_KEY,
+        on_change=(
+            _sync_accent_palette_preference
+        ),
     )
-
-    selected_appearance = APPEARANCE_OPTIONS[
-        appearance_label
-    ]
-
-    selected_palette = ACCENT_PALETTE_OPTIONS[
-        accent_label
-    ]
-
-    if (
-        selected_appearance != appearance
-        or selected_palette != accent_palette
-    ):
-        st.session_state[
-            APPEARANCE_KEY
-        ] = selected_appearance
-
-        st.session_state[
-            ACCENT_PALETTE_KEY
-        ] = selected_palette
-
-        st.rerun()
 
     if show_caption:
         st.caption(

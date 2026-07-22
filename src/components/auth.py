@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from html import escape
 from typing import Any
 
 import streamlit as st
@@ -446,10 +447,78 @@ def render_authentication_gate() -> dict[str, str] | None:
     return None
 
 
+def _build_account_initials(
+    username: str,
+) -> str:
+    """Cria iniciais curtas para a identidade da conta."""
+    normalized_username = " ".join(
+        str(
+            username
+            if username is not None
+            else ""
+        )
+        .strip()
+        .split()
+    )
+
+    if not normalized_username:
+        return "C"
+
+    parts = [
+        part
+        for part in normalized_username.split()
+        if part
+    ]
+
+    if len(parts) == 1:
+        return parts[0][0].upper()
+
+    return (
+        parts[0][0]
+        + parts[-1][0]
+    ).upper()
+
+
+def build_sidebar_account_html(
+    username: str,
+) -> str:
+    """Monta a identidade compacta da conta na sidebar."""
+    normalized_username = " ".join(
+        str(
+            username
+            if username is not None
+            else ""
+        )
+        .strip()
+        .split()
+    ) or "Conta local"
+
+    initials = _build_account_initials(
+        normalized_username
+    )
+
+    return (
+        '<div class="finantec-sidebar-account-identity">'
+        '<span class="finantec-sidebar-account-avatar" '
+        'aria-hidden="true">'
+        f"{escape(initials)}"
+        "</span>"
+        '<div class="finantec-sidebar-account-copy">'
+        '<span class="finantec-sidebar-account-eyebrow">'
+        "Conta local"
+        "</span>"
+        f'<strong title="{escape(normalized_username)}">'
+        f"{escape(normalized_username)}"
+        "</strong>"
+        "</div>"
+        "</div>"
+    )
+
+
 def render_account_sidebar(
     account: dict[str, str],
 ) -> None:
-    """Exibe a conta atual e as ações globais da sessão."""
+    """Exibe a conta atual e a ação de encerramento da sessão."""
     username = str(
         account.get(
             "username",
@@ -466,17 +535,15 @@ def render_account_sidebar(
                 identity_column,
                 action_column,
             ) = st.columns(
-                [1.45, 0.85],
+                [1.75, 0.75],
                 gap="small",
             )
 
             with identity_column:
-                st.caption(
-                    "Conta atual"
-                )
-
-                st.markdown(
-                    f"**{username}**"
+                render_html(
+                    build_sidebar_account_html(
+                        username
+                    )
                 )
 
             with action_column:
@@ -485,6 +552,7 @@ def render_account_sidebar(
                     key="finantec-logout",
                     icon=":material/logout:",
                     type="secondary",
+                    help="Encerrar a sessão atual",
                     use_container_width=True,
                 )
 
@@ -492,9 +560,3 @@ def render_account_sidebar(
                 clear_session_preserving_visual_preferences()
                 st.cache_data.clear()
                 st.rerun()
-
-        st.divider()
-
-    render_appearance_toolbar(
-        key="finantec-page-toolbar"
-    )

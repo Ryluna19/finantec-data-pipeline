@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from html import escape
 
+import streamlit as st
+
+from components.appearance import (
+    render_appearance_controls,
+)
 from ui_components import render_html
 
 
@@ -109,12 +114,9 @@ def build_section_header_html(
     )
 
 
-def render_header(
-    _period: str | None = None,
-) -> None:
-    """Exibe somente a identidade visual global do FinanTec."""
-    render_html(
-        """
+def build_brand_header_html() -> str:
+    """Monta a identidade exibida no cabeçalho global."""
+    return """
         <header class="finantec-brand-header">
             <div class="finantec-brand-title-row">
                 <span
@@ -164,5 +166,31 @@ def render_header(
                 e pessoas em início de carreira.
             </p>
         </header>
-        """
-    )
+    """
+
+
+def render_header(
+    _period: str | None = None,
+) -> None:
+    """Exibe identidade e aparência na mesma superfície global."""
+    with st.container(
+        border=False,
+        key="finantec-global-header-shell",
+    ):
+        brand_column, appearance_column = st.columns(
+            [4.5, 1],
+            gap="small",
+        )
+
+        with brand_column:
+            render_html(
+                build_brand_header_html()
+            )
+
+        with appearance_column:
+            with st.container(
+                key="finantec-global-header-actions",
+            ):
+                render_appearance_controls(
+                    compact=True
+                )

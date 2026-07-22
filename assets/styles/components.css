@@ -6,43 +6,75 @@
    SIDEBAR
    ========================================================= */
 
-[data-testid="stSidebar"] hr {
-    margin:
-        1rem
-        0 !important;
+[data-testid="stSidebar"] {
+    background:
+        #111214 !important;
 
-    border-color:
-        var(--border) !important;
+    border-right:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        ) !important;
+}
+
+[data-testid="stSidebar"]
+[data-testid="stSidebarUserContent"] {
+    padding:
+        1rem
+        0.75rem
+        1.5rem !important;
+}
+
+[data-testid="stSidebar"] hr {
+    display:
+        none !important;
 }
 
 
 /* Conta atual */
 
 .st-key-finantec-sidebar-account {
+    margin-bottom:
+        1rem;
+
     padding:
-        0.75rem;
+        0.8rem;
 
     background:
-        var(--bg-panel);
+        #191a1d;
 
     border:
         1px solid
-        var(--border-light);
+        #34363c;
 
     border-radius:
-        12px;
+        14px;
+
+    box-shadow:
+        0
+        10px
+        24px
+        rgba(
+            0,
+            0,
+            0,
+            0.16
+        );
 }
 
 .st-key-finantec-sidebar-account
 > [data-testid="stVerticalBlock"] {
     gap:
-        0.35rem;
+        0 !important;
 }
 
 .st-key-finantec-sidebar-account
 [data-testid="stHorizontalBlock"] {
     align-items:
-        center;
+        center !important;
 }
 
 .st-key-finantec-sidebar-account
@@ -51,22 +83,107 @@
         0;
 }
 
-.st-key-finantec-sidebar-account
-[data-testid="stCaptionContainer"] {
-    margin-bottom:
-        0.1rem;
-}
+.finantec-sidebar-account-identity {
+    display:
+        flex;
 
-.st-key-finantec-sidebar-account
-[data-testid="stMarkdownContainer"] p {
-    margin:
+    min-width:
         0;
 
+    align-items:
+        center;
+
+    gap:
+        0.65rem;
+}
+
+.finantec-sidebar-account-avatar {
+    display:
+        inline-flex;
+
+    width:
+        38px;
+
+    height:
+        38px;
+
+    flex:
+        0
+        0
+        38px;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    background:
+        var(--accent-soft);
+
+    color:
+        var(--accent);
+
+    border:
+        1px solid
+        var(--accent-line);
+
+    border-radius:
+        11px;
+
+    font-size:
+        0.82rem;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        0.04em;
+}
+
+.finantec-sidebar-account-copy {
+    display:
+        flex;
+
+    min-width:
+        0;
+
+    flex-direction:
+        column;
+
+    gap:
+        0.14rem;
+}
+
+.finantec-sidebar-account-eyebrow {
+    color:
+        #aeb2bd;
+
+    font-size:
+        0.7rem;
+
+    font-weight:
+        650;
+
+    line-height:
+        1.2;
+}
+
+.finantec-sidebar-account-copy strong {
     overflow:
         hidden;
 
     color:
-        var(--text-main) !important;
+        #f4f4f5;
+
+    font-size:
+        0.92rem;
+
+    font-weight:
+        750;
+
+    line-height:
+        1.25;
 
     text-overflow:
         ellipsis;
@@ -78,7 +195,7 @@
 .st-key-finantec-sidebar-account
 .stButton > button {
     min-height:
-        36px !important;
+        38px !important;
 
     padding:
         0.4rem
@@ -88,13 +205,19 @@
         transparent !important;
 
     color:
-        var(--text-soft) !important;
+        #d4d4d8 !important;
 
     border-color:
-        var(--border-light) !important;
+        #404249 !important;
+
+    border-radius:
+        10px !important;
 
     font-size:
-        0.78rem !important;
+        0.76rem !important;
+
+    font-weight:
+        700 !important;
 }
 
 .st-key-finantec-sidebar-account
@@ -110,45 +233,261 @@
 }
 
 
-/* Menu do perfil */
+/* Navegação da conta */
 
 .st-key-finantec-sidebar-navigation {
-    margin-top:
+    padding:
+        0
+        0.1rem;
+}
+
+.st-key-finantec-sidebar-navigation
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0.55rem !important;
+}
+
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:first-child {
+    margin-bottom:
         0.15rem;
 }
 
 .st-key-finantec-sidebar-navigation
-[data-testid="stCaptionContainer"] {
-    margin-bottom:
-        0.35rem;
+[data-testid="stCaptionContainer"]:first-child,
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:first-child p {
+    color:
+        #c7cad2 !important;
+
+    font-size:
+        0.76rem !important;
+
+    font-weight:
+        700 !important;
+
+    letter-spacing:
+        0.02em;
+}
+
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:not(:first-child),
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:not(:first-child) p {
+    color:
+        #9296a1 !important;
+
+    font-size:
+        0.74rem !important;
+
+    font-weight:
+        500 !important;
 }
 
 .st-key-finantec-sidebar-navigation
 button {
     min-height:
-        42px !important;
+        44px !important;
+
+    justify-content:
+        flex-start !important;
+
+    padding-inline:
+        0.8rem !important;
 
     background:
-        var(--bg-panel) !important;
+        #191a1d !important;
 
     color:
-        var(--text-main) !important;
+        #f4f4f5 !important;
 
     border:
         1px solid
-        var(--border-light) !important;
+        #34363c !important;
 
     border-radius:
-        10px !important;
+        11px !important;
 
     box-shadow:
         none !important;
+
+    font-size:
+        0.82rem !important;
+
+    font-weight:
+        700 !important;
 }
 
 .st-key-finantec-sidebar-navigation
 button:hover {
     background:
-        var(--bg-hover) !important;
+        #202126 !important;
+
+    color:
+        var(--accent) !important;
+
+    border-color:
+        var(--accent-line) !important;
+}
+
+
+/* Controle de recolhimento */
+
+[data-testid="stSidebarCollapseButton"]
+button,
+[data-testid="stSidebarCollapsedControl"]
+button {
+    color:
+        var(--text-soft) !important;
+
+    border-radius:
+        10px !important;
+}
+
+[data-testid="stSidebarCollapseButton"]
+button:hover,
+[data-testid="stSidebarCollapsedControl"]
+button:hover {
+    background:
+        var(--accent-soft) !important;
+
+    color:
+        var(--accent) !important;
+}
+
+
+/* Tema claro da sidebar */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSidebar"] {
+    background:
+        #eee5dc !important;
+
+    border-right-color:
+        #d6c7ba !important;
+
+    box-shadow:
+        10px
+        0
+        28px
+        rgba(
+            78,
+            58,
+            42,
+            0.10
+        );
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-account {
+    background:
+        #fffaf5;
+
+    border-color:
+        #d8c9bb;
+
+    box-shadow:
+        0
+        10px
+        22px
+        rgba(
+            78,
+            58,
+            42,
+            0.08
+        );
+}
+
+:root:has(.finantec-theme-light)
+.finantec-sidebar-account-eyebrow {
+    color:
+        #7a6a5e;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-sidebar-account-copy strong {
+    color:
+        #2d2621;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-account
+.stButton > button {
+    background:
+        #fffdf9 !important;
+
+    color:
+        #5f5147 !important;
+
+    border-color:
+        #d8c9bb !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-account
+.stButton > button:hover {
+    background:
+        var(--accent-soft) !important;
+
+    color:
+        var(--accent) !important;
+
+    border-color:
+        var(--accent-line) !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:first-child,
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:first-child p {
+    color:
+        #5f5147 !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:not(:first-child),
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-navigation
+[data-testid="stCaptionContainer"]:not(:first-child) p {
+    color:
+        #77695f !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-navigation
+button {
+    background:
+        #fffaf5 !important;
+
+    color:
+        #2d2621 !important;
+
+    border-color:
+        #d8c9bb !important;
+
+    box-shadow:
+        0
+        6px
+        14px
+        rgba(
+            78,
+            58,
+            42,
+            0.06
+        ) !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-sidebar-navigation
+button:hover {
+    background:
+        var(--accent-soft) !important;
+
+    color:
+        var(--accent) !important;
 
     border-color:
         var(--accent-line) !important;
@@ -172,6 +511,7 @@ button:hover {
     line-height:
         1.3;
 }
+
 
 /* =========================================================
    TEXTOS AUXILIARES E LEGIBILIDADE
@@ -3123,4 +3463,111 @@ div[class*="st-key-period-transactions-card"]
         0
         2px
         var(--accent-focus) !important;
+}
+
+/* =========================================================
+   SIDEBAR — LARGURA MÍNIMA
+   ========================================================= */
+
+/*
+   A sidebar pode ser redimensionada sem alterar a largura
+   da janela. Por isso, container queries são mais adequadas
+   do que media queries baseadas no viewport.
+*/
+
+.st-key-finantec-sidebar-account,
+.st-key-finantec-sidebar-navigation {
+    container-type:
+        inline-size;
+}
+
+
+@container (max-width: 205px) {
+    .st-key-finantec-sidebar-account
+    [data-testid="stHorizontalBlock"] {
+        flex-direction:
+            column !important;
+
+        align-items:
+            stretch !important;
+
+        gap:
+            0.55rem !important;
+    }
+
+    .st-key-finantec-sidebar-account
+    [data-testid="stColumn"] {
+        width:
+            100% !important;
+
+        flex:
+            1 1 100% !important;
+    }
+
+    .finantec-sidebar-account-identity {
+        width:
+            100%;
+    }
+
+    .finantec-sidebar-account-avatar {
+        width:
+            34px;
+
+        height:
+            34px;
+
+        flex-basis:
+            34px;
+    }
+
+    .finantec-sidebar-account-eyebrow {
+        display:
+            none;
+    }
+
+    .finantec-sidebar-account-copy strong {
+        font-size:
+            0.84rem;
+    }
+
+    .st-key-finantec-sidebar-account
+    .stButton {
+        width:
+            100%;
+    }
+
+    .st-key-finantec-sidebar-account
+    .stButton > button {
+        width:
+            100% !important;
+
+        justify-content:
+            center !important;
+    }
+
+    .st-key-finantec-sidebar-navigation
+    button {
+        padding-inline:
+            0.6rem !important;
+    }
+
+    .st-key-finantec-sidebar-navigation
+    button p,
+    .st-key-finantec-sidebar-navigation
+    button span {
+        overflow:
+            hidden;
+
+        text-overflow:
+            ellipsis;
+
+        white-space:
+            nowrap;
+    }
+
+    .st-key-finantec-sidebar-navigation
+    [data-testid="stCaptionContainer"]:not(:first-child) {
+        display:
+            none;
+    }
 }

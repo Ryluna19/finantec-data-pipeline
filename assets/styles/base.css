@@ -137,11 +137,84 @@ a:hover {
 }
 
 /* =========================================================
+   CABEÇALHO GLOBAL
+   ========================================================= */
+
+.st-key-finantec-global-header-shell {
+    box-sizing:
+        border-box;
+
+    width:
+        100%;
+
+    margin-bottom:
+        0.2rem;
+
+    padding:
+        0.85rem
+        1rem !important;
+
+    border:
+        0 !important;
+
+    border-radius:
+        16px;
+
+    overflow:
+        visible !important;
+}
+
+.st-key-finantec-global-header-shell
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0 !important;
+}
+
+.st-key-finantec-global-header-shell
+[data-testid="stHorizontalBlock"] {
+    align-items:
+        center;
+
+    gap:
+        1rem;
+}
+
+.st-key-finantec-global-header-shell
+[data-testid="stColumn"] {
+    min-width:
+        0;
+}
+
+.st-key-finantec-global-header-actions
+> [data-testid="stVerticalBlock"],
+.st-key-finantec-global-header-actions
+[data-testid="stVerticalBlock"] {
+    align-items:
+        flex-end !important;
+
+    justify-content:
+        center;
+}
+
+.st-key-finantec-global-header-actions
+.st-key-finantec-appearance-popover,
+.st-key-finantec-global-header-actions
+[data-testid="stPopover"] {
+    width:
+        fit-content !important;
+
+    margin-left:
+        auto !important;
+}
+
+
+/* =========================================================
    CABEÇALHO DA MARCA
    ========================================================= */
 
 .finantec-brand-header {
-    margin-bottom: 0.75rem;
+    margin:
+        0;
 }
 
 .finantec-brand-title-row {
@@ -221,7 +294,7 @@ a:hover {
 .finantec-brand-description {
     max-width: 680px;
 
-    margin: 0.65rem 0 0;
+    margin: 0.5rem 0 0;
 
     color: var(--text-muted) !important;
 
@@ -230,18 +303,8 @@ a:hover {
 }
 
 .finantec-brand-header::after {
-    content: "";
-
-    display: block;
-
-    width: 44px;
-    height: 3px;
-
-    margin-top: 0.7rem;
-
-    background: var(--accent);
-
-    border-radius: 999px;
+    content:
+        none;
 }
 
 
@@ -365,7 +428,8 @@ a:hover {
    ========================================================= */
 
 .stTabs [data-baseweb="tab-list"] {
-    gap: 1.1rem;
+    gap:
+        1.1rem;
 
     border-bottom:
         1px solid
@@ -393,9 +457,14 @@ a:hover {
     border:
         0 !important;
 
+    border-inline:
+        0 !important;
+
+    border-top:
+        0 !important;
+
     border-bottom:
-        2px solid
-        transparent !important;
+        0 !important;
 
     border-radius:
         0 !important;
@@ -404,9 +473,14 @@ a:hover {
         0 !important;
 
     box-shadow:
-        none !important;
+        inset
+        0
+        -2px
+        0
+        transparent !important;
 
-    font-weight: 650;
+    font-weight:
+        650;
 }
 
 .stTabs [data-baseweb="tab"]:hover,
@@ -420,7 +494,11 @@ a:hover {
     color:
         var(--text-main) !important;
 
-    border-bottom-color:
+    box-shadow:
+        inset
+        0
+        -2px
+        0
         var(--accent) !important;
 }
 
@@ -431,7 +509,7 @@ a:hover {
         none !important;
 }
 
-/* O foco por teclado usa a paleta sem criar uma moldura vermelha. */
+/* O foco por teclado permanece visível sem criar bordas laterais. */
 
 .stTabs [data-baseweb="tab"]:focus,
 .stTabs [data-baseweb="tab"]:focus-visible,
@@ -443,15 +521,23 @@ a:hover {
     background:
         var(--accent-soft) !important;
 
-    border-bottom-color:
-        var(--accent) !important;
+    border:
+        0 !important;
+
+    border-inline:
+        0 !important;
 
     outline:
         0 !important;
 
     box-shadow:
-        none !important;
+        inset
+        0
+        -2px
+        0
+        var(--accent) !important;
 }
+
 
 /* =========================================================
    INPUTS E CAMPOS

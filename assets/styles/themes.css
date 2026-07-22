@@ -272,6 +272,67 @@
 
 
 /* =========================================================
+   CABEÇALHO GLOBAL
+   ========================================================= */
+
+:root:has(.finantec-theme-dark)
+.st-key-finantec-global-header-shell {
+    background:
+        linear-gradient(
+            135deg,
+            #1b1918,
+            #171717
+        ) !important;
+
+    box-shadow:
+        inset
+        0
+        -1px
+        0
+        rgba(255, 255, 255, 0.08) !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-global-header-shell {
+    background:
+        linear-gradient(
+            135deg,
+            #eadfd4,
+            #f0e7de
+        ) !important;
+
+    box-shadow:
+        inset
+        0
+        -1px
+        0
+        rgba(116, 91, 70, 0.14),
+        0
+        10px
+        30px
+        rgba(71, 54, 42, 0.055) !important;
+}
+
+.st-key-finantec-global-header-actions
+.st-key-finantec-appearance-popover
+button {
+    background:
+        var(--bg-panel-2) !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-finantec-global-header-actions
+.st-key-finantec-appearance-popover
+button {
+    background:
+        #fffdf9 !important;
+
+    border-color:
+        #cfbdad !important;
+}
+
+
+/* =========================================================
    CONTROLE GLOBAL DE APARÊNCIA
    ========================================================= */
 
