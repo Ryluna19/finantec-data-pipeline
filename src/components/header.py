@@ -1,8 +1,112 @@
-"""Componente responsável pelo cabeçalho principal do FinanTec."""
+"""Componentes responsáveis pelos cabeçalhos do FinanTec."""
 
 from __future__ import annotations
 
+from html import escape
+
 from ui_components import render_html
+
+
+def _normalize_heading_text(
+    value: object,
+) -> str:
+    """Normaliza textos usados nos cabeçalhos visuais."""
+    return " ".join(
+        str(
+            value
+            if value is not None
+            else ""
+        )
+        .strip()
+        .split()
+    )
+
+
+def build_page_header_html(
+    *,
+    title: str,
+    description: str,
+) -> str:
+    """Monta o cabeçalho padronizado de uma página interna."""
+    normalized_title = _normalize_heading_text(
+        title
+    )
+
+    normalized_description = (
+        _normalize_heading_text(
+            description
+        )
+    )
+
+    if not normalized_title:
+        raise ValueError(
+            "O título da página não pode ficar vazio."
+        )
+
+    description_html = (
+        (
+            '<p class="finantec-page-header-description">'
+            f"{escape(normalized_description)}"
+            "</p>"
+        )
+        if normalized_description
+        else ""
+    )
+
+    return (
+        '<section class="finantec-page-header">'
+        '<div class="finantec-page-header-copy">'
+        f"<h2>{escape(normalized_title)}</h2>"
+        f"{description_html}"
+        "</div>"
+        "</section>"
+    )
+
+
+def build_section_header_html(
+    *,
+    title: str,
+    description: str | None = None,
+    compact: bool = False,
+) -> str:
+    """Monta um título local sem âncora automática do Markdown."""
+    normalized_title = _normalize_heading_text(
+        title
+    )
+
+    normalized_description = (
+        _normalize_heading_text(
+            description
+        )
+    )
+
+    if not normalized_title:
+        raise ValueError(
+            "O título da seção não pode ficar vazio."
+        )
+
+    class_name = (
+        "finantec-section-header compact"
+        if compact
+        else "finantec-section-header"
+    )
+
+    description_html = (
+        (
+            '<p class="finantec-section-header-description">'
+            f"{escape(normalized_description)}"
+            "</p>"
+        )
+        if normalized_description
+        else ""
+    )
+
+    return (
+        f'<div class="{class_name}">'
+        f"<h3>{escape(normalized_title)}</h3>"
+        f"{description_html}"
+        "</div>"
+    )
 
 
 def render_header(

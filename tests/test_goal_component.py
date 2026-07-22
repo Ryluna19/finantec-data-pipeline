@@ -9,6 +9,7 @@ import components.goals as goals_module
 from components.goals import (
     build_free_simulation_goal,
     build_goal_payload,
+    build_goal_summary_html,
     calculate_estimated_months,
     calculate_goal_deadline,
     calculate_goal_overview,
@@ -179,6 +180,54 @@ def configure_goal_views(
     )
 
     return fake_streamlit, events
+
+
+
+def test_build_goal_summary_html_uses_single_compact_panel():
+    html = build_goal_summary_html(
+        goal_name="Notebook <novo>",
+        goal_value=5000.0,
+        current_value=1000.0,
+        remaining_value=4000.0,
+        fourth_label="Necessário por mês",
+        fourth_value="R$ 500,00",
+        fourth_description="Para concluir em 8 meses.",
+    )
+
+    assert (
+        'class="finantec-goal-simulation-panel"'
+        in html
+    )
+
+    assert html.count(
+        'class="finantec-goal-summary-item'
+    ) == 4
+
+    assert "finantec-goal-card" not in html
+
+    assert "Notebook &lt;novo&gt;" in html
+
+    assert "Para concluir em 8 meses." in html
+
+
+def test_completed_goal_summary_uses_completed_state():
+    html = build_goal_summary_html(
+        goal_name="Notebook",
+        goal_value=5000.0,
+        current_value=5000.0,
+        remaining_value=0.0,
+        fourth_label="Situação",
+        fourth_value="Concluída",
+        fourth_description="O valor da meta já foi alcançado.",
+    )
+
+    assert (
+        'class="finantec-goal-simulation-panel completed"'
+        in html
+    )
+
+    assert "Meta concluída" in html
+
 
 
 def test_calculate_goal_progress():

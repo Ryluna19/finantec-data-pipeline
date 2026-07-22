@@ -1230,40 +1230,21 @@ button:hover {
 }
 
 
-/* Confirmação de exclusão permanece compacta dentro da meta. */
+/* Confirmação de exclusão em diálogo. */
 
-div[class*="st-key-financial-goal-delete-confirmation-"] {
+div[class*="st-key-financial-goal-delete-dialog-actions"] {
     margin-top:
-        0.75rem;
-
-    padding:
         0.9rem;
 
-    background:
-        var(--danger-bg);
+    padding-top:
+        0.9rem;
 
-    border:
+    border-top:
         1px solid
-        var(--danger-border);
-
-    border-radius:
-        var(--radius);
+        var(--border);
 }
 
-div[class*="st-key-financial-goal-delete-confirmation-"]
-[data-testid="stMarkdownContainer"]
-p {
-    color:
-        var(--text-main) !important;
-
-    font-size:
-        0.9rem !important;
-
-    line-height:
-        1.5 !important;
-}
-
-div[class*="st-key-confirm-delete-goal-"]
+div[class*="st-key-confirm-delete-financial-goal-dialog"]
 button {
     background:
         #b91c1c !important;
@@ -1275,16 +1256,19 @@ button {
         var(--danger) !important;
 }
 
-div[class*="st-key-confirm-delete-goal-"]
+div[class*="st-key-confirm-delete-financial-goal-dialog"]
 button:hover {
     background:
         #dc2626 !important;
+
+    color:
+        #ffffff !important;
 
     border-color:
         #f87171 !important;
 }
 
-div[class*="st-key-cancel-delete-goal-"]
+div[class*="st-key-cancel-delete-financial-goal-dialog"]
 button {
     background:
         transparent !important;
@@ -1296,197 +1280,288 @@ button {
         var(--border-light) !important;
 }
 
+div[class*="st-key-cancel-delete-financial-goal-dialog"]
+button:hover {
+    background:
+        var(--bg-hover) !important;
+
+    border-color:
+        var(--accent-line) !important;
+}
+
 /* =========================================================
    SIMULADOR DE METAS
    ========================================================= */
 
-.finantec-goal-grid {
-    display: grid;
+.finantec-goal-simulation-panel {
+    margin:
+        1rem
+        0;
+
+    overflow:
+        hidden;
+
+    background:
+        var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius:
+        16px;
+
+    box-shadow:
+        none;
+}
+
+.finantec-goal-summary-grid {
+    display:
+        grid;
 
     grid-template-columns:
         repeat(
             4,
             minmax(0, 1fr)
         );
-
-    gap: 1rem;
-    margin: 1rem 0;
 }
 
-.finantec-goal-card {
-    display: flex;
-    flex-direction: column;
+.finantec-goal-summary-item {
+    min-width:
+        0;
 
-    min-width: 0;
-    min-height: 132px;
-    padding: 1.15rem 1.2rem;
+    padding:
+        0.95rem
+        1rem;
 
-    background: var(--bg-panel);
-
-    border:
+    border-right:
         1px solid
         var(--border);
-
-    border-top:
-        3px solid
-        var(--border-light);
-
-    border-radius: var(--radius);
-
-    box-shadow: none;
 }
 
-.finantec-goal-card.current {
-    border-top-color: var(--success);
+.finantec-goal-summary-item:last-child {
+    border-right:
+        0;
 }
 
-.finantec-goal-card.remaining {
-    border-top-color: var(--warning);
+.finantec-goal-summary-label {
+    color:
+        var(--support-text-strong);
+
+    font-size:
+        0.78rem;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.35;
 }
 
-.finantec-goal-card.monthly {
-    border-top-color: var(--info);
-}
+.finantec-goal-summary-value {
+    margin-top:
+        0.38rem;
 
-.finantec-goal-label {
-    color: var(--text-muted);
-
-    font-size: 0.72rem;
-    line-height: 1.3;
-    font-weight: 750;
-
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-}
-
-.finantec-goal-value {
-    margin: 0.7rem 0 0.5rem;
-
-    color: var(--text-main);
+    color:
+        var(--text-main);
 
     font-size:
         clamp(
             1.35rem,
             2vw,
-            1.9rem
+            1.75rem
         );
 
-    line-height: 1.12;
-    font-weight: 800;
+    font-weight:
+        800;
 
-    overflow-wrap: anywhere;
-    word-break: normal;
+    line-height:
+        1.08;
+
+    overflow-wrap:
+        anywhere;
 }
 
-.finantec-goal-card.current
-.finantec-goal-value {
-    color: var(--success);
+.finantec-goal-summary-item.current
+.finantec-goal-summary-value {
+    color:
+        var(--success);
 }
 
-.finantec-goal-card.remaining
-.finantec-goal-value {
-    color: var(--warning);
+.finantec-goal-summary-item.remaining
+.finantec-goal-summary-value {
+    color:
+        var(--warning);
 }
 
-.finantec-goal-description {
-    margin-top: auto;
+.finantec-goal-summary-item.result
+.finantec-goal-summary-value {
+    color:
+        var(--accent);
+}
 
-    color: var(--text-muted);
+.finantec-goal-simulation-panel.completed
+.finantec-goal-summary-item.remaining
+.finantec-goal-summary-value,
+.finantec-goal-simulation-panel.completed
+.finantec-goal-summary-item.result
+.finantec-goal-summary-value {
+    color:
+        var(--success);
+}
 
-    font-size: 0.82rem;
-    line-height: 1.45;
+.finantec-goal-summary-note {
+    margin-top:
+        0.3rem;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.76rem;
+
+    font-weight:
+        500;
+
+    line-height:
+        1.35;
 }
 
 
-/* Barra de progresso */
+/* Progresso integrado ao mesmo painel. */
 
-.finantec-goal-progress-panel {
-    margin-bottom: 1rem;
-    padding: 1.15rem 1.2rem;
+.finantec-goal-progress-section {
+    padding:
+        0.9rem
+        1rem
+        0.95rem;
 
-    background: var(--bg-panel);
-
-    border:
+    border-top:
         1px solid
         var(--border);
-
-    border-radius: var(--radius);
 }
 
 .finantec-goal-progress-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    display:
+        flex;
 
-    gap: 1rem;
-    margin-bottom: 0.85rem;
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        1rem;
+
+    margin-bottom:
+        0.72rem;
 }
 
 .finantec-goal-progress-title {
-    color: var(--text-main);
+    color:
+        var(--text-main);
 
-    font-size: 0.95rem;
-    font-weight: 700;
+    font-size:
+        0.92rem;
+
+    font-weight:
+        700;
 }
 
 .finantec-goal-progress-name {
-    margin-top: 0.2rem;
+    margin-top:
+        0.16rem;
 
-    color: var(--text-muted);
+    color:
+        var(--support-text-muted);
 
-    font-size: 0.82rem;
+    font-size:
+        0.8rem;
+
+    font-weight:
+        500;
 }
 
 .finantec-goal-progress-header strong {
-    color: var(--success);
+    color:
+        var(--success);
 
-    font-size: 0.85rem;
-    font-weight: 750;
+    font-size:
+        0.82rem;
 
-    white-space: nowrap;
+    font-weight:
+        750;
+
+    white-space:
+        nowrap;
 }
 
 .finantec-goal-progress-track {
-    width: 100%;
-    height: 11px;
+    width:
+        100%;
 
-    background: var(--bg-elevated);
+    height:
+        9px;
+
+    overflow:
+        hidden;
+
+    background:
+        var(--bg-elevated);
 
     border:
         1px solid
         var(--border-light);
 
-    border-radius: 999px;
-
-    overflow: hidden;
+    border-radius:
+        999px;
 }
 
 .finantec-goal-progress-fill {
-    height: 100%;
+    height:
+        100%;
 
     background:
         linear-gradient(
             90deg,
-            rgba(34, 197, 94, 0.78),
-            #22c55e
+            var(--accent-active),
+            var(--accent)
         );
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
-    transition: width 180ms ease;
+    transition:
+        width
+        180ms
+        ease;
 }
 
 .finantec-goal-progress-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display:
+        flex;
 
-    gap: 1rem;
-    margin-top: 0.6rem;
+    align-items:
+        center;
 
-    color: var(--text-muted);
+    justify-content:
+        space-between;
 
-    font-size: 0.8rem;
+    gap:
+        1rem;
+
+    margin-top:
+        0.52rem;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.78rem;
+
+    font-weight:
+        500;
 }
 
 
@@ -2577,12 +2652,60 @@ hr {
 .st-key-dashboard-categories-section,
 .st-key-dashboard-evolution-section,
 .st-key-transactions-validation-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .st-key-dashboard-latest-section,
 .st-key-transactions-period-section {
     margin-bottom: 0;
+}
+
+
+/* =========================================================
+   CABEÇALHOS E FILTROS DAS PÁGINAS
+   ========================================================= */
+
+.st-key-monthly-budget-section-header,
+.st-key-financial-goal-section-header {
+    margin:
+        1.15rem
+        0
+        0.75rem;
+}
+
+.st-key-monthly-budget-section-header
+[data-testid="stHorizontalBlock"],
+.st-key-financial-goal-section-header
+[data-testid="stHorizontalBlock"] {
+    align-items:
+        center;
+}
+
+.st-key-monthly-budget-section-header
+.finantec-section-header,
+.st-key-financial-goal-section-header
+.finantec-section-header {
+    margin-bottom:
+        0;
+}
+
+.st-key-dashboard-period-filter-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-dashboard-period-filter-card[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-transactions-period-filter-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-transactions-period-filter-card[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0.95rem
+        1rem !important;
+}
+
+.st-key-dashboard-period-filter-card
+[data-testid="stVerticalBlock"],
+.st-key-transactions-period-filter-card
+[data-testid="stVerticalBlock"] {
+    gap:
+        0.55rem;
 }
 
 /* =========================================================

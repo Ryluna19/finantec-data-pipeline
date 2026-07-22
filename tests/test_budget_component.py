@@ -9,10 +9,13 @@ from src.components.budget import (
     CATEGORY_PLACEHOLDER,
     DEFAULT_BUDGET_CATEGORIES,
     _find_budget,
+    build_budget_card_html,
+    build_budget_summary_html,
     build_budget_category_options,
     build_budget_dashboard_summary,
     build_budget_end_period_options,
     build_budget_payload,
+    build_budget_removal_dialog_copy,
     build_budget_period_options,
     format_budget_period,
     format_budget_validity,
@@ -232,6 +235,68 @@ def test_budget_status_labels():
     )
 
 
+def test_build_budget_card_html_uses_compact_financial_summary():
+    html = build_budget_card_html(
+        category="Educação",
+        validity_label=(
+            "Contínuo desde Julho/2026"
+        ),
+        status="within_limit",
+        planned_amount=400.0,
+        spent_amount=0.0,
+        remaining_amount=400.0,
+        usage_percentage=0.0,
+    )
+
+    assert "Educação" in html
+    assert "Contínuo desde Julho/2026" in html
+    assert "Dentro do limite" in html
+    assert "R$ 0,00" in html
+    assert "R$ 400,00" in html
+    assert "Disponível" in html
+    assert "0.0%" in html
+    assert "finantec-budget-card-body" in html
+
+
+def test_build_budget_card_html_escapes_category_text():
+    html = build_budget_card_html(
+        category="<script>alert('x')</script>",
+        validity_label="Contínuo",
+        status="within_limit",
+        planned_amount=100.0,
+        spent_amount=20.0,
+        remaining_amount=80.0,
+        usage_percentage=20.0,
+    )
+
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_build_budget_summary_html_uses_single_compact_panel():
+    html = build_budget_summary_html(
+        {
+            "total_planned": 1100.0,
+            "total_spent": 130.0,
+            "total_remaining": 970.0,
+            "categories_over_limit": 1,
+        }
+    )
+
+    assert html.count(
+        "finantec-budget-summary-item"
+    ) == 4
+    assert "finantec-budget-summary-panel" in html
+    assert "Planejado" in html
+    assert "Gasto" in html
+    assert "Disponível" in html
+    assert "Acima do limite" in html
+    assert "R$ 1.100,00" in html
+    assert "R$ 130,00" in html
+    assert "R$ 970,00" in html
+    assert 'class="finantec-budget-summary-item danger"' in html
+
+
 def test_build_budget_dashboard_summary():
     transactions = pd.DataFrame(
         {
@@ -353,6 +418,46 @@ def test_resolve_budget_category_rejects_empty_selection():
     )
 
     assert category == ""
+
+
+def test_build_budget_removal_dialog_copy_for_delete():
+    copy = build_budget_removal_dialog_copy(
+        category="Compras",
+        is_inherited_period=False,
+        selected_period="2026-07",
+    )
+
+    assert copy == {
+        "title": "Excluir limite",
+        "question": (
+            "Deseja excluir o limite de “Compras”?"
+        ),
+        "description": (
+            "Essa ação não pode ser desfeita."
+        ),
+        "confirm_label": "Sim, excluir",
+    }
+
+
+def test_build_budget_removal_dialog_copy_for_end():
+    copy = build_budget_removal_dialog_copy(
+        category="Educação",
+        is_inherited_period=True,
+        selected_period="2026-09",
+    )
+
+    assert copy == {
+        "title": "Encerrar limite",
+        "question": (
+            "Deseja encerrar o limite de “Educação” "
+            "a partir de Setembro/2026?"
+        ),
+        "description": (
+            "Os meses anteriores serão preservados."
+        ),
+        "confirm_label": "Sim, encerrar",
+    }
+
 
 def test_budget_period_is_inherited_when_started_before_selected_month():
     assert is_budget_inherited_period(

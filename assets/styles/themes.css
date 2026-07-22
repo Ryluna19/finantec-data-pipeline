@@ -974,9 +974,7 @@ button[kind="primary"]:not(:disabled):hover {
 :root:has(.finantec-theme-light)
 .finantec-table-panel,
 :root:has(.finantec-theme-light)
-.finantec-goal-card,
-:root:has(.finantec-theme-light)
-.finantec-goal-progress-panel,
+.finantec-goal-simulation-panel,
 :root:has(.finantec-theme-light)
 .finantec-data-summary-card,
 :root:has(.finantec-theme-light)
@@ -990,6 +988,41 @@ button[kind="primary"]:not(:disabled):hover {
     box-shadow:
         var(--shadow-soft) !important;
 }
+
+/* Simulador de metas em uma única superfície no tema claro. */
+
+:root:has(.finantec-theme-light)
+.finantec-goal-simulation-panel {
+    background:
+        #fffdf9 !important;
+
+    border-color:
+        #c9b8a9 !important;
+
+    box-shadow:
+        0
+        5px
+        16px
+        rgba(45, 38, 33, 0.035) !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-goal-summary-item,
+:root:has(.finantec-theme-light)
+.finantec-goal-progress-section {
+    border-color:
+        #e1d5ca !important;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-goal-progress-track {
+    background:
+        #e8dfd5 !important;
+
+    border-color:
+        #d7c9bc !important;
+}
+
 
 :root:has(.finantec-theme-light)
 .finantec-balance-panel.positive {
@@ -1897,6 +1930,16 @@ label {
         none !important;
 }
 
+.st-key-monthly-budget-form-card
+.stButton > button {
+    min-height:
+        40px !important;
+
+    padding:
+        0.58rem
+        0.8rem !important;
+}
+
 :root:has(.finantec-theme-light)
 .st-key-monthly-budget-form-card {
     background:
@@ -1916,73 +1959,224 @@ label {
 }
 
 
+
+
+/* Cabeçalho local sem o ícone de âncora do Markdown. */
+
+.finantec-budget-section-heading h2 {
+    margin:
+        0;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.35rem,
+            2.2vw,
+            1.7rem
+        );
+
+    font-weight:
+        750;
+
+    line-height:
+        1.2;
+}
+
+.finantec-budget-section-heading p {
+    margin:
+        0.45rem
+        0
+        0;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.86rem;
+
+    font-weight:
+        500;
+
+    line-height:
+        1.45;
+}
+
+[class*="st-key-open-new-monthly-budget-"] {
+    width:
+        100%;
+
+    max-width:
+        220px;
+
+    margin-left:
+        auto;
+}
+
+[class*="st-key-open-new-monthly-budget-"]
+.stButton > button {
+    min-height:
+        42px !important;
+}
+
+
 /* ---------------------------------------------------------
    RESUMO DO MÊS
    --------------------------------------------------------- */
 
-.st-key-monthly-budget-summary-grid
-[data-testid="stMetric"],
-[class*="st-key-monthly-budget-summary-"]
-[data-testid="stMetric"] {
-    min-height:
-        88px !important;
+.finantec-budget-summary-panel {
+    display:
+        grid;
 
-    padding:
-        0.72rem
-        0.88rem !important;
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    margin-bottom:
+        0.75rem;
+
+    overflow:
+        hidden;
 
     background:
-        var(--bg-panel) !important;
+        var(--bg-panel);
 
     border:
         1px solid
-        var(--border-light) !important;
+        var(--border-light);
 
     border-radius:
-        13px !important;
+        14px;
 
     box-shadow:
-        none !important;
+        none;
 }
 
-.st-key-monthly-budget-summary-grid
-[data-testid="stMetricLabel"],
-[class*="st-key-monthly-budget-summary-"]
-[data-testid="stMetricLabel"] {
-    font-size:
-        0.78rem !important;
+.finantec-budget-summary-item {
+    min-width:
+        0;
 
-    line-height:
-        1.25 !important;
+    padding:
+        0.9rem
+        1rem;
+
+    border-left:
+        1px solid
+        var(--border);
 }
 
-.st-key-monthly-budget-summary-grid
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-summary-"]
-[data-testid="stMetricValue"] {
+.finantec-budget-summary-item:first-child {
+    border-left:
+        0;
+}
+
+.finantec-budget-summary-item span {
+    display:
+        block;
+
+    color:
+        var(--support-text-strong);
+
     font-size:
-        1.62rem !important;
+        0.76rem;
+
+    font-weight:
+        700;
 
     line-height:
-        1.06 !important;
+        1.3;
+}
+
+.finantec-budget-summary-item strong {
+    display:
+        block;
+
+    margin-top:
+        0.42rem;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.28rem,
+            2vw,
+            1.68rem
+        );
+
+    font-weight:
+        800;
+
+    font-variant-numeric:
+        tabular-nums;
+
+    line-height:
+        1.08;
+
+    overflow-wrap:
+        anywhere;
+}
+
+.finantec-budget-summary-item.spent strong {
+    color:
+        var(--accent);
+}
+
+.finantec-budget-summary-item.positive strong {
+    color:
+        var(--success);
+}
+
+.finantec-budget-summary-item.danger strong {
+    color:
+        var(--danger);
 }
 
 :root:has(.finantec-theme-light)
-.st-key-monthly-budget-summary-grid
-[data-testid="stMetric"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-"]
-[data-testid="stMetric"] {
+.finantec-budget-summary-panel {
     background:
-        #ffffff !important;
+        #ffffff;
 
     border-color:
-        #d7c9bc !important;
+        #d7c9bc;
+
+    box-shadow:
+        0
+        3px
+        12px
+        rgba(45, 38, 33, 0.035);
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-summary-item {
+    border-color:
+        #e5d9cf;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-summary-item.spent strong {
+    color:
+        #b84d08;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-summary-item.positive strong {
+    color:
+        #147a43;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-summary-item.danger strong {
+    color:
+        #bd2932;
 }
 
 
 /* ---------------------------------------------------------
-   CARD DE CATEGORIA
+   CARD COMPACTO DE CATEGORIA
    --------------------------------------------------------- */
 
 [class*="st-key-monthly-budget-card-"] {
@@ -1990,7 +2184,7 @@ label {
         hidden;
 
     margin-bottom:
-        0.75rem;
+        0.7rem;
 
     background:
         var(--bg-deep);
@@ -2010,9 +2204,9 @@ label {
 [data-testid="stVerticalBlockBorderWrapper"],
 [class*="st-key-monthly-budget-card-"][data-testid="stVerticalBlockBorderWrapper"] {
     padding:
-        0.8rem
-        0.85rem
-        0.78rem !important;
+        1rem
+        1.05rem
+        0.9rem !important;
 
     background:
         transparent !important;
@@ -2024,10 +2218,19 @@ label {
         none !important;
 }
 
+[class*="st-key-monthly-budget-card-"]
+> [data-testid="stVerticalBlock"],
+[class*="st-key-monthly-budget-card-"]
+[data-testid="stVerticalBlockBorderWrapper"]
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0.75rem !important;
+}
+
 :root:has(.finantec-theme-light)
 [class*="st-key-monthly-budget-card-"] {
     background:
-        rgba(255, 253, 250, 0.88);
+        rgba(255, 253, 250, 0.9);
 
     border-color:
         #c9b8a9;
@@ -2039,79 +2242,100 @@ label {
         rgba(45, 38, 33, 0.035);
 }
 
+.finantec-budget-card-content {
+    display:
+        flex;
 
-/* Métricas internas */
+    flex-direction:
+        column;
 
-[class*="st-key-monthly-budget-metric-"]
-[data-testid="stMetric"],
-[class*="st-key-monthly-budget-metric-"][data-testid="stMetric"] {
-    min-height:
-        84px !important;
-
-    padding:
-        0.66rem
-        0.78rem !important;
-
-    background:
-        var(--bg-panel) !important;
-
-    border:
-        1px solid
-        var(--border) !important;
-
-    border-radius:
-        12px !important;
-
-    box-shadow:
-        none !important;
+    gap:
+        0.85rem;
 }
 
-[class*="st-key-monthly-budget-metric-"]
-[data-testid="stMetricLabel"] {
-    font-size:
-        0.76rem !important;
+.finantec-budget-card-header {
+    display:
+        flex;
 
-    line-height:
-        1.25 !important;
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        1rem;
 }
 
-[class*="st-key-monthly-budget-metric-"]
-[data-testid="stMetricValue"] {
-    font-size:
-        1.52rem !important;
-
-    line-height:
-        1.06 !important;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-"]
-[data-testid="stMetric"] {
-    background:
-        #ffffff !important;
-
-    border-color:
-        #d7c9bc !important;
-}
-
-
-/* ---------------------------------------------------------
-   STATUS COMPACTO
-   --------------------------------------------------------- */
-
-[class*="st-key-monthly-budget-status-"] {
-    width:
-        fit-content !important;
-
+.finantec-budget-card-heading {
     min-width:
-        0 !important;
+        0;
+}
 
-    margin-left:
-        auto !important;
+.finantec-budget-card-heading h3 {
+    margin:
+        0;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.16rem,
+            1.8vw,
+            1.36rem
+        );
+
+    font-weight:
+        750;
+
+    line-height:
+        1.2;
+
+    overflow-wrap:
+        anywhere;
+}
+
+.finantec-budget-card-heading p {
+    margin:
+        0.32rem
+        0
+        0;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.8rem;
+
+    font-weight:
+        550;
+
+    line-height:
+        1.4;
+}
+
+.finantec-budget-status {
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    flex:
+        0
+        0
+        auto;
+
+    min-height:
+        26px;
 
     padding:
-        0.3rem
-        0.62rem;
+        0.26rem
+        0.6rem;
 
     border:
         1px solid
@@ -2119,306 +2343,158 @@ label {
 
     border-radius:
         999px;
-}
-
-[class*="st-key-monthly-budget-status-"]
-> [data-testid="stVerticalBlock"] {
-    gap:
-        0 !important;
-}
-
-[class*="st-key-monthly-budget-status-"]
-[data-testid="stMarkdownContainer"] p,
-[class*="st-key-monthly-budget-status-"]
-[data-testid="stMarkdownContainer"] {
-    margin:
-        0 !important;
 
     font-size:
-        0.72rem !important;
+        0.7rem;
 
     font-weight:
-        700 !important;
+        750;
 
     line-height:
-        1.2 !important;
+        1.2;
 
     white-space:
         nowrap;
 }
 
-[class*="st-key-monthly-budget-status-success-"] {
+.finantec-budget-status.success {
     background:
         var(--success-soft);
+
+    color:
+        var(--success);
 
     border-color:
         rgba(34, 197, 94, 0.34);
 }
 
-[class*="st-key-monthly-budget-status-success-"]
-[data-testid="stMarkdownContainer"] p {
-    color:
-        var(--success) !important;
-}
-
-[class*="st-key-monthly-budget-status-warning-"] {
+.finantec-budget-status.warning {
     background:
         var(--warning-soft);
+
+    color:
+        var(--warning);
 
     border-color:
         rgba(245, 158, 11, 0.38);
 }
 
-[class*="st-key-monthly-budget-status-warning-"]
-[data-testid="stMarkdownContainer"] p {
-    color:
-        var(--warning) !important;
-}
-
-[class*="st-key-monthly-budget-status-danger-"] {
+.finantec-budget-status.danger {
     background:
         var(--danger-soft);
+
+    color:
+        var(--danger);
 
     border-color:
         rgba(239, 68, 68, 0.38);
 }
 
-[class*="st-key-monthly-budget-status-danger-"]
-[data-testid="stMarkdownContainer"] p {
-    color:
-        var(--danger) !important;
-}
+.finantec-budget-card-body {
+    display:
+        grid;
 
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
-/* ---------------------------------------------------------
-   PROGRESSO E AÇÕES
-   --------------------------------------------------------- */
+    align-items:
+        end;
 
-[class*="st-key-monthly-budget-progress-"]
-[data-testid="stProgressBar"] {
-    height:
-        7px !important;
+    gap:
+        1.35rem;
 
-    overflow:
-        hidden;
+    padding-top:
+        0.85rem;
 
-    background:
-        var(--bg-elevated) !important;
-
-    border:
+    border-top:
         1px solid
         var(--border);
-
-    border-radius:
-        999px !important;
 }
 
-[class*="st-key-monthly-budget-progress-success-"]
-[data-testid="stProgressBar"] > div {
-    background:
-        var(--success) !important;
+.finantec-budget-card-tracking {
+    min-width:
+        0;
 }
 
-[class*="st-key-monthly-budget-progress-warning-"]
-[data-testid="stProgressBar"] > div {
-    background:
-        var(--warning) !important;
+.finantec-budget-usage-row {
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    justify-content:
+        space-between;
+
+    gap:
+        1rem;
 }
 
-[class*="st-key-monthly-budget-progress-danger-"]
-[data-testid="stProgressBar"] > div {
-    background:
-        var(--danger) !important;
-}
+.finantec-budget-usage-row p {
+    margin:
+        0;
 
-[class*="st-key-monthly-budget-card-"]
-.stButton > button,
-.st-key-monthly-budget-form-card
-.stButton > button {
-    min-height:
-        40px !important;
-
-    padding:
-        0.58rem
-        0.8rem !important;
-}
-
-
-/* ---------------------------------------------------------
-   RESPONSIVIDADE DO ORÇAMENTO
-   --------------------------------------------------------- */
-
-@media (max-width: 700px) {
-    [class*="st-key-monthly-budget-status-"] {
-        margin-left:
-            0 !important;
-    }
-
-    .st-key-monthly-budget-summary-grid
-    [data-testid="stMetric"],
-    [class*="st-key-monthly-budget-summary-"]
-    [data-testid="stMetric"] {
-        min-height:
-            82px !important;
-    }
-
-    [class*="st-key-monthly-budget-metric-"]
-    [data-testid="stMetric"] {
-        min-height:
-            80px !important;
-    }
-
-    [class*="st-key-monthly-budget-metric-"]
-    [data-testid="stMetricValue"] {
-        font-size:
-            1.4rem !important;
-    }
-}
-
-/* ---------------------------------------------------------
-   CORES SEMÂNTICAS DO RESUMO
-   --------------------------------------------------------- */
-
-.st-key-monthly-budget-summary-spent
-[data-testid="stMetricValue"],
-.st-key-monthly-budget-summary-spent
-[data-testid="stMetricValue"] * {
     color:
-        var(--accent) !important;
-}
-
-[class*="st-key-monthly-budget-summary-remaining-positive"]
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-summary-remaining-positive"]
-[data-testid="stMetricValue"] * {
-    color:
-        var(--success) !important;
-}
-
-[class*="st-key-monthly-budget-summary-remaining-danger"]
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-summary-remaining-danger"]
-[data-testid="stMetricValue"] *,
-[class*="st-key-monthly-budget-summary-exceeded-danger"]
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-summary-exceeded-danger"]
-[data-testid="stMetricValue"] * {
-    color:
-        var(--danger) !important;
-}
-
-
-/* ---------------------------------------------------------
-   CORES SEMÂNTICAS DAS CATEGORIAS
-   --------------------------------------------------------- */
-
-[class*="st-key-monthly-budget-metric-spent-"]
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-metric-spent-"]
-[data-testid="stMetricValue"] * {
-    color:
-        var(--accent) !important;
-}
-
-[class*="st-key-monthly-budget-metric-available-"]
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-metric-available-"]
-[data-testid="stMetricValue"] * {
-    color:
-        var(--success) !important;
-}
-
-[class*="st-key-monthly-budget-metric-exceeded-"]
-[data-testid="stMetricValue"],
-[class*="st-key-monthly-budget-metric-exceeded-"]
-[data-testid="stMetricValue"] * {
-    color:
-        var(--danger) !important;
-}
-
-
-/* ---------------------------------------------------------
-   LINHA DE UTILIZAÇÃO
-   --------------------------------------------------------- */
-
-[class*="st-key-monthly-budget-usage-"]
-[data-testid="stCaptionContainer"] {
-    margin-top:
-        -0.15rem;
-
-    margin-bottom:
-        0.25rem;
-}
-
-[class*="st-key-monthly-budget-usage-"]
-[data-testid="stCaptionContainer"] p {
-    color:
-        var(--text-muted) !important;
+        var(--text-soft);
 
     font-size:
-        0.76rem !important;
+        0.83rem;
+
+    font-weight:
+        500;
 
     line-height:
-        1.35 !important;
+        1.4;
 }
 
-
-/* ---------------------------------------------------------
-   PILLS MAIS FORTES NO TEMA CLARO
-   --------------------------------------------------------- */
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-status-success-"] {
-    background:
-        #e5f7ec;
-
-    border-color:
-        #4cae72;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-status-success-"]
-[data-testid="stMarkdownContainer"] p {
+.finantec-budget-usage-row p strong {
     color:
-        #0f6a38 !important;
+        var(--text-main);
+
+    font-weight:
+        750;
 }
 
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-status-warning-"] {
-    background:
-        #fff2d3;
-
-    border-color:
-        #d29a27;
-}
-
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-status-warning-"]
-[data-testid="stMarkdownContainer"] p {
+.finantec-budget-usage-row
+.finantec-budget-spent {
     color:
-        #815400 !important;
+        var(--accent);
 }
 
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-status-danger-"] {
-    background:
-        #ffebec;
+.finantec-budget-percentage {
+    flex:
+        0
+        0
+        auto;
 
-    border-color:
-        #e36a70;
+    font-size:
+        0.8rem;
+
+    font-weight:
+        800;
+
+    font-variant-numeric:
+        tabular-nums;
+
+    white-space:
+        nowrap;
 }
 
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-status-danger-"]
-[data-testid="stMarkdownContainer"] p {
+.finantec-budget-percentage.success {
     color:
-        #ac1f28 !important;
+        var(--success);
 }
 
+.finantec-budget-percentage.warning {
+    color:
+        var(--warning);
+}
 
-/* ---------------------------------------------------------
-   BARRA DE PROGRESSO PERSONALIZADA
-   --------------------------------------------------------- */
+.finantec-budget-percentage.danger {
+    color:
+        var(--danger);
+}
 
 .finantec-budget-progress-track {
     width:
@@ -2427,10 +2503,8 @@ label {
     height:
         8px;
 
-    margin:
-        0.3rem
-        0
-        0.75rem;
+    margin-top:
+        0.55rem;
 
     overflow:
         hidden;
@@ -2474,6 +2548,111 @@ label {
         var(--danger);
 }
 
+.finantec-budget-balance {
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        flex-end;
+
+    min-width:
+        155px;
+
+    padding-left:
+        1.25rem;
+
+    border-left:
+        1px solid
+        var(--border);
+}
+
+.finantec-budget-balance span {
+    color:
+        var(--support-text-strong);
+
+    font-size:
+        0.74rem;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.3;
+}
+
+.finantec-budget-balance strong {
+    margin-top:
+        0.28rem;
+
+    font-size:
+        clamp(
+            1.45rem,
+            2.2vw,
+            1.85rem
+        );
+
+    font-weight:
+        800;
+
+    font-variant-numeric:
+        tabular-nums;
+
+    line-height:
+        1.08;
+
+    white-space:
+        nowrap;
+}
+
+.finantec-budget-balance.positive strong {
+    color:
+        var(--success);
+}
+
+.finantec-budget-balance.danger strong {
+    color:
+        var(--danger);
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-status.success {
+    background:
+        #e5f7ec;
+
+    color:
+        #0f6a38;
+
+    border-color:
+        #4cae72;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-status.warning {
+    background:
+        #fff2d3;
+
+    color:
+        #815400;
+
+    border-color:
+        #d29a27;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-status.danger {
+    background:
+        #ffebec;
+
+    color:
+        #ac1f28;
+
+    border-color:
+        #e36a70;
+}
+
 :root:has(.finantec-theme-light)
 .finantec-budget-progress-track {
     background:
@@ -2483,134 +2662,528 @@ label {
         #d1c2b6;
 }
 
-/* ---------------------------------------------------------
-   LINHA DE UTILIZAÇÃO DO ORÇAMENTO
-   --------------------------------------------------------- */
-
-.finantec-budget-usage-text {
-    margin:
-        -0.15rem
-        0
-        0.45rem !important;
-
+:root:has(.finantec-theme-light)
+.finantec-budget-usage-row
+.finantec-budget-spent {
     color:
-        var(--text-soft) !important;
-
-    font-size:
-        0.8rem !important;
-
-    font-weight:
-        500;
-
-    line-height:
-        1.4 !important;
+        #b84d08;
 }
 
-.finantec-budget-usage-text strong {
+:root:has(.finantec-theme-light)
+.finantec-budget-balance.positive strong {
+    color:
+        #147a43;
+}
+
+:root:has(.finantec-theme-light)
+.finantec-budget-balance.danger strong {
+    color:
+        #bd2932;
+}
+
+
+/* ---------------------------------------------------------
+   AÇÕES DO CARD
+   --------------------------------------------------------- */
+
+[class*="st-key-monthly-budget-actions-"] {
+    margin-top:
+        0.05rem;
+
+    padding-top:
+        0.78rem;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+[class*="st-key-monthly-budget-actions-"]
+[data-testid="stHorizontalBlock"] {
+    align-items:
+        stretch;
+}
+
+[class*="st-key-monthly-budget-actions-"]
+.stButton > button {
+    min-height:
+        38px !important;
+
+    padding:
+        0.5rem
+        0.75rem !important;
+}
+
+[class*="st-key-edit-monthly-budget-"]
+button {
+    background:
+        transparent !important;
+
     color:
         var(--text-main) !important;
 
-    font-weight:
-        700;
+    border-color:
+        var(--border-light) !important;
 }
 
-.finantec-budget-usage-text
-.finantec-budget-usage-success {
-    color:
-        var(--success) !important;
+[class*="st-key-edit-monthly-budget-"]
+button:hover {
+    background:
+        var(--bg-hover) !important;
+
+    border-color:
+        var(--accent-line) !important;
 }
 
-.finantec-budget-usage-text
-.finantec-budget-usage-warning {
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button,
+[class*="st-key-delete-monthly-budget-"]
+button {
+    background:
+        transparent !important;
+
     color:
-        var(--warning) !important;
+        var(--danger) !important;
+
+    border-color:
+        var(--danger) !important;
 }
 
-.finantec-budget-usage-text
-.finantec-budget-usage-danger {
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:hover,
+[class*="st-key-delete-monthly-budget-"]
+button:hover {
+    background:
+        var(--danger-soft) !important;
+
     color:
+        var(--danger) !important;
+
+    border-color:
         var(--danger) !important;
 }
 
 :root:has(.finantec-theme-light)
-.finantec-budget-usage-text {
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:not(:disabled),
+:root:has(.finantec-theme-light)
+[class*="st-key-delete-monthly-budget-"]
+button:not(:disabled) {
+    background:
+        transparent !important;
+
     color:
-        #665b53 !important;
+        #b83232 !important;
+
+    border-color:
+        #b83232 !important;
+
+    box-shadow:
+        none !important;
 }
 
 :root:has(.finantec-theme-light)
-.finantec-budget-usage-text strong {
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:not(:disabled):hover,
+:root:has(.finantec-theme-light)
+[class*="st-key-delete-monthly-budget-"]
+button:not(:disabled):hover {
+    background:
+        #fef5f5 !important;
+
     color:
-        #302925 !important;
+        #9f2929 !important;
+
+    border-color:
+        #9f2929 !important;
+}
+
+
+
+
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button p,
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button span {
+    color:
+        inherit !important;
+
+    -webkit-text-fill-color:
+        currentColor !important;
+}
+
+
+/* Reforço específico para o tema escuro. */
+
+:root:has(.finantec-theme-dark)
+:is(
+    [class*="st-key-monthly-budget-danger-action-"],
+    [class*="st-key-delete-monthly-budget-"]
+)
+button:not(:disabled) {
+    background:
+        transparent !important;
+
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+
+    border:
+        1px solid
+        var(--danger) !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-dark)
+:is(
+    [class*="st-key-monthly-budget-danger-action-"],
+    [class*="st-key-delete-monthly-budget-"]
+)
+button:not(:disabled) p,
+:root:has(.finantec-theme-dark)
+:is(
+    [class*="st-key-monthly-budget-danger-action-"],
+    [class*="st-key-delete-monthly-budget-"]
+)
+button:not(:disabled) span {
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+}
+
+:root:has(.finantec-theme-dark)
+:is(
+    [class*="st-key-monthly-budget-danger-action-"],
+    [class*="st-key-delete-monthly-budget-"]
+)
+button:not(:disabled):hover {
+    background:
+        var(--danger-soft) !important;
+
+    color:
+        var(--danger) !important;
+
+    border-color:
+        var(--danger) !important;
+}
+
+
+/* Confirmação de exclusão ou encerramento em diálogo. */
+
+[class*="st-key-monthly-budget-removal-dialog-actions"] {
+    margin-top:
+        0.9rem;
+
+    padding-top:
+        0.9rem;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+[class*="st-key-monthly-budget-removal-dialog-actions"]
+[data-testid="stHorizontalBlock"] {
+    align-items:
+        stretch;
+}
+
+[class*="st-key-cancel-monthly-budget-dialog"]
+button {
+    background:
+        transparent !important;
+
+    color:
+        var(--text-main) !important;
+
+    border-color:
+        var(--border-light) !important;
+}
+
+[class*="st-key-cancel-monthly-budget-dialog"]
+button:hover {
+    background:
+        var(--bg-hover) !important;
+
+    border-color:
+        var(--accent-line) !important;
+}
+
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) {
+    background:
+        #b91c1c !important;
+
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    border-color:
+        var(--danger) !important;
+
+    box-shadow:
+        none !important;
+}
+
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) p,
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+}
+
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled):hover {
+    background:
+        #dc2626 !important;
+
+    border-color:
+        #f87171 !important;
 }
 
 /* ---------------------------------------------------------
-   CORES SEMÂNTICAS COM PRIORIDADE SOBRE A REGRA GLOBAL CLARA
+   RESPONSIVIDADE DO ORÇAMENTO
    --------------------------------------------------------- */
 
-/*
-   O tema claro possui uma regra global para stMetricValue com
-   alta especificidade. Estas regras repetem o marcador do tema
-   para garantir que os estados semânticos prevaleçam.
-*/
+@media (max-width: 700px) {
+    [class*="st-key-open-new-monthly-budget-"] {
+        max-width:
+            none;
 
-:root:has(.finantec-theme-light)
-.st-key-monthly-budget-summary-spent
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-.st-key-monthly-budget-summary-spent
-[data-testid="stMetricValue"] * {
-    color:
-        #b84d08 !important;
+        margin-left:
+            0;
+    }
+
+    .finantec-budget-summary-panel {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+    .finantec-budget-summary-item:nth-child(3) {
+        border-left:
+            0;
+    }
+
+    .finantec-budget-summary-item:nth-child(n + 3) {
+        border-top:
+            1px solid
+            var(--border);
+    }
+
+    .finantec-budget-card-header {
+        flex-wrap:
+            wrap;
+
+        gap:
+            0.65rem;
+    }
+
+    .finantec-budget-card-body {
+        grid-template-columns:
+            1fr;
+
+        gap:
+            0.8rem;
+    }
+
+    .finantec-budget-balance {
+        align-items:
+            flex-start;
+
+        min-width:
+            0;
+
+        padding:
+            0.75rem
+            0
+            0;
+
+        border-left:
+            0;
+
+        border-top:
+            1px solid
+            var(--border);
+    }
 }
 
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-positive"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-positive"]
-[data-testid="stMetricValue"] *,
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-available-"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-available-"]
-[data-testid="stMetricValue"] * {
-    color:
-        #147a43 !important;
+@media (max-width: 560px) {
+    [class*="st-key-monthly-budget-card-"]
+    [data-testid="stVerticalBlockBorderWrapper"],
+    [class*="st-key-monthly-budget-card-"][data-testid="stVerticalBlockBorderWrapper"] {
+        padding:
+            0.88rem !important;
+
+        border-radius:
+            14px !important;
+    }
+
+    .finantec-budget-section-heading h2 {
+        font-size:
+            1.35rem;
+    }
+
+    .finantec-budget-section-heading p {
+        font-size:
+            0.8rem;
+    }
+
+    .finantec-budget-summary-item {
+        padding:
+            0.78rem
+            0.82rem;
+    }
+
+    .finantec-budget-summary-item strong {
+        font-size:
+            clamp(
+                1.12rem,
+                5vw,
+                1.35rem
+            );
+    }
+
+    .finantec-budget-card-content {
+        gap:
+            0.72rem;
+    }
+
+    .finantec-budget-card-heading h3 {
+        font-size:
+            1.15rem;
+    }
+
+    .finantec-budget-card-heading p {
+        font-size:
+            0.76rem;
+    }
+
+    .finantec-budget-status {
+        min-height:
+            24px;
+
+        padding:
+            0.22rem
+            0.52rem;
+
+        font-size:
+            0.66rem;
+    }
+
+    .finantec-budget-usage-row {
+        align-items:
+            flex-start;
+
+        gap:
+            0.6rem;
+    }
+
+    .finantec-budget-usage-row p {
+        font-size:
+            0.78rem;
+    }
+
+    .finantec-budget-balance strong {
+        font-size:
+            1.5rem;
+    }
+
+    [class*="st-key-monthly-budget-actions-"]
+    [data-testid="stHorizontalBlock"] {
+        flex-direction:
+            row !important;
+
+        flex-wrap:
+            nowrap !important;
+
+        gap:
+            0.55rem !important;
+    }
+
+    [class*="st-key-monthly-budget-actions-"]
+    [data-testid="stColumn"] {
+        width:
+            calc(
+                50%
+                - 0.275rem
+            ) !important;
+
+        min-width:
+            0 !important;
+
+        flex:
+            1
+            1
+            0 !important;
+    }
+
+    [class*="st-key-monthly-budget-actions-"]
+    .stButton > button {
+        min-height:
+            42px !important;
+
+        padding:
+            0.48rem
+            0.5rem !important;
+
+        font-size:
+            0.78rem !important;
+    }
 }
 
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-danger"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-remaining-danger"]
-[data-testid="stMetricValue"] *,
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-exceeded-danger"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-summary-exceeded-danger"]
-[data-testid="stMetricValue"] *,
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-exceeded-"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-exceeded-"]
-[data-testid="stMetricValue"] * {
-    color:
-        #bd2932 !important;
+@media (max-width: 360px) {
+    .finantec-budget-summary-panel {
+        grid-template-columns:
+            1fr;
+    }
+
+    .finantec-budget-summary-item {
+        border-left:
+            0;
+
+        border-top:
+            1px solid
+            var(--border);
+    }
+
+    .finantec-budget-summary-item:first-child {
+        border-top:
+            0;
+    }
+
+    [class*="st-key-monthly-budget-actions-"]
+    [data-testid="stHorizontalBlock"] {
+        flex-direction:
+            column !important;
+    }
+
+    [class*="st-key-monthly-budget-actions-"]
+    [data-testid="stColumn"] {
+        width:
+            100% !important;
+
+        flex:
+            1
+            1
+            100% !important;
+    }
 }
 
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-spent-"]
-[data-testid="stMetricValue"],
-:root:has(.finantec-theme-light)
-[class*="st-key-monthly-budget-metric-spent-"]
-[data-testid="stMetricValue"] * {
-    color:
-        #b84d08 !important;
-}
 
 /* =========================================================
    METAS — CONTORNOS NO TEMA CLARO
@@ -3509,4 +4082,329 @@ section[role="dialog"]
 
     opacity:
         1 !important;
+}
+
+/* =========================================================
+   ORÇAMENTO — BALANÇO FINAL DAS AÇÕES DESTRUTIVAS
+   ========================================================= */
+
+/*
+   No tema escuro, o estado ultrapassado já usa vermelho no badge,
+   percentual, barra e saldo. O botão continua destrutivo pelo texto,
+   mas volta a usar uma borda neutra para não repetir o alerta.
+*/
+
+:root:has(.finantec-theme-dark)
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:not(:disabled),
+:root:has(.finantec-theme-dark)
+[class*="st-key-delete-monthly-budget-"]
+button:not(:disabled) {
+    background:
+        transparent !important;
+
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+
+    border:
+        1px solid
+        var(--border-strong) !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-dark)
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:not(:disabled) p,
+:root:has(.finantec-theme-dark)
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:not(:disabled) span,
+:root:has(.finantec-theme-dark)
+[class*="st-key-delete-monthly-budget-"]
+button:not(:disabled) p,
+:root:has(.finantec-theme-dark)
+[class*="st-key-delete-monthly-budget-"]
+button:not(:disabled) span {
+    color:
+        var(--danger) !important;
+
+    -webkit-text-fill-color:
+        var(--danger) !important;
+}
+
+:root:has(.finantec-theme-dark)
+[class*="st-key-monthly-budget-danger-action-"]
+.stButton > button:not(:disabled):hover,
+:root:has(.finantec-theme-dark)
+[class*="st-key-delete-monthly-budget-"]
+button:not(:disabled):hover {
+    background:
+        var(--danger-soft) !important;
+
+    color:
+        var(--danger) !important;
+
+    border-color:
+        var(--danger) !important;
+}
+
+/*
+   A confirmação é o momento em que a ação destrutiva precisa ganhar
+   maior peso. Este bloco fica no fim do arquivo para vencer os estilos
+   secundários globais aplicados aos botões de diálogos.
+*/
+
+[class*="st-key-confirm-monthly-budget-dialog"]
+.stButton > button:not(:disabled),
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) {
+    background:
+        #a61f27 !important;
+
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    border:
+        1px solid
+        #c83b43 !important;
+
+    box-shadow:
+        none !important;
+}
+
+[class*="st-key-confirm-monthly-budget-dialog"]
+.stButton > button:not(:disabled) p,
+[class*="st-key-confirm-monthly-budget-dialog"]
+.stButton > button:not(:disabled) span,
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) p,
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+}
+
+[class*="st-key-confirm-monthly-budget-dialog"]
+.stButton > button:not(:disabled):hover,
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled):hover {
+    background:
+        #c52b34 !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #ef6b72 !important;
+}
+
+/* =========================================================
+   ORÇAMENTO — CONFIRMAÇÃO DESTRUTIVA NO TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+:is(
+    section[role="dialog"],
+    [data-testid="stDialog"]
+)
+[class*="st-key-confirm-monthly-budget-dialog"]
+.stButton > button:not(:disabled),
+:root:has(.finantec-theme-light)
+:is(
+    section[role="dialog"],
+    [data-testid="stDialog"]
+)
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) {
+    background:
+        #b83232 !important;
+
+    background-color:
+        #b83232 !important;
+
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    border:
+        1px solid
+        #9f2929 !important;
+
+    box-shadow:
+        none !important;
+
+    opacity:
+        1 !important;
+}
+
+:root:has(.finantec-theme-light)
+:is(
+    section[role="dialog"],
+    [data-testid="stDialog"]
+)
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) p,
+:root:has(.finantec-theme-light)
+:is(
+    section[role="dialog"],
+    [data-testid="stDialog"]
+)
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    opacity:
+        1 !important;
+}
+
+:root:has(.finantec-theme-light)
+:is(
+    section[role="dialog"],
+    [data-testid="stDialog"]
+)
+[class*="st-key-confirm-monthly-budget-dialog"]
+button:not(:disabled):hover {
+    background:
+        #9f2929 !important;
+
+    background-color:
+        #9f2929 !important;
+
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    border-color:
+        #822020 !important;
+}
+
+
+/* =========================================================
+   METAS — SELECT DE META NO TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Meta"]
+)
+[role="group"] {
+    min-height:
+        35px !important;
+
+    height:
+        35px !important;
+
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        var(--text-main) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-sm) !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Meta"]
+)
+[role="group"] > div {
+    background:
+        transparent !important;
+
+    background-color:
+        transparent !important;
+}
+
+:root:has(.finantec-theme-light)
+input[role="combobox"][aria-label="Meta"] {
+    min-height:
+        33px !important;
+
+    height:
+        33px !important;
+
+    padding:
+        0
+        0.7rem !important;
+
+    background:
+        transparent !important;
+
+    color:
+        var(--text-main) !important;
+
+    -webkit-text-fill-color:
+        var(--text-main) !important;
+
+    opacity:
+        1 !important;
+
+    border:
+        0 !important;
+
+    outline:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Meta"]
+)
+[role="group"] svg {
+    color:
+        var(--text-soft) !important;
+
+    fill:
+        currentColor !important;
+}
+
+:root:has(.finantec-theme-light)
+.stSelectbox:has(
+    input[aria-label="Meta"]
+)
+[role="group"]:focus-within {
+    border-color:
+        var(--accent) !important;
+
+    box-shadow:
+        0
+        0
+        0
+        2px
+        var(--accent-focus) !important;
 }

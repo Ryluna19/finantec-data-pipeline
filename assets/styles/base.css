@@ -24,9 +24,9 @@ body {
 
 [data-testid="stMainBlockContainer"] {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1220px;
     margin: 0 auto;
-    padding: 2rem 2rem 4rem;
+    padding: 1.5rem 1.75rem 3.5rem;
 }
 
 [data-testid="stHeader"] {
@@ -141,7 +141,7 @@ a:hover {
    ========================================================= */
 
 .finantec-brand-header {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .finantec-brand-title-row {
@@ -158,8 +158,8 @@ a:hover {
 
     flex: 0 0 auto;
 
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
 
     color: var(--accent);
 
@@ -174,8 +174,8 @@ a:hover {
 }
 
 .finantec-brand-icon svg {
-    width: 27px;
-    height: 27px;
+    width: 24px;
+    height: 24px;
 
     stroke: currentColor;
     stroke-width: 1.7;
@@ -208,9 +208,9 @@ a:hover {
 
     font-size:
         clamp(
-            1.9rem,
-            3vw,
-            2.5rem
+            1.8rem,
+            2.6vw,
+            2.2rem
         );
 
     line-height: 1;
@@ -221,7 +221,7 @@ a:hover {
 .finantec-brand-description {
     max-width: 680px;
 
-    margin: 0.85rem 0 0;
+    margin: 0.65rem 0 0;
 
     color: var(--text-muted) !important;
 
@@ -237,11 +237,127 @@ a:hover {
     width: 44px;
     height: 3px;
 
-    margin-top: 0.9rem;
+    margin-top: 0.7rem;
 
     background: var(--accent);
 
     border-radius: 999px;
+}
+
+
+/* =========================================================
+   CABEÇALHOS DE PÁGINA E SEÇÃO
+   ========================================================= */
+
+.finantec-page-header {
+    margin:
+        0
+        0
+        1.1rem;
+}
+
+.finantec-page-header-copy {
+    max-width:
+        760px;
+}
+
+.finantec-page-header h2 {
+    margin:
+        0;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.45rem,
+            2.2vw,
+            1.7rem
+        );
+
+    line-height:
+        1.2;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        -0.025em;
+}
+
+.finantec-page-header-description {
+    margin:
+        0.42rem
+        0
+        0;
+
+    color:
+        var(--text-muted) !important;
+
+    font-size:
+        0.9rem !important;
+
+    font-weight:
+        500;
+
+    line-height:
+        1.5 !important;
+}
+
+.finantec-section-header {
+    margin:
+        0
+        0
+        0.8rem;
+}
+
+.finantec-section-header.compact {
+    margin-bottom:
+        0.55rem;
+}
+
+.finantec-section-header h3 {
+    margin:
+        0;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        1.15rem;
+
+    line-height:
+        1.3;
+
+    font-weight:
+        750;
+
+    letter-spacing:
+        -0.018em;
+}
+
+.finantec-section-header.compact h3 {
+    font-size:
+        1rem;
+}
+
+.finantec-section-header-description {
+    margin:
+        0.35rem
+        0
+        0;
+
+    color:
+        var(--text-muted) !important;
+
+    font-size:
+        0.86rem !important;
+
+    font-weight:
+        500;
+
+    line-height:
+        1.45 !important;
 }
 
 /* =========================================================
@@ -249,19 +365,24 @@ a:hover {
    ========================================================= */
 
 .stTabs [data-baseweb="tab-list"] {
-    gap: 1.25rem;
+    gap: 1.1rem;
 
     border-bottom:
         1px solid
         var(--border);
 }
 
+.stTabs [role="tabpanel"] {
+    padding-top:
+        0.85rem;
+}
+
 .stTabs [data-baseweb="tab"],
 .stTabs button[role="tab"] {
     padding:
-        0.55rem
+        0.5rem
         0
-        0.65rem;
+        0.6rem;
 
     color:
         var(--text-muted) !important;

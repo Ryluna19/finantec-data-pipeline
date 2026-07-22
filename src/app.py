@@ -34,7 +34,11 @@ from components.budget import (
     render_budget_dashboard_summary,
     render_monthly_budget,
 )
-from components.header import render_header
+from components.header import (
+    build_page_header_html,
+    build_section_header_html,
+    render_header,
+)
 from components.period import (
     ALL_MONTHS,
     filter_transactions_by_period,
@@ -209,12 +213,15 @@ def render_dashboard_tab(
     data_mode: str,
 ) -> None:
     """Compõe a visão geral com período próprio."""
-    st.header(
-        "Visão geral"
-    )
-
-    st.caption(
-        "Acompanhe o resumo financeiro do período escolhido."
+    st.markdown(
+        build_page_header_html(
+            title="Visão geral",
+            description=(
+                "Acompanhe o resumo financeiro "
+                "do período escolhido."
+            ),
+        ),
+        unsafe_allow_html=True,
     )
 
     with st.container(
@@ -222,7 +229,11 @@ def render_dashboard_tab(
         key="dashboard-period-filter-card",
     ):
         st.markdown(
-            "### Período analisado"
+            build_section_header_html(
+                title="Período analisado",
+                compact=True,
+            ),
+            unsafe_allow_html=True,
         )
 
         (
@@ -475,76 +486,60 @@ def render_transaction_export_dialog(
 
 
 def _render_transaction_action_bar() -> str | None:
-    """Exibe os comandos da tela e retorna a ação ativa."""
-    active_action = (
-        _get_active_transaction_action()
-    )
-
-    (
-        new_column,
-        import_column,
-        export_column,
-    ) = st.columns(
-        3,
-        gap="small",
-    )
-
-    with new_column:
-        st.button(
-            "Nova transação",
-            key="open-new-transaction",
-            type=(
-                "primary"
-                if active_action
-                == TRANSACTION_ACTION_NEW
-                else "secondary"
-            ),
-            use_container_width=True,
-            on_click=(
-                _toggle_transaction_action
-            ),
-            args=(
-                TRANSACTION_ACTION_NEW,
-            ),
+    """Exibe as ações com hierarquia visual clara."""
+    with st.container(
+        key="transactions-action-bar",
+    ):
+        (
+            new_column,
+            import_column,
+            export_column,
+        ) = st.columns(
+            [2, 1, 1],
+            gap="small",
         )
 
-    with import_column:
-        st.button(
-            "Importar",
-            key="open-transaction-import",
-            type=(
-                "primary"
-                if active_action
-                == TRANSACTION_ACTION_IMPORT
-                else "secondary"
-            ),
-            use_container_width=True,
-            on_click=(
-                _toggle_transaction_action
-            ),
-            args=(
-                TRANSACTION_ACTION_IMPORT,
-            ),
-        )
+        with new_column:
+            st.button(
+                "Nova transação",
+                key="open-new-transaction",
+                type="primary",
+                use_container_width=True,
+                on_click=(
+                    _toggle_transaction_action
+                ),
+                args=(
+                    TRANSACTION_ACTION_NEW,
+                ),
+            )
 
-    with export_column:
-        st.button(
-            "Exportar",
-            key="open-transaction-export",
-            type=(
-                "primary"
-                if active_action
-                == TRANSACTION_ACTION_EXPORT
-                else "secondary"
-            ),
-            use_container_width=True,
-            on_click=(
-                _toggle_transaction_action
-            ),
-            args=(
-                TRANSACTION_ACTION_EXPORT,
-            ),
-        )
+        with import_column:
+            st.button(
+                "Importar",
+                key="open-transaction-import",
+                type="secondary",
+                use_container_width=True,
+                on_click=(
+                    _toggle_transaction_action
+                ),
+                args=(
+                    TRANSACTION_ACTION_IMPORT,
+                ),
+            )
+
+        with export_column:
+            st.button(
+                "Exportar",
+                key="open-transaction-export",
+                type="secondary",
+                use_container_width=True,
+                on_click=(
+                    _toggle_transaction_action
+                ),
+                args=(
+                    TRANSACTION_ACTION_EXPORT,
+                ),
+            )
 
     return _get_active_transaction_action()
 
@@ -584,13 +579,15 @@ def render_transactions_tab(
     rejections: pd.DataFrame,
 ) -> None:
     """Compõe consulta e ações com período próprio."""
-    st.subheader(
-        "Transações"
-    )
-
-    st.caption(
-        "Consulte seus lançamentos ou use as ações "
-        "para adicionar, importar e exportar dados."
+    st.markdown(
+        build_page_header_html(
+            title="Transações",
+            description=(
+                "Consulte seus lançamentos ou use as ações "
+                "para adicionar, importar e exportar dados."
+            ),
+        ),
+        unsafe_allow_html=True,
     )
 
     with st.container(
@@ -598,7 +595,11 @@ def render_transactions_tab(
         key="transactions-period-filter-card",
     ):
         st.markdown(
-            "### Período da consulta"
+            build_section_header_html(
+                title="Período da consulta",
+                compact=True,
+            ),
+            unsafe_allow_html=True,
         )
 
         (
@@ -625,10 +626,6 @@ def render_transactions_tab(
                 feedback
             )
         )
-
-    st.markdown(
-        "### Ações"
-    )
 
     active_action = (
         _render_transaction_action_bar()

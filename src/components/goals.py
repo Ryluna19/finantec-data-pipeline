@@ -16,6 +16,10 @@ from analytics import (
     formatar_moeda as format_currency,
 )
 from data_loader import ARQUIVO_BANCO
+from components.header import (
+    build_page_header_html,
+    build_section_header_html,
+)
 from src.goal_repository import (
     DuplicateFinancialGoalError,
     FinancialGoalNotFoundError,
@@ -409,30 +413,50 @@ def _render_goal_view_selector(
     active_view: str,
 ) -> None:
     """Exibe os comandos para alternar entre metas e simulador."""
-    management_column, simulator_column = st.columns(
-        2,
-        gap="small",
-    )
-
-    with management_column:
-        st.button(
-            GOAL_VIEW_MANAGEMENT,
-            key="show-financial-goals",
-            type=("primary" if active_view == GOAL_VIEW_MANAGEMENT else "secondary"),
-            use_container_width=True,
-            on_click=_set_goal_view,
-            args=(GOAL_VIEW_MANAGEMENT,),
+    with st.container(
+        key="financial-goal-view-selector",
+    ):
+        (
+            management_column,
+            simulator_column,
+        ) = st.columns(
+            2,
+            gap="small",
         )
 
-    with simulator_column:
-        st.button(
-            GOAL_VIEW_SIMULATOR,
-            key="show-goal-simulator",
-            type=("primary" if active_view == GOAL_VIEW_SIMULATOR else "secondary"),
-            use_container_width=True,
-            on_click=_set_goal_view,
-            args=(GOAL_VIEW_SIMULATOR,),
-        )
+        with management_column:
+            st.button(
+                GOAL_VIEW_MANAGEMENT,
+                key="show-financial-goals",
+                type=(
+                    "primary"
+                    if active_view
+                    == GOAL_VIEW_MANAGEMENT
+                    else "secondary"
+                ),
+                use_container_width=True,
+                on_click=_set_goal_view,
+                args=(
+                    GOAL_VIEW_MANAGEMENT,
+                ),
+            )
+
+        with simulator_column:
+            st.button(
+                GOAL_VIEW_SIMULATOR,
+                key="show-goal-simulator",
+                type=(
+                    "primary"
+                    if active_view
+                    == GOAL_VIEW_SIMULATOR
+                    else "secondary"
+                ),
+                use_container_width=True,
+                on_click=_set_goal_view,
+                args=(
+                    GOAL_VIEW_SIMULATOR,
+                ),
+            )
 
 
 def _get_form_version() -> int:
@@ -1087,44 +1111,111 @@ def _render_goal_management_cards(
 
                             st.rerun()
 
-                if pending_delete_id == goal_id:
-                    with st.container(
-                        key=("financial-goal-delete-confirmation-" f"{goal_id}"),
-                    ):
-                        st.markdown(
-                            f"**Excluir a meta “{name}”?** "
-                            "Essa ação não pode ser desfeita."
-                        )
+    if (
+        read_only
+        or not pending_delete_id
+    ):
+        return
 
-                        (
-                            confirm_column,
-                            cancel_column,
-                        ) = st.columns(
-                            2,
-                            gap="small",
-                        )
+    pending_delete_goal = _find_goal(
+        goals,
+        str(pending_delete_id),
+    )
 
-                        with confirm_column:
-                            if st.button(
-                                "Sim, excluir",
-                                key=("confirm-delete-goal-" f"{goal_id}"),
-                                use_container_width=True,
-                            ):
-                                _delete_goal(
-                                    goal_id,
-                                    user_id,
-                                )
+    if pending_delete_goal is None:
+        _close_goal_delete_dialog()
 
-                        with cancel_column:
-                            if st.button(
-                                "Manter meta",
-                                key=("cancel-delete-goal-" f"{goal_id}"),
-                                use_container_width=True,
-                            ):
-                                st.session_state[GOAL_DELETE_ID_KEY] = None
+        st.warning(
+            "A meta selecionada para exclusão "
+            "não foi encontrada."
+        )
 
-                                st.rerun()
+        return
 
+    _render_goal_delete_dialog(
+        goal=pending_delete_goal,
+        user_id=user_id,
+    )
+
+
+
+
+def _close_goal_delete_dialog() -> None:
+    """Fecha a confirmação de exclusão da meta."""
+    st.session_state[
+        GOAL_DELETE_ID_KEY
+    ] = None
+
+
+@st.dialog(
+    "Excluir meta",
+    width="medium",
+    on_dismiss=_close_goal_delete_dialog,
+)
+def _render_goal_delete_dialog(
+    *,
+    goal: dict[str, Any],
+    user_id: str,
+) -> None:
+    """Confirma a exclusão de uma meta financeira."""
+    goal_id = str(
+        goal["goal_id"]
+    )
+
+    goal_name = str(
+        goal["nome"]
+    )
+
+    st.error(
+        f'Excluir a meta "{goal_name}"? '
+        "Essa ação não pode ser desfeita."
+    )
+
+    st.caption(
+        "A meta será removida da sua lista "
+        "de objetivos financeiros."
+    )
+
+    with st.container(
+        key=(
+            "financial-goal-delete-"
+            "dialog-actions"
+        ),
+    ):
+        (
+            confirm_column,
+            cancel_column,
+        ) = st.columns(
+            2,
+            gap="small",
+        )
+
+        with confirm_column:
+            if st.button(
+                "Sim, excluir",
+                key=(
+                    "confirm-delete-"
+                    "financial-goal-dialog"
+                ),
+                type="primary",
+                use_container_width=True,
+            ):
+                _delete_goal(
+                    goal_id,
+                    user_id,
+                )
+
+        with cancel_column:
+            if st.button(
+                "Manter meta",
+                key=(
+                    "cancel-delete-"
+                    "financial-goal-dialog"
+                ),
+                use_container_width=True,
+            ):
+                _close_goal_delete_dialog()
+                st.rerun()
 
 def _render_goal_management_view(
     goals: list[dict[str, Any]],
@@ -1133,9 +1224,16 @@ def _render_goal_management_view(
 ) -> None:
     """Exibe a consulta e as ações das metas salvas."""
     if read_only:
-        st.markdown("### Metas de demonstração")
-
-        st.caption("Acompanhe as metas fictícias ou use o simulador.")
+        st.markdown(
+            build_section_header_html(
+                title="Metas de demonstração",
+                description=(
+                    "Acompanhe as metas fictícias "
+                    "ou use o simulador."
+                ),
+            ),
+            unsafe_allow_html=True,
+        )
 
         _render_goal_management_cards(
             goals,
@@ -1145,28 +1243,38 @@ def _render_goal_management_view(
 
         return
 
-    title_column, action_column = st.columns(
-        [
-            3,
-            1,
-        ],
-        gap="small",
-    )
+    with st.container(
+        key="financial-goal-section-header",
+    ):
+        title_column, action_column = st.columns(
+            [
+                3,
+                1,
+            ],
+            gap="small",
+        )
 
-    with title_column:
-        st.markdown("### Minhas metas")
+        with title_column:
+            st.markdown(
+                build_section_header_html(
+                    title="Minhas metas",
+                    description=(
+                        "Acompanhe o progresso e atualize "
+                        "suas metas quando precisar."
+                    ),
+                ),
+                unsafe_allow_html=True,
+            )
 
-        st.caption("Acompanhe o progresso e atualize " "suas metas quando precisar.")
-
-    with action_column:
-        if st.button(
-            "Nova meta",
-            key="open-new-financial-goal",
-            type="primary",
-            use_container_width=True,
-        ):
-            _open_goal_form()
-            st.rerun()
+        with action_column:
+            if st.button(
+                "Nova meta",
+                key="open-new-financial-goal",
+                type="primary",
+                use_container_width=True,
+            ):
+                _open_goal_form()
+                st.rerun()
 
     _render_goal_form(
         goals,
@@ -1179,6 +1287,131 @@ def _render_goal_management_view(
     )
 
 
+def build_goal_summary_html(
+    *,
+    goal_name: str,
+    goal_value: float,
+    current_value: float,
+    remaining_value: float,
+    fourth_label: str,
+    fourth_value: str,
+    fourth_description: str,
+) -> str:
+    """Monta o painel compacto exibido pelo simulador de metas."""
+    progress_percentage = calculate_goal_progress(
+        current_value=current_value,
+        goal_value=goal_value,
+    )
+
+    progress_description = (
+        "Meta concluída"
+        if progress_percentage >= 100
+        else (
+            f"{progress_percentage:.1f}% "
+            "da meta alcançada"
+        )
+    )
+
+    completion_class = (
+        " completed"
+        if progress_percentage >= 100
+        else ""
+    )
+
+    return f"""
+        <div class="finantec-goal-simulation-panel{completion_class}">
+            <div class="finantec-goal-summary-grid">
+                <div class="finantec-goal-summary-item neutral">
+                    <div class="finantec-goal-summary-label">
+                        Meta desejada
+                    </div>
+
+                    <div class="finantec-goal-summary-value">
+                        {escape(format_currency(goal_value))}
+                    </div>
+                </div>
+
+                <div class="finantec-goal-summary-item current">
+                    <div class="finantec-goal-summary-label">
+                        Já guardado
+                    </div>
+
+                    <div class="finantec-goal-summary-value">
+                        {escape(format_currency(current_value))}
+                    </div>
+                </div>
+
+                <div class="finantec-goal-summary-item remaining">
+                    <div class="finantec-goal-summary-label">
+                        Falta guardar
+                    </div>
+
+                    <div class="finantec-goal-summary-value">
+                        {escape(format_currency(remaining_value))}
+                    </div>
+                </div>
+
+                <div class="finantec-goal-summary-item result">
+                    <div class="finantec-goal-summary-label">
+                        {escape(fourth_label)}
+                    </div>
+
+                    <div class="finantec-goal-summary-value">
+                        {escape(fourth_value)}
+                    </div>
+
+                    <div class="finantec-goal-summary-note">
+                        {escape(fourth_description)}
+                    </div>
+                </div>
+            </div>
+
+            <div class="finantec-goal-progress-section">
+                <div class="finantec-goal-progress-header">
+                    <div>
+                        <div class="finantec-goal-progress-title">
+                            Progresso da meta
+                        </div>
+
+                        <div class="finantec-goal-progress-name">
+                            {escape(goal_name)}
+                        </div>
+                    </div>
+
+                    <strong>
+                        {escape(progress_description)}
+                    </strong>
+                </div>
+
+                <div
+                    class="finantec-goal-progress-track"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="{progress_percentage:.1f}"
+                >
+                    <div
+                        class="finantec-goal-progress-fill"
+                        style="width: {progress_percentage:.1f}%;"
+                    >
+                    </div>
+                </div>
+
+                <div class="finantec-goal-progress-footer">
+                    <span>
+                        {escape(format_currency(current_value))}
+                    </span>
+
+                    <span>
+                        Meta:
+                        {escape(format_currency(goal_value))}
+                    </span>
+                </div>
+            </div>
+        </div>
+        """
+
+
 def _render_goal_summary(
     *,
     goal_name: str,
@@ -1189,121 +1422,18 @@ def _render_goal_summary(
     fourth_value: str,
     fourth_description: str,
 ) -> None:
-    """Exibe os cartões e a barra de progresso da meta."""
-    progress_percentage = calculate_goal_progress(
-        current_value=current_value,
-        goal_value=goal_value,
+    """Exibe o resumo e o progresso da meta em um único painel."""
+    render_html(
+        build_goal_summary_html(
+            goal_name=goal_name,
+            goal_value=goal_value,
+            current_value=current_value,
+            remaining_value=remaining_value,
+            fourth_label=fourth_label,
+            fourth_value=fourth_value,
+            fourth_description=fourth_description,
+        )
     )
-
-    progress_description = (
-        "Meta concluída"
-        if progress_percentage >= 100
-        else (f"{progress_percentage:.1f}% " "da meta alcançada")
-    )
-
-    render_html(f"""
-        <div class="finantec-goal-grid">
-            <div class="finantec-goal-card neutral">
-                <div class="finantec-goal-label">
-                    Valor da meta
-                </div>
-
-                <div class="finantec-goal-value">
-                    {escape(format_currency(goal_value))}
-                </div>
-
-                <div class="finantec-goal-description">
-                    Objetivo financeiro total.
-                </div>
-            </div>
-
-            <div class="finantec-goal-card current">
-                <div class="finantec-goal-label">
-                    Valor atual
-                </div>
-
-                <div class="finantec-goal-value">
-                    {escape(format_currency(current_value))}
-                </div>
-
-                <div class="finantec-goal-description">
-                    Valor já reservado.
-                </div>
-            </div>
-
-            <div class="finantec-goal-card remaining">
-                <div class="finantec-goal-label">
-                    Falta guardar
-                </div>
-
-                <div class="finantec-goal-value">
-                    {escape(format_currency(remaining_value))}
-                </div>
-
-                <div class="finantec-goal-description">
-                    Valor restante para concluir.
-                </div>
-            </div>
-
-            <div class="finantec-goal-card monthly">
-                <div class="finantec-goal-label">
-                    {escape(fourth_label)}
-                </div>
-
-                <div class="finantec-goal-value">
-                    {escape(fourth_value)}
-                </div>
-
-                <div class="finantec-goal-description">
-                    {escape(fourth_description)}
-                </div>
-            </div>
-        </div>
-
-        <div class="finantec-goal-progress-panel">
-            <div class="finantec-goal-progress-header">
-                <div>
-                    <div class="finantec-goal-progress-title">
-                        Progresso da meta
-                    </div>
-
-                    <div class="finantec-goal-progress-name">
-                        {escape(goal_name)}
-                    </div>
-                </div>
-
-                <strong>
-                    {escape(progress_description)}
-                </strong>
-            </div>
-
-            <div
-                class="finantec-goal-progress-track"
-                role="progressbar"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="{progress_percentage:.1f}"
-            >
-                <div
-                    class="finantec-goal-progress-fill"
-                    style="width: {progress_percentage:.1f}%;"
-                >
-                </div>
-            </div>
-
-            <div class="finantec-goal-progress-footer">
-                <span>
-                    {escape(format_currency(current_value))}
-                </span>
-
-                <span>
-                    Meta:
-                    {escape(format_currency(goal_value))}
-                </span>
-            </div>
-        </div>
-        """)
-
 
 def _render_balance_evaluation(
     monthly_amount: float,
@@ -1519,11 +1649,16 @@ def _render_free_goal_simulation(
         border=True,
         key="free-goal-simulation-card",
     ):
-        st.markdown("#### Dados da simulação")
-
-        st.caption(
-            "Preencha os valores abaixo para testar um objetivo "
-            "sem salvar nada no banco."
+        st.markdown(
+            build_section_header_html(
+                title="Dados da simulação",
+                description=(
+                    "Preencha os valores abaixo para testar "
+                    "um objetivo sem salvar nada no banco."
+                ),
+                compact=True,
+            ),
+            unsafe_allow_html=True,
         )
 
         name = st.text_input(
@@ -1602,10 +1737,15 @@ def _render_goal_simulator_view(
     summary: dict[str, Any],
 ) -> None:
     """Exibe o simulador separado do gerenciamento de metas."""
-    st.markdown("### Simulador")
-
-    st.caption(
-        "Use uma meta salva ou monte uma simulação livre " "sem alterar seus dados."
+    st.markdown(
+        build_section_header_html(
+            title="Simulador",
+            description=(
+                "Use uma meta salva ou monte uma simulação "
+                "livre sem alterar seus dados."
+            ),
+        ),
+        unsafe_allow_html=True,
     )
 
     if not goals:
@@ -1692,10 +1832,15 @@ def render_goal_simulator(
     data_mode: str,
 ) -> None:
     """Exibe gerenciamento e simulação das metas financeiras."""
-    st.subheader("Metas")
-
-    st.caption(
-        "Acompanhe seus objetivos ou simule " "diferentes formas de alcançá-los."
+    st.markdown(
+        build_page_header_html(
+            title="Metas",
+            description=(
+                "Acompanhe seus objetivos ou simule "
+                "diferentes formas de alcançá-los."
+            ),
+        ),
+        unsafe_allow_html=True,
     )
 
     _show_goal_feedback()

@@ -41,7 +41,7 @@
     .stTabs [data-baseweb="tab"] {
         flex-shrink: 0;
     }
-  .finantec-goal-grid {
+    .finantec-goal-summary-grid {
         grid-template-columns:
             repeat(
                 2,
@@ -142,11 +142,68 @@
 
 
 @media (max-width: 560px) {
-  [class*="st-key-delete-persisted-transaction-"]
+    .finantec-page-header {
+        margin-bottom:
+            0.9rem;
+    }
+
+    .finantec-page-header h2 {
+        font-size:
+            1.35rem;
+    }
+
+    .finantec-page-header-description {
+        margin-top:
+            0.32rem;
+
+        font-size:
+            0.82rem !important;
+    }
+
+    .finantec-section-header {
+        margin-bottom:
+            0.65rem;
+    }
+
+    .finantec-section-header h3 {
+        font-size:
+            1.05rem;
+    }
+
+    .finantec-section-header.compact h3 {
+        font-size:
+            0.96rem;
+    }
+
+    .finantec-section-header-description {
+        font-size:
+            0.8rem !important;
+    }
+
+    .st-key-monthly-budget-section-header,
+    .st-key-financial-goal-section-header {
+        margin:
+            0.9rem
+            0
+            0.65rem;
+    }
+
+    .st-key-dashboard-period-filter-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-dashboard-period-filter-card[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-transactions-period-filter-card
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-transactions-period-filter-card[data-testid="stVerticalBlockBorderWrapper"] {
+        padding:
+            0.8rem !important;
+    }
+
+    [class*="st-key-delete-persisted-transaction-"]
     button {
         width: 100% !important;
         min-width: 0;
     }
+
     [data-testid="stMainBlockContainer"] {
         padding: 4rem 0.8rem 2.5rem;
     }
@@ -227,214 +284,386 @@
     }
 
     .finantec-table-panel {
-    overflow-x:
-        auto;
+        overflow-x: auto;
 
-    overscroll-behavior-inline:
-        contain;
+        overscroll-behavior-inline: contain;
 
-    -webkit-overflow-scrolling:
-        touch;
+        -webkit-overflow-scrolling: touch;
 
-    scrollbar-width:
-        thin;
-}
-
-
-/*
-   Tabelas de transações continuam largas e usam
-   rolagem horizontal no celular.
-*/
-
-.finantec-table {
-    min-width:
-        720px;
-}
-
-
-/*
-   No resumo mensal, Mês e Receitas ficam totalmente
-   visíveis. Despesas permanece acessível deslizando.
-*/
-
-.finantec-table[
-    aria-label="Resumo mensal"
-] {
-    min-width:
-        430px;
-
-    table-layout:
-        fixed;
-}
-
-
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-th,
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-td {
-    padding:
-        0.72rem
-        0.65rem;
-
-    white-space:
-        nowrap;
-}
-
-
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-th:nth-child(1),
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-td:nth-child(1) {
-    width:
-        110px;
-}
-
-
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-th:nth-child(2),
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-td:nth-child(2),
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-th:nth-child(3),
-.finantec-table[
-    aria-label="Resumo mensal"
-]
-td:nth-child(3) {
-    width:
-        160px;
-}
-
-
-/*
-   Mantém larguras previsíveis na tabela de últimas
-   transações e evita que a descrição comprima tudo.
-*/
-
-.finantec-table[
-    aria-label="Últimas transações"
-] {
-    min-width:
-        760px;
-
-    table-layout:
-        fixed;
-}
-
-
-.finantec-table[
-    aria-label="Últimas transações"
-]
-th:nth-child(1),
-.finantec-table[
-    aria-label="Últimas transações"
-]
-td:nth-child(1) {
-    width:
-        110px;
-}
-
-
-.finantec-table[
-    aria-label="Últimas transações"
-]
-th:nth-child(2),
-.finantec-table[
-    aria-label="Últimas transações"
-]
-td:nth-child(2) {
-    width:
-        90px;
-}
-
-
-.finantec-table[
-    aria-label="Últimas transações"
-]
-th:nth-child(3),
-.finantec-table[
-    aria-label="Últimas transações"
-]
-td:nth-child(3) {
-    width:
-        260px;
-}
-
-
-.finantec-table[
-    aria-label="Últimas transações"
-]
-th:nth-child(4),
-.finantec-table[
-    aria-label="Últimas transações"
-]
-td:nth-child(4) {
-    width:
-        170px;
-}
-
-
-.finantec-table[
-    aria-label="Últimas transações"
-]
-th:nth-child(5),
-.finantec-table[
-    aria-label="Últimas transações"
-]
-td:nth-child(5) {
-    width:
-        130px;
-
-    white-space:
-        nowrap;
-}
-      .finantec-goal-grid {
-        grid-template-columns: 1fr;
+        scrollbar-width: thin;
     }
 
-    .finantec-goal-card {
-        min-height: auto;
-        padding: 1rem;
+
+    /*
+       Tabelas de transações continuam largas e usam
+       rolagem horizontal no celular.
+    */
+
+    .finantec-table {
+        min-width: 720px;
     }
 
-    .finantec-goal-value {
-        font-size: 1.55rem;
+
+    /*
+       No resumo mensal, Mês e Receitas ficam totalmente
+       visíveis. Despesas permanece acessível deslizando.
+    */
+
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ] {
+        min-width: 430px;
+
+        table-layout: fixed;
     }
 
-    .finantec-goal-progress-panel {
-        padding: 1rem;
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    th,
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    td {
+        padding:
+            0.72rem
+            0.65rem;
+
+        white-space: nowrap;
+    }
+
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    th:nth-child(1),
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    td:nth-child(1) {
+        width: 110px;
+    }
+
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    th:nth-child(2),
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    td:nth-child(2),
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    th:nth-child(3),
+    .finantec-table[
+        aria-label="Resumo mensal"
+    ]
+    td:nth-child(3) {
+        width: 160px;
+    }
+
+
+    /*
+       Mantém larguras previsíveis na tabela de últimas
+       transações e evita que a descrição comprima tudo.
+    */
+
+    .finantec-table[
+        aria-label="Últimas transações"
+    ] {
+        min-width: 760px;
+
+        table-layout: fixed;
+    }
+
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    th:nth-child(1),
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    td:nth-child(1) {
+        width: 110px;
+    }
+
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    th:nth-child(2),
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    td:nth-child(2) {
+        width: 90px;
+    }
+
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    th:nth-child(3),
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    td:nth-child(3) {
+        width: 260px;
+    }
+
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    th:nth-child(4),
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    td:nth-child(4) {
+        width: 170px;
+    }
+
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    th:nth-child(5),
+    .finantec-table[
+        aria-label="Últimas transações"
+    ]
+    td:nth-child(5) {
+        width: 130px;
+
+        white-space: nowrap;
+    }
+
+
+    /* =====================================================
+       METAS NO CELULAR
+       ===================================================== */
+
+    /*
+       No desktop, Minhas metas e Simulador permanecem
+       lado a lado. No celular, continuam empilhados para
+       preservar área de toque e leitura.
+    */
+
+    div[class*="st-key-show-financial-goals"]
+    button,
+    div[class*="st-key-show-goal-simulator"]
+    button {
+        min-height: 44px !important;
+
+        padding:
+            0.55rem
+            0.6rem !important;
+
+        font-size: 0.84rem !important;
+    }
+
+
+    /* Botão Nova meta mais compacto. */
+
+    div[class*="st-key-open-new-financial-goal"] {
+        margin-top: 0.15rem;
+    }
+
+    div[class*="st-key-open-new-financial-goal"]
+    button {
+        min-height: 44px !important;
+
+        padding:
+            0.55rem
+            0.8rem !important;
+    }
+
+
+    /* Card de meta mais compacto no celular. */
+
+    div[class*="st-key-financial-goal-card-"]
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.9rem !important;
+
+        border-radius: 14px !important;
+    }
+
+    .finantec-saved-goal {
+        gap: 0.8rem;
+    }
+
+    .finantec-saved-goal-header {
+        gap: 0.6rem;
+    }
+
+    .finantec-saved-goal-heading h3 {
+        font-size: 1.2rem;
+    }
+
+    .finantec-saved-goal-heading p {
+        margin-top: 0.35rem;
+
+        font-size: 0.8rem;
+    }
+
+    .finantec-goal-status {
+        min-height: 25px;
+
+        padding:
+            0.25rem
+            0.55rem;
+
+        font-size: 0.72rem;
+    }
+
+
+    /*
+       Os dois valores principais permanecem lado a lado
+       enquanto houver espaço suficiente.
+    */
+
+    .finantec-saved-goal-values {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+        gap: 0.75rem;
+
+        padding:
+            0.8rem
+            0;
+    }
+
+    .finantec-saved-goal-value-block
+    span {
+        font-size: 0.75rem;
+    }
+
+    .finantec-saved-goal-value-block
+    strong {
+        font-size:
+            clamp(
+                1.25rem,
+                6vw,
+                1.55rem
+            );
+
+        overflow-wrap: normal;
+
+        white-space: nowrap;
+    }
+
+    .finantec-saved-goal-progress-header {
+        font-size: 0.78rem;
+    }
+
+    .finantec-saved-goal-projection {
+        padding:
+            0.65rem
+            0.7rem;
+
+        font-size: 0.8rem;
+    }
+
+
+    /* Editar e Excluir permanecem lado a lado. */
+
+    div[class*="st-key-financial-goal-actions-"]
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+
+        gap: 0.55rem !important;
+    }
+
+    div[class*="st-key-financial-goal-actions-"]
+    [data-testid="stColumn"] {
+        width:
+            calc(
+                50%
+                - 0.275rem
+            ) !important;
+
+        min-width: 0 !important;
+
+        flex:
+            1
+            1
+            0 !important;
+    }
+
+
+    /* Simulador de metas. */
+
+    .finantec-goal-summary-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+    .finantec-goal-summary-item {
+        padding:
+            0.85rem;
+
+        border-right:
+            0;
+
+        border-bottom:
+            1px solid
+            var(--border);
+    }
+
+    .finantec-goal-summary-item:nth-child(odd) {
+        border-right:
+            1px solid
+            var(--border);
+    }
+
+    .finantec-goal-summary-item:nth-last-child(-n + 2) {
+        border-bottom:
+            0;
+    }
+
+    .finantec-goal-summary-value {
+        font-size:
+            1.35rem;
+    }
+
+    .finantec-goal-progress-section {
+        padding:
+            0.85rem;
     }
 
     .finantec-goal-progress-header {
-        flex-direction: column;
-        gap: 0.45rem;
+        flex-direction:
+            column;
+
+        gap:
+            0.35rem;
     }
 
     .finantec-goal-progress-header strong {
-        white-space: normal;
+        white-space:
+            normal;
     }
 
     .finantec-goal-progress-footer {
-        align-items: flex-start;
-        flex-direction: column;
+        align-items:
+            flex-start;
 
-        gap: 0.25rem;
+        flex-direction:
+            column;
+
+        gap:
+            0.2rem;
     }
 
-        .st-key-manual-entry-card
+
+    /* Formulário manual. */
+
+    .st-key-manual-entry-card
     [data-testid="stVerticalBlockBorderWrapper"] {
         padding: 1rem !important;
     }
@@ -446,6 +675,41 @@ td:nth-child(5) {
         min-width: 0;
     }
 }
+
+
+@media (max-width: 360px) {
+    .finantec-goal-summary-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+    .finantec-goal-summary-item,
+    .finantec-goal-summary-item:nth-child(odd) {
+        border-right:
+            0;
+    }
+
+    .finantec-goal-summary-item:nth-last-child(-n + 2) {
+        border-bottom:
+            1px solid
+            var(--border);
+    }
+
+    .finantec-goal-summary-item:last-child {
+        border-bottom:
+            0;
+    }
+
+    .finantec-saved-goal-values {
+        grid-template-columns: 1fr;
+    }
+
+    .finantec-saved-goal-value-block
+    strong {
+        white-space: normal;
+    }
+}
+
 
 /* Ação principal aparece antes no modal em telas pequenas. */
 @media (max-width: 640px) {
@@ -459,5 +723,79 @@ td:nth-child(5) {
     [data-testid="column"] {
         width: 100% !important;
         flex: 1 1 100% !important;
+    }
+}
+
+/* =========================================================
+   TRANSAÇÕES — RESPONSIVIDADE DO REWORK
+   ========================================================= */
+
+@media (max-width: 700px) {
+    .finantec-transaction-summary {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+    .finantec-transaction-summary-item.total {
+        grid-column:
+            1 / -1;
+
+        border-bottom:
+            1px solid
+            var(--border);
+    }
+
+    .finantec-transaction-summary-item.income {
+        border-left:
+            0;
+    }
+}
+
+@media (max-width: 560px) {
+    .st-key-transactions-action-bar
+    [data-testid="stHorizontalBlock"] {
+        display:
+            grid !important;
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            ) !important;
+
+        gap:
+            0.55rem !important;
+    }
+
+    .st-key-transactions-action-bar
+    [data-testid="stColumn"] {
+        width:
+            100% !important;
+
+        min-width:
+            0 !important;
+
+        flex:
+            none !important;
+    }
+
+    .st-key-transactions-action-bar
+    [data-testid="stColumn"]:first-child {
+        grid-column:
+            1 / -1;
+    }
+
+    .finantec-transaction-summary-item {
+        padding:
+            0.75rem
+            0.8rem;
+    }
+
+    .finantec-transaction-summary-item strong {
+        font-size:
+            1.22rem;
     }
 }
