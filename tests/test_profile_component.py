@@ -10,6 +10,8 @@ import pytest
 import components.profile as profile_module
 
 from components.profile import (
+    build_profile_empty_state_html,
+    build_profile_summary_html,
     calculate_monthly_income,
     income_sources_to_dataframe,
     prepare_income_sources,
@@ -171,6 +173,107 @@ def test_calculate_monthly_income_returns_zero_for_empty_table():
 
     assert result == 0.0
 
+def test_build_profile_summary_html_uses_semantic_cards():
+    html = build_profile_summary_html(
+        {
+            "nome": "Ryan <Santos>",
+            "ocupacao": "Estudante",
+            "idade": 23,
+            "renda_mensal_principal": 1200.0,
+            "situacao_atual": {
+                "possui_dividas": False,
+                "utiliza_cartao_de_credito": True,
+                "observacao": (
+                    "Quero guardar dinheiro."
+                ),
+            },
+        }
+    )
+
+    assert "Ryan &lt;Santos&gt;" in html
+    assert "Estudante • 23 anos" in html
+    assert "R$ 1.200,00" in html
+    assert "finantec-profile-stat income" in html
+    assert "finantec-profile-stat active" in html
+    assert "Quero guardar dinheiro." in html
+    assert "stMetric" not in html
+
+
+def test_build_profile_empty_state_html_explains_next_step():
+    html = build_profile_empty_state_html()
+
+    assert (
+        "Complete seu perfil financeiro"
+        in html
+    )
+
+    assert (
+        "personalizar os resumos financeiros"
+        in html
+    )
+
+def test_build_profile_payload_rejects_empty_name():
+    with pytest.raises(
+        ValueError,
+        match="Informe seu nome",
+    ):
+        profile_module._build_profile_payload(
+            name="   ",
+            age=0,
+            occupation="Estudante",
+            income_sources=pd.DataFrame(
+                columns=[
+                    "Tipo",
+                    "Valor mensal",
+                ]
+            ),
+            has_debts=False,
+            uses_credit_card=False,
+            observation="",
+            existing_preferences={},
+        )
+
+
+def test_build_profile_payload_normalizes_text_fields():
+    payload = (
+        profile_module._build_profile_payload(
+            name="  Ryan   Santos  ",
+            age=21,
+            occupation=(
+                "  Estudante   universitário  "
+            ),
+            income_sources=pd.DataFrame(
+                columns=[
+                    "Tipo",
+                    "Valor mensal",
+                ]
+            ),
+            has_debts=False,
+            uses_credit_card=True,
+            observation=(
+                "  Quero guardar dinheiro.  "
+            ),
+            existing_preferences=None,
+        )
+    )
+
+    assert payload["nome"] == "Ryan Santos"
+    assert (
+        payload["ocupacao"]
+        == "Estudante universitário"
+    )
+    assert (
+        payload["situacao_atual"][
+            "observacao"
+        ]
+        == "Quero guardar dinheiro."
+    )
+    assert (
+        payload[
+            "preferencias_de_comunicacao"
+        ]
+        == {}
+    )
 
 class ProfileRenderStreamlit:
     """Registra os controles dos estados resumidos do perfil."""
@@ -182,6 +285,7 @@ class ProfileRenderStreamlit:
         self.markdowns: list[str] = []
         self.infos: list[str] = []
         self.buttons: list[str] = []
+        
 
     def subheader(
         self,
@@ -237,18 +341,31 @@ def test_unconfigured_profile_has_dedicated_state_without_summary_metrics(
     fake_streamlit = (
         ProfileRenderStreamlit()
     )
-    rendered_summaries: list[dict] = []
+
+    rendered_html: list[str] = []
+
+    rendered_summaries: list[
+        dict
+    ] = []
 
     monkeypatch.setattr(
         profile_module,
         "st",
         fake_streamlit,
     )
+
+    monkeypatch.setattr(
+        profile_module,
+        "render_html",
+        rendered_html.append,
+    )
+
     monkeypatch.setattr(
         profile_module,
         "_show_profile_feedback",
         lambda: None,
     )
+
     monkeypatch.setattr(
         profile_module,
         "_render_profile_summary",
@@ -264,13 +381,27 @@ def test_unconfigured_profile_has_dedicated_state_without_summary_metrics(
         data_mode="user",
     )
 
-    assert fake_streamlit.markdowns == [
-        "### Perfil não configurado",
-    ]
+    assert fake_streamlit.markdowns == []
+
     assert fake_streamlit.buttons == [
         "Configurar perfil",
     ]
+
     assert rendered_summaries == []
+
+    assert len(
+        rendered_html
+    ) == 2
+
+    assert (
+        "<h2>Meu perfil</h2>"
+        in rendered_html[0]
+    )
+
+    assert (
+        "Complete seu perfil financeiro"
+        in rendered_html[1]
+    )
 
 
 def test_demo_profile_is_read_only_even_with_edit_mode_pending(
@@ -279,22 +410,35 @@ def test_demo_profile_is_read_only_even_with_edit_mode_pending(
     fake_streamlit = (
         ProfileRenderStreamlit()
     )
+
     fake_streamlit.session_state[
         profile_module.PROFILE_EDIT_MODE_KEY
     ] = True
 
-    rendered_summaries: list[dict] = []
+    rendered_html: list[str] = []
+
+    rendered_summaries: list[
+        dict
+    ] = []
 
     monkeypatch.setattr(
         profile_module,
         "st",
         fake_streamlit,
     )
+
+    monkeypatch.setattr(
+        profile_module,
+        "render_html",
+        rendered_html.append,
+    )
+
     monkeypatch.setattr(
         profile_module,
         "_show_profile_feedback",
         lambda: None,
     )
+
     monkeypatch.setattr(
         profile_module,
         "_render_profile_summary",
@@ -315,8 +459,24 @@ def test_demo_profile_is_read_only_even_with_edit_mode_pending(
     assert rendered_summaries == [
         demo_profile,
     ]
+
     assert fake_streamlit.buttons == []
+
     assert fake_streamlit.infos == [
         "Perfil de demonstração. "
         "Estas informações são fictícias e somente leitura.",
     ]
+
+    assert len(
+        rendered_html
+    ) == 1
+
+    assert (
+        'class="finantec-page-header"'
+        in rendered_html[0]
+    )
+
+    assert (
+        "<h2>Meu perfil</h2>"
+        in rendered_html[0]
+    )

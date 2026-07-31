@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from html import escape
+from math import isfinite
 from typing import Any
 
 import pandas as pd
@@ -15,14 +17,193 @@ from src.profile_repository import (
     save_user_profile,
 )
 
-
-PROFILE_FEEDBACK_KEY = (
-    "profile_feedback"
+from components.header import (
+    build_page_header_html,
+    build_section_header_html,
 )
+from ui_components import render_html
 
-PROFILE_EDIT_MODE_KEY = (
-    "profile_edit_mode"
-)
+PROFILE_FEEDBACK_KEY = "profile_feedback"
+
+PROFILE_EDIT_MODE_KEY = "profile_edit_mode"
+
+
+def _normalize_profile_text(
+    value: object,
+    *,
+    fallback: str = "",
+) -> str:
+    """Normaliza textos curtos armazenados no perfil."""
+    normalized_value = " ".join(str(value if value is not None else "").strip().split())
+
+    return normalized_value or fallback
+
+
+def _normalize_profile_observation(
+    value: object,
+) -> str:
+    """Normaliza a observação sem remover suas quebras de linha."""
+    return str(value if value is not None else "").strip()
+
+
+def _coerce_non_negative_float(
+    value: object,
+) -> float:
+    """Converte um valor legado em número não negativo."""
+    try:
+        numeric_value = float(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 0.0
+
+    if not isfinite(numeric_value) or numeric_value < 0:
+        return 0.0
+
+    return numeric_value
+
+
+def _coerce_optional_age(
+    value: object,
+) -> int | None:
+    """Converte uma idade válida ou retorna não informada."""
+    try:
+        numeric_value = float(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return None
+
+    if not isfinite(numeric_value) or not numeric_value.is_integer():
+        return None
+
+    age = int(numeric_value)
+
+    if not 1 <= age <= 130:
+        return None
+
+    return age
+
+
+def _get_profile_situation(
+    profile: dict[str, Any],
+) -> dict[str, Any]:
+    """Obtém a situação financeira em formato seguro."""
+    situation = profile.get(
+        "situacao_atual",
+        {},
+    )
+
+    if not isinstance(
+        situation,
+        dict,
+    ):
+        return {}
+
+    return situation
+
+
+def build_profile_summary_html(
+    profile: dict[str, Any],
+) -> str:
+    """Monta o resumo visual do perfil configurado."""
+    situation = _get_profile_situation(profile)
+
+    name = _normalize_profile_text(
+        profile.get("nome"),
+        fallback="Perfil não configurado",
+    )
+
+    occupation = _normalize_profile_text(
+        profile.get("ocupacao"),
+        fallback="Ocupação não informada",
+    )
+
+    age = _coerce_optional_age(profile.get("idade"))
+
+    monthly_income = _coerce_non_negative_float(profile.get("renda_mensal_principal"))
+
+    profile_details = [
+        occupation,
+    ]
+
+    if age is not None:
+        profile_details.append(f"{age} anos")
+
+    details_text = " • ".join(profile_details)
+
+    has_debts = bool(
+        situation.get(
+            "possui_dividas",
+            False,
+        )
+    )
+
+    uses_credit_card = bool(
+        situation.get(
+            "utiliza_cartao_de_credito",
+            False,
+        )
+    )
+
+    observation = _normalize_profile_observation(situation.get("observacao"))
+
+    observation_html = (
+        (
+            '<div class="finantec-profile-observation">'
+            "<span>Observação pessoal</span>"
+            f"<p>{escape(observation)}</p>"
+            "</div>"
+        )
+        if observation
+        else ""
+    )
+
+    debt_class = "danger" if has_debts else "neutral"
+
+    card_class = "active" if uses_credit_card else "neutral"
+
+    return (
+        '<section class="finantec-profile-summary">'
+        '<header class="finantec-profile-identity">'
+        f"<h3>{escape(name)}</h3>"
+        f"<p>{escape(details_text)}</p>"
+        "</header>"
+        '<div class="finantec-profile-stat-grid">'
+        '<article class="finantec-profile-stat income">'
+        "<span>Renda mensal total</span>"
+        f"<strong>{escape(format_currency(monthly_income))}</strong>"
+        "</article>"
+        f'<article class="finantec-profile-stat {debt_class}">'
+        "<span>Possui dívidas</span>"
+        f"<strong>{'Sim' if has_debts else 'Não'}</strong>"
+        "</article>"
+        f'<article class="finantec-profile-stat {card_class}">'
+        "<span>Usa cartão de crédito</span>"
+        f"<strong>{'Sim' if uses_credit_card else 'Não'}</strong>"
+        "</article>"
+        "</div>"
+        f"{observation_html}"
+        "</section>"
+    )
+
+
+def build_profile_empty_state_html() -> str:
+    """Monta o estado inicial de um perfil não configurado."""
+    return (
+        '<section class="finantec-profile-empty-state">'
+        '<span class="finantec-profile-empty-eyebrow">'
+        "Perfil financeiro"
+        "</span>"
+        "<h3>Complete seu perfil financeiro</h3>"
+        "<p>"
+        "Informe sua renda e sua situação atual para personalizar "
+        "os resumos financeiros do FinanTec."
+        "</p>"
+        "</section>"
+    )
 
 
 def _show_profile_feedback() -> None:
@@ -46,14 +227,10 @@ def _show_profile_feedback() -> None:
     )
 
     if message_type == "success":
-        st.success(
-            message
-        )
+        st.success(message)
         return
 
-    st.error(
-        message
-    )
+    st.error(message)
 
 
 def _set_profile_feedback(
@@ -61,9 +238,7 @@ def _set_profile_feedback(
     message: str,
 ) -> None:
     """Guarda uma mensagem para o próximo rerun."""
-    st.session_state[
-        PROFILE_FEEDBACK_KEY
-    ] = {
+    st.session_state[PROFILE_FEEDBACK_KEY] = {
         "type": message_type,
         "message": message,
     }
@@ -73,9 +248,7 @@ def _set_profile_edit_mode(
     is_editing: bool,
 ) -> None:
     """Ativa ou encerra a edição do perfil."""
-    st.session_state[
-        PROFILE_EDIT_MODE_KEY
-    ] = is_editing
+    st.session_state[PROFILE_EDIT_MODE_KEY] = is_editing
 
 
 def income_sources_to_dataframe(
@@ -131,20 +304,11 @@ def income_sources_to_dataframe(
             errors="coerce",
         )
 
-        if (
-            not pd.isna(
-                saved_income
-            )
-            and float(
-                saved_income
-            ) > 0
-        ):
+        if not pd.isna(saved_income) and float(saved_income) > 0:
             rows.append(
                 {
                     "Tipo": "Renda principal",
-                    "Valor mensal": float(
-                        saved_income
-                    ),
+                    "Valor mensal": float(saved_income),
                 }
             )
 
@@ -164,9 +328,7 @@ def prepare_income_sources(
     if table is None or table.empty:
         return []
 
-    sources: list[
-        dict[str, Any]
-    ] = []
+    sources: list[dict[str, Any]] = []
 
     for _, row in table.iterrows():
         source_type = str(
@@ -185,39 +347,26 @@ def prepare_income_sources(
             errors="coerce",
         )
 
-        value_is_empty = pd.isna(
-            monthly_value
-        )
+        value_is_empty = pd.isna(monthly_value)
 
-        if (
-            not source_type
-            and value_is_empty
-        ):
+        if not source_type and value_is_empty:
             continue
 
         if not source_type:
             raise ValueError(
-                "Informe o tipo de todas "
-                "as fontes de renda preenchidas."
+                "Informe o tipo de todas " "as fontes de renda preenchidas."
             )
 
         if value_is_empty:
             monthly_value = 0.0
 
-        if float(
-            monthly_value
-        ) < 0:
-            raise ValueError(
-                "O valor de uma fonte de renda "
-                "não pode ser negativo."
-            )
+        if float(monthly_value) < 0:
+            raise ValueError("O valor de uma fonte de renda " "não pode ser negativo.")
 
         sources.append(
             {
                 "tipo": source_type,
-                "valor_mensal": float(
-                    monthly_value
-                ),
+                "valor_mensal": float(monthly_value),
             }
         )
 
@@ -228,19 +377,10 @@ def calculate_monthly_income(
     table: pd.DataFrame,
 ) -> float:
     """Soma os valores mensais das fontes de renda."""
-    sources = prepare_income_sources(
-        table
-    )
+    sources = prepare_income_sources(table)
 
     return round(
-        sum(
-            float(
-                source[
-                    "valor_mensal"
-                ]
-            )
-            for source in sources
-        ),
+        sum(float(source["valor_mensal"]) for source in sources),
         2,
     )
 
@@ -249,111 +389,7 @@ def _render_profile_summary(
     profile: dict[str, Any],
 ) -> None:
     """Exibe um resumo do perfil atual."""
-    situation = profile.get(
-        "situacao_atual",
-        {},
-    )
-
-    name = str(
-        profile.get(
-            "nome",
-            "Perfil não configurado",
-        )
-    )
-
-    occupation = str(
-        profile.get(
-            "ocupacao",
-            "",
-        )
-        or "Ocupação não informada"
-    )
-
-    age = profile.get(
-        "idade"
-    )
-
-    monthly_income = float(
-        profile.get(
-            "renda_mensal_principal",
-            0,
-        )
-        or 0
-    )
-
-    profile_details = [
-        occupation,
-    ]
-
-    if age:
-        profile_details.append(
-            f"{int(age)} anos"
-        )
-
-    st.markdown(
-        f"### {name}"
-    )
-
-    st.caption(
-        " • ".join(
-            profile_details
-        )
-    )
-
-    (
-        income_column,
-        debt_column,
-        card_column,
-    ) = st.columns(
-        3,
-        gap="small",
-    )
-
-    with income_column:
-        st.metric(
-            "Renda mensal total",
-            format_currency(
-                monthly_income
-            ),
-        )
-
-    with debt_column:
-        st.metric(
-            "Possui dívidas",
-            (
-                "Sim"
-                if situation.get(
-                    "possui_dividas",
-                    False,
-                )
-                else "Não"
-            ),
-        )
-
-    with card_column:
-        st.metric(
-            "Usa cartão de crédito",
-            (
-                "Sim"
-                if situation.get(
-                    "utiliza_cartao_de_credito",
-                    False,
-                )
-                else "Não"
-            ),
-        )
-
-    observation = str(
-        situation.get(
-            "observacao",
-            "",
-        )
-    ).strip()
-
-    if observation:
-        st.info(
-            observation
-        )
+    render_html(build_profile_summary_html(profile))
 
 
 def _build_profile_payload(
@@ -368,52 +404,46 @@ def _build_profile_payload(
     existing_preferences: dict[str, Any],
 ) -> dict[str, Any]:
     """Monta o perfil recebido pelo repositório."""
-    normalized_income_sources = (
-        prepare_income_sources(
-            income_sources
+
+    normalized_name = _normalize_profile_text(name)
+
+    if not normalized_name:
+        raise ValueError("Informe seu nome para salvar o perfil.")
+
+    normalized_occupation = _normalize_profile_text(occupation)
+
+    normalized_observation = _normalize_profile_observation(observation)
+
+    if not 0 <= age <= 130:
+        raise ValueError("Informe uma idade entre 0 e 130 anos.")
+
+    normalized_preferences = (
+        dict(existing_preferences)
+        if isinstance(
+            existing_preferences,
+            dict,
         )
+        else {}
     )
+    normalized_income_sources = prepare_income_sources(income_sources)
 
     monthly_income = round(
-        sum(
-            float(
-                source[
-                    "valor_mensal"
-                ]
-            )
-            for source in (
-                normalized_income_sources
-            )
-        ),
+        sum(float(source["valor_mensal"]) for source in (normalized_income_sources)),
         2,
     )
 
     return {
-        "nome": name,
-        "idade": (
-            None
-            if age <= 0
-            else age
-        ),
-        "ocupacao": occupation,
-        "renda_mensal_principal": (
-            monthly_income
-        ),
-        "fontes_de_renda": (
-            normalized_income_sources
-        ),
+        "nome": normalized_name,
+        "idade": (None if age <= 0 else age),
+        "ocupacao": normalized_occupation,
+        "renda_mensal_principal": (monthly_income),
+        "fontes_de_renda": (normalized_income_sources),
         "situacao_atual": {
             "possui_dividas": has_debts,
-            "utiliza_cartao_de_credito": (
-                uses_credit_card
-            ),
-            "observacao": observation,
+            "utiliza_cartao_de_credito": (uses_credit_card),
+            "observacao": normalized_observation,
         },
-        "preferencias_de_comunicacao": (
-            dict(
-                existing_preferences
-            )
-        ),
+        "preferencias_de_comunicacao": (normalized_preferences),
     }
 
 
@@ -423,16 +453,15 @@ def render_user_profile(
     data_mode: str,
 ) -> None:
     """Exibe e permite editar o perfil financeiro."""
-    st.subheader(
-        "Meu perfil",
-        anchor="meu-perfil",
-    )
 
-    st.caption(
-        "Consulte e atualize suas informações "
-        "financeiras pessoais."
+    render_html(
+        build_page_header_html(
+            title="Meu perfil",
+            description=(
+                "Consulte e atualize suas informações " "financeiras pessoais."
+            ),
+        )
     )
-
     _show_profile_feedback()
 
     is_demo = data_mode == "demo"
@@ -456,9 +485,7 @@ def render_user_profile(
             border=True,
             key="profile-summary-card",
         ):
-            _render_profile_summary(
-                profile
-            )
+            _render_profile_summary(profile)
 
         return
 
@@ -470,58 +497,41 @@ def render_user_profile(
     )
 
     if not is_editing:
-        if is_configured:
-            with st.container(
-                border=True,
-                key="profile-summary-card",
-            ):
-                _render_profile_summary(
-                    profile
-                )
+        container_key = (
+            "profile-summary-card" if is_configured else "profile-empty-card"
+        )
 
-        else:
-            with st.container(
-                border=True,
-                key="profile-empty-card",
-            ):
-                st.markdown(
-                    "### Perfil não configurado"
-                )
-
-                st.caption(
-                    "Preencha suas informações para "
-                    "configurar o perfil financeiro."
-                )
-
-        if st.button(
-            (
-                "Editar perfil"
-                if is_configured
-                else "Configurar perfil"
-            ),
-            key="start-profile-edit",
-            type="primary",
+        with st.container(
+            border=True,
+            key=container_key,
         ):
-            _set_profile_edit_mode(
-                True
-            )
+            if is_configured:
+                _render_profile_summary(profile)
 
-            st.rerun()
+            else:
+                render_html(build_profile_empty_state_html())
+
+            if st.button(
+                ("Editar perfil" if is_configured else "Configurar perfil"),
+                key="start-profile-edit",
+                type="primary",
+            ):
+                _set_profile_edit_mode(True)
+
+                st.rerun()
 
         return
 
-    st.markdown(
-        (
-            "### Editar perfil"
-            if is_configured
-            else "### Configurar perfil"
+    render_html(
+        build_section_header_html(
+            title=("Editar perfil" if is_configured else "Configurar perfil"),
+            description=(
+                "Atualize as informações usadas nos seus " "resumos financeiros."
+            ),
         )
     )
 
-    situation = profile.get(
-        "situacao_atual",
-        {},
-    )
+    situation = _get_profile_situation(profile)
 
     existing_preferences = profile.get(
         "preferencias_de_comunicacao",
@@ -534,26 +544,19 @@ def render_user_profile(
     ):
         existing_preferences = {}
 
-    current_age = profile.get(
-        "idade"
-    )
+    current_age = _coerce_optional_age(profile.get("idade"))
 
-    age_value = (
-        int(current_age)
-        if current_age is not None
-        else 0
-    )
+    age_value = current_age or 0
 
-    current_income_sources = (
-        income_sources_to_dataframe(
-            profile
-        )
-    )
+    current_income_sources = income_sources_to_dataframe(profile)
 
     with st.form(
         "user-profile-form",
-        border=True,
+        border=False,
     ):
+        render_html(
+            '<div class="finantec-profile-form-marker" ' 'aria-hidden="true"></div>'
+        )
         (
             name_column,
             age_column,
@@ -584,10 +587,7 @@ def render_user_profile(
                 max_value=130,
                 value=age_value,
                 step=1,
-                help=(
-                    "Use 0 para deixar "
-                    "a idade não informada."
-                ),
+                help=("Use 0 para deixar " "a idade não informada."),
             )
 
         occupation = st.text_input(
@@ -599,19 +599,19 @@ def render_user_profile(
                 )
             ),
             max_chars=150,
-            placeholder=(
-                "Ex.: estudante, estagiário, desenvolvedor"
-            ),
+            placeholder=("Ex.: estudante, estagiário, desenvolvedor"),
         )
 
-        st.markdown(
-            "#### Fontes de renda"
-        )
-
-        st.caption(
-            "A renda mensal total será calculada "
-            "automaticamente pela soma das fontes "
-            "informadas."
+        render_html(
+            build_section_header_html(
+                title="Fontes de renda",
+                description=(
+                    "A renda mensal total será calculada "
+                    "automaticamente pela soma das fontes "
+                    "informadas."
+                ),
+                compact=True,
+            )
         )
 
         income_sources = st.data_editor(
@@ -626,10 +626,7 @@ def render_user_profile(
                         "Tipo",
                         required=True,
                         width="large",
-                        help=(
-                            "Ex.: salário, estágio, "
-                            "freelance ou benefício."
-                        ),
+                        help=("Ex.: salário, estágio, " "freelance ou benefício."),
                     )
                 ),
                 "Valor mensal": (
@@ -644,8 +641,12 @@ def render_user_profile(
             },
         )
 
-        st.markdown(
-            "#### Situação financeira"
+        render_html(
+            build_section_header_html(
+                title="Situação financeira",
+                description=("Marque as opções que representam " "sua situação atual."),
+                compact=True,
+            )
         )
 
         (
@@ -693,35 +694,36 @@ def render_user_profile(
             ),
         )
 
-        (
-            save_column,
-            cancel_column,
-        ) = st.columns(
-            2,
-            gap="medium",
-        )
+        with st.container(
+            key="profile-form-actions",
+        ):
+            (
+                save_column,
+                cancel_column,
+            ) = st.columns(
+                [
+                    1.35,
+                    1,
+                ],
+                gap="medium",
+            )
 
-        with save_column:
-            submitted = (
-                st.form_submit_button(
+            with save_column:
+                submitted = st.form_submit_button(
                     "Salvar alterações",
                     type="primary",
                     use_container_width=True,
                 )
-            )
 
-        with cancel_column:
-            cancelled = (
-                st.form_submit_button(
+            with cancel_column:
+                cancelled = st.form_submit_button(
                     "Cancelar",
+                    type="secondary",
                     use_container_width=True,
                 )
-            )
 
     if cancelled:
-        _set_profile_edit_mode(
-            False
-        )
+        _set_profile_edit_mode(False)
 
         st.rerun()
 
@@ -729,31 +731,19 @@ def render_user_profile(
         return
 
     try:
-        profile_payload = (
-            _build_profile_payload(
-                name=name,
-                age=int(
-                    age
-                ),
-                occupation=occupation,
-                income_sources=(
-                    income_sources
-                ),
-                has_debts=has_debts,
-                uses_credit_card=(
-                    uses_credit_card
-                ),
-                observation=observation,
-                existing_preferences=(
-                    existing_preferences
-                ),
-            )
+        profile_payload = _build_profile_payload(
+            name=name,
+            age=int(age),
+            occupation=occupation,
+            income_sources=(income_sources),
+            has_debts=has_debts,
+            uses_credit_card=(uses_credit_card),
+            observation=observation,
+            existing_preferences=(existing_preferences),
         )
 
         save_user_profile(
-            database_path=(
-                ARQUIVO_BANCO
-            ),
+            database_path=(ARQUIVO_BANCO),
             user_id=user_id,
             profile=profile_payload,
         )
@@ -762,17 +752,11 @@ def render_user_profile(
         ValueError,
         RuntimeError,
     ) as error:
-        st.error(
-            str(
-                error
-            )
-        )
+        st.error(str(error))
 
         return
 
-    _set_profile_edit_mode(
-        False
-    )
+    _set_profile_edit_mode(False)
 
     _set_profile_feedback(
         "success",
@@ -785,3 +769,5 @@ def render_user_profile(
 
     st.cache_data.clear()
     st.rerun()
+
+    return

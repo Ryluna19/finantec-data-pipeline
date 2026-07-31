@@ -3450,3 +3450,539 @@ div[class*="st-key-period-transactions-card"]
             none;
     }
 }
+
+
+/* =========================================================
+   PERFIL FINANCEIRO
+   ========================================================= */
+
+.st-key-profile-summary-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-profile-empty-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        1.1rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-lg) !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-profile-summary-card
+> [data-testid="stVerticalBlock"],
+.st-key-profile-empty-card
+> [data-testid="stVerticalBlock"] {
+    gap:
+        1rem !important;
+}
+
+
+/* Resumo configurado */
+
+.finantec-profile-summary {
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        1rem;
+}
+
+.finantec-profile-identity h3 {
+    margin:
+        0;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.45rem,
+            2.5vw,
+            1.85rem
+        );
+
+    font-weight:
+        800;
+
+    line-height:
+        1.15;
+}
+
+.finantec-profile-identity p {
+    margin:
+        0.45rem
+        0
+        0;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.9rem;
+
+    font-weight:
+        500;
+}
+
+.finantec-profile-stat-grid {
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(
+                210px,
+                1fr
+            )
+        );
+
+    gap:
+        0.9rem;
+}
+
+.finantec-profile-stat {
+    min-height:
+        118px;
+
+    padding:
+        1rem;
+
+    background:
+        var(--bg-panel-2);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-top:
+        3px solid
+        var(--border-light);
+
+    border-radius:
+        var(--radius);
+}
+
+.finantec-profile-stat span {
+    display:
+        block;
+
+    color:
+        var(--support-text-strong);
+
+    font-size:
+        0.8rem;
+
+    font-weight:
+        700;
+}
+
+.finantec-profile-stat strong {
+    display:
+        block;
+
+    margin-top:
+        0.65rem;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.6rem,
+            2.7vw,
+            2.1rem
+        );
+
+    font-weight:
+        800;
+
+    line-height:
+        1.08;
+
+    overflow-wrap:
+        anywhere;
+}
+
+.finantec-profile-stat.income {
+    border-top-color:
+        var(--success);
+}
+
+.finantec-profile-stat.danger {
+    border-top-color:
+        var(--danger);
+}
+
+.finantec-profile-stat.active {
+    border-top-color:
+        var(--accent);
+}
+
+.finantec-profile-observation {
+    padding:
+        0.95rem
+        1rem;
+
+    background:
+        var(--bg-elevated);
+
+    border-left:
+        4px solid
+        var(--accent);
+
+    border-radius:
+        var(--radius-sm);
+}
+
+.finantec-profile-observation span {
+    color:
+        var(--support-text-strong);
+
+    font-size:
+        0.78rem;
+
+    font-weight:
+        700;
+}
+
+.finantec-profile-observation p {
+    margin:
+        0.4rem
+        0
+        0;
+
+    color:
+        var(--text-soft);
+
+    font-size:
+        0.9rem;
+
+    line-height:
+        1.5;
+
+    white-space:
+        pre-wrap;
+}
+
+
+/* Estado vazio */
+
+.finantec-profile-empty-state {
+    max-width:
+        680px;
+}
+
+.finantec-profile-empty-eyebrow {
+    color:
+        var(--accent);
+
+    font-size:
+        0.74rem;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        0.1em;
+
+    text-transform:
+        uppercase;
+}
+
+.finantec-profile-empty-state h3 {
+    margin:
+        0.55rem
+        0
+        0;
+
+    color:
+        var(--text-main);
+
+    font-size:
+        clamp(
+            1.35rem,
+            2.4vw,
+            1.7rem
+        );
+
+    font-weight:
+        800;
+}
+
+.finantec-profile-empty-state p {
+    margin:
+        0.6rem
+        0
+        0;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.92rem;
+
+    line-height:
+        1.55;
+}
+
+
+/* Ação do card */
+
+.st-key-profile-summary-card
+.st-key-start-profile-edit,
+.st-key-profile-empty-card
+.st-key-start-profile-edit {
+    padding-top:
+        0.95rem;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+.st-key-profile-summary-card
+.st-key-start-profile-edit
+button,
+.st-key-profile-empty-card
+.st-key-start-profile-edit
+button {
+    width:
+        auto !important;
+
+    min-width:
+        150px;
+}
+
+/* =========================================================
+   FORMULÁRIO DO PERFIL
+   ========================================================= */
+
+.finantec-profile-form-marker {
+    display:
+        none;
+}
+
+[data-testid="stForm"]:has(
+    .finantec-profile-form-marker
+) {
+    padding:
+        1.2rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-lg) !important;
+
+    box-shadow:
+        none !important;
+}
+
+[data-testid="stForm"]:has(
+    .finantec-profile-form-marker
+)
+.finantec-section-header {
+    margin-top:
+        0.5rem;
+}
+
+[data-testid="stForm"]:has(
+    .finantec-profile-form-marker
+)
+.finantec-section-header.compact {
+    padding-bottom:
+        0.15rem;
+}
+
+
+/* Ações do formulário */
+
+.st-key-profile-form-actions {
+    margin-top:
+        0.65rem;
+
+    padding-top:
+        1rem;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+.st-key-profile-form-actions
+[data-testid="stColumn"]:first-child
+[data-testid="stFormSubmitButton"]
+button {
+    background:
+        var(--accent-active) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent) !important;
+}
+
+.st-key-profile-form-actions
+[data-testid="stColumn"]:first-child
+[data-testid="stFormSubmitButton"]
+button:hover {
+    background:
+        var(--accent) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-hover) !important;
+}
+
+.st-key-profile-form-actions
+[data-testid="stColumn"]:last-child
+[data-testid="stFormSubmitButton"]
+button {
+    background:
+        var(--bg-panel-2) !important;
+
+    color:
+        var(--text-main) !important;
+
+    border-color:
+        var(--border-strong) !important;
+}
+
+.st-key-profile-form-actions
+[data-testid="stColumn"]:last-child
+[data-testid="stFormSubmitButton"]
+button:hover {
+    background:
+        var(--bg-hover) !important;
+
+    color:
+        var(--text-main) !important;
+
+    border-color:
+        var(--accent) !important;
+}
+
+/* =========================================================
+   FORMULÁRIO DO PERFIL — TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.st-key-profile-form-actions
+[data-testid="stColumn"]:first-child
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background:
+        var(--accent) !important;
+
+    background-color:
+        var(--accent) !important;
+
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-active) !important;
+
+    box-shadow:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-profile-form-actions
+[data-testid="stColumn"]:first-child
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+:root:has(.finantec-theme-light)
+.st-key-profile-form-actions
+[data-testid="stColumn"]:first-child
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-profile-form-actions
+[data-testid="stColumn"]:first-child
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background:
+        var(--accent-hover) !important;
+
+    background-color:
+        var(--accent-hover) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--accent-hover) !important;
+}
+
+/* =========================================================
+   FORMULÁRIO DO PERFIL — TEMA ESCURO
+   ========================================================= */
+
+:root:has(.finantec-theme-dark)
+[data-testid="stForm"]:has(
+    .finantec-profile-form-marker
+) {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(
+                255,
+                255,
+                255,
+                0.018
+            ),
+            rgba(
+                255,
+                255,
+                255,
+                0
+            )
+            150px
+        ),
+        #151517 !important;
+
+    border-color:
+        #303034 !important;
+
+    box-shadow:
+        inset
+        0
+        1px
+        0
+        rgba(
+            255,
+            255,
+            255,
+            0.015
+        ) !important;
+}

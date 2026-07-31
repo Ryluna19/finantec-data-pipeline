@@ -58,15 +58,21 @@ class FakeStreamlit:
         return False
 
 
-def test_profile_heading_uses_a_stable_anchor(
+def test_profile_uses_standard_page_heading(
     monkeypatch,
 ) -> None:
     fake_streamlit = FakeStreamlit()
+    rendered_html: list[str] = []
 
     monkeypatch.setattr(
         profile_module,
         "st",
         fake_streamlit,
+    )
+    monkeypatch.setattr(
+        profile_module,
+        "render_html",
+        rendered_html.append,
     )
     monkeypatch.setattr(
         profile_module,
@@ -85,12 +91,21 @@ def test_profile_heading_uses_a_stable_anchor(
         data_mode="user",
     )
 
-    assert fake_streamlit.subheaders == [
-        (
-            "Meu perfil",
-            "meu-perfil",
-        )
-    ]
+    assert rendered_html
+
+    page_header_html = rendered_html[0]
+
+    assert (
+        'class="finantec-page-header"'
+        in page_header_html
+    )
+
+    assert (
+        "<h2>Meu perfil</h2>"
+        in page_header_html
+    )
+
+    assert fake_streamlit.subheaders == []
 
 
 def test_data_management_heading_uses_a_stable_anchor(
