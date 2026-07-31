@@ -749,6 +749,61 @@ button[data-testid="baseButton-primary"]:not(:disabled):hover,
     transform: translateY(1px);
 }
 
+/* =========================================================
+   CHECKBOXES
+   ========================================================= */
+
+[data-testid="stCheckbox"]
+label[data-baseweb="checkbox"]
+input[type="checkbox"] {
+    accent-color:
+        var(--accent);
+}
+
+[data-testid="stCheckbox"]
+label[data-baseweb="checkbox"]
+input[type="checkbox"] + div {
+    background:
+        var(--bg-panel) !important;
+
+    border-color:
+        var(--border-strong) !important;
+
+    box-shadow:
+        none !important;
+}
+
+[data-testid="stCheckbox"]
+label[data-baseweb="checkbox"]
+input[type="checkbox"]:checked + div {
+    background:
+        var(--accent) !important;
+
+    border-color:
+        var(--accent) !important;
+}
+
+[data-testid="stCheckbox"]
+label[data-baseweb="checkbox"]
+input[type="checkbox"]:checked + div svg {
+    color:
+        #ffffff !important;
+
+    fill:
+        currentColor !important;
+}
+
+[data-testid="stCheckbox"]
+label[data-baseweb="checkbox"]
+input[type="checkbox"]:focus-visible + div {
+    outline:
+        2px solid
+        var(--accent-focus) !important;
+
+    outline-offset:
+        2px;
+}
+
 
 /* Botões desabilitados */
 

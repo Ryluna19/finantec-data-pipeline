@@ -1015,6 +1015,83 @@ button[kind="primary"]:not(:disabled):hover {
         2px !important;
 }
 
+/* =========================================================
+   AÇÕES DESTRUTIVAS
+   ========================================================= */
+
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled),
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background:
+        var(--danger) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--danger) !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled) p,
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled) span,
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+}
+
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled):hover,
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background:
+        var(--danger) !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        var(--danger) !important;
+
+    filter:
+        brightness(1.08);
+}
+
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:disabled {
+    background:
+        var(--danger-soft) !important;
+
+    color:
+        var(--text-disabled) !important;
+
+    border-color:
+        var(--danger-border) !important;
+
+    opacity:
+        1 !important;
+}
+
 
 /* =========================================================
    CARDS E PAINÉIS NO TEMA CLARO
@@ -4468,4 +4545,110 @@ input[role="combobox"][aria-label="Meta"] {
         0
         2px
         var(--accent-focus) !important;
+}
+
+/* =========================================================
+   AÇÕES DESTRUTIVAS — REFORÇO DO TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled),
+:root:has(.finantec-theme-light)
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) {
+    background:
+        #b83232 !important;
+
+    background-color:
+        #b83232 !important;
+
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+
+    border-color:
+        #b83232 !important;
+
+    box-shadow:
+        none !important;
+
+    filter:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled) p,
+:root:has(.finantec-theme-light)
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled) span,
+:root:has(.finantec-theme-light)
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) p,
+:root:has(.finantec-theme-light)
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled) span {
+    color:
+        #ffffff !important;
+
+    -webkit-text-fill-color:
+        #ffffff !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:not(:disabled):hover,
+:root:has(.finantec-theme-light)
+.st-key-account-deletion-wrapper
+[data-testid="stFormSubmitButton"]
+button:not(:disabled):hover {
+    background:
+        #9f2929 !important;
+
+    background-color:
+        #9f2929 !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #9f2929 !important;
+
+    filter:
+        none !important;
+}
+
+:root:has(.finantec-theme-light)
+.st-key-danger-zone-wrapper
+.st-key-delete-user-financial-data
+button:disabled {
+    background:
+        #fef5f5 !important;
+
+    color:
+        #9b7373 !important;
+
+    -webkit-text-fill-color:
+        #9b7373 !important;
+
+    border-color:
+        rgba(
+            184,
+            50,
+            50,
+            0.35
+        ) !important;
+
+    opacity:
+        1 !important;
 }

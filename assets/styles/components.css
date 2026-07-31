@@ -356,142 +356,6 @@ button:hover {
 }
 
 
-/* Tema claro da sidebar */
-
-:root:has(.finantec-theme-light)
-[data-testid="stSidebar"] {
-    background:
-        #eee5dc !important;
-
-    border-right-color:
-        #d6c7ba !important;
-
-    box-shadow:
-        10px
-        0
-        28px
-        rgba(
-            78,
-            58,
-            42,
-            0.10
-        );
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-account {
-    background:
-        #fffaf5;
-
-    border-color:
-        #d8c9bb;
-
-    box-shadow:
-        0
-        10px
-        22px
-        rgba(
-            78,
-            58,
-            42,
-            0.08
-        );
-}
-
-:root:has(.finantec-theme-light)
-.finantec-sidebar-account-eyebrow {
-    color:
-        #7a6a5e;
-}
-
-:root:has(.finantec-theme-light)
-.finantec-sidebar-account-copy strong {
-    color:
-        #2d2621;
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-account
-.stButton > button {
-    background:
-        #fffdf9 !important;
-
-    color:
-        #5f5147 !important;
-
-    border-color:
-        #d8c9bb !important;
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-account
-.stButton > button:hover {
-    background:
-        var(--accent-soft) !important;
-
-    color:
-        var(--accent) !important;
-
-    border-color:
-        var(--accent-line) !important;
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-navigation
-[data-testid="stCaptionContainer"]:first-child,
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-navigation
-[data-testid="stCaptionContainer"]:first-child p {
-    color:
-        #5f5147 !important;
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-navigation
-[data-testid="stCaptionContainer"]:not(:first-child),
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-navigation
-[data-testid="stCaptionContainer"]:not(:first-child) p {
-    color:
-        #77695f !important;
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-navigation
-button {
-    background:
-        #fffaf5 !important;
-
-    color:
-        #2d2621 !important;
-
-    border-color:
-        #d8c9bb !important;
-
-    box-shadow:
-        0
-        6px
-        14px
-        rgba(
-            78,
-            58,
-            42,
-            0.06
-        ) !important;
-}
-
-:root:has(.finantec-theme-light)
-.st-key-finantec-sidebar-navigation
-button:hover {
-    background:
-        var(--accent-soft) !important;
-
-    color:
-        var(--accent) !important;
-
-    border-color:
-        var(--accent-line) !important;
-}
 
 
 /* Filtros */
@@ -2845,28 +2709,40 @@ button:disabled {
 
 .st-key-danger-zone-wrapper
 [data-testid="stExpander"] {
-    background: var(--danger-bg) !important;
+    background:
+        var(--danger-bg) !important;
 
     border:
         1px solid
         var(--danger-border) !important;
 
-    border-radius: var(--radius) !important;
+    border-radius:
+        var(--radius) !important;
 }
 
 .st-key-danger-zone-wrapper
 [data-testid="stExpander"] summary {
-    background: var(--danger-surface) !important;
-    color: #fecaca !important;
+    background:
+        var(--danger-surface) !important;
+
+    color:
+        var(--danger) !important;
 
     border-bottom-color:
-        rgba(239, 68, 68, 0.30) !important;
+        transparent !important;
 }
 
 .st-key-danger-zone-wrapper
 [data-testid="stExpander"] summary:hover {
     background:
-        rgba(127, 29, 29, 0.28) !important;
+        var(--danger-surface-strong) !important;
+}
+
+.st-key-danger-zone-wrapper
+[data-testid="stExpander"]
+details[open] summary {
+    border-bottom-color:
+        var(--danger-border) !important;
 }
 
 .st-key-danger-zone-wrapper
@@ -2875,16 +2751,26 @@ button:disabled {
 [data-testid="stExpander"] summary span,
 .st-key-danger-zone-wrapper
 [data-testid="stExpander"] summary svg {
-    color: #fecaca !important;
-    fill: currentColor !important;
+    color:
+        var(--danger) !important;
+
+    fill:
+        currentColor !important;
 }
 
+
+/* Alertas das ações destrutivas */
+
 .st-key-danger-zone-wrapper
+[data-testid="stAlert"],
+.st-key-account-deletion-wrapper
 [data-testid="stAlert"] {
-    padding: 1rem 1.1rem !important;
+    padding:
+        1rem
+        1.1rem !important;
 
     background:
-        var(--danger-surface-strong) !important;
+        var(--danger-surface) !important;
 
     border:
         1px solid
@@ -2894,82 +2780,75 @@ button:disabled {
         5px solid
         var(--danger) !important;
 
-    border-radius: 12px !important;
+    border-radius:
+        12px !important;
 }
 
 .st-key-danger-zone-wrapper
 [data-testid="stAlert"] p,
 .st-key-danger-zone-wrapper
+[data-testid="stAlert"] span,
+.st-key-account-deletion-wrapper
+[data-testid="stAlert"] p,
+.st-key-account-deletion-wrapper
 [data-testid="stAlert"] span {
-    color: #fee2e2 !important;
+    color:
+        var(--text-main) !important;
 
-    font-size: 0.94rem !important;
-    font-weight: 600 !important;
-    line-height: 1.55 !important;
+    font-size:
+        0.94rem !important;
+
+    font-weight:
+        600 !important;
+
+    line-height:
+        1.55 !important;
 }
 
 .st-key-danger-zone-wrapper
-.stTextInput input {
-    background: #160d0f !important;
-    color: #fee2e2 !important;
+[data-testid="stAlert"] svg,
+.st-key-account-deletion-wrapper
+[data-testid="stAlert"] svg {
+    color:
+        var(--danger) !important;
 
-    border-color: var(--danger-border) !important;
+    fill:
+        currentColor !important;
+}
+
+
+/* Confirmação textual para apagar os dados */
+
+.st-key-danger-zone-wrapper
+.stTextInput input {
+    background:
+        var(--bg-panel) !important;
+
+    color:
+        var(--text-main) !important;
+
+    border-color:
+        var(--danger-border) !important;
 }
 
 .st-key-danger-zone-wrapper
 .stTextInput input::placeholder {
-    color: #9f6a70 !important;
+    color:
+        var(--text-disabled) !important;
 }
 
 .st-key-danger-zone-wrapper
 .stTextInput input:focus {
-    border-color: var(--danger) !important;
+    border-color:
+        var(--danger) !important;
 
     outline:
         2px solid
-        rgba(239, 68, 68, 0.28) !important;
+        var(--danger-soft) !important;
+
+    outline-offset:
+        1px;
 }
-
-
-/* Botão destrutivo habilitado */
-
-.st-key-danger-zone-wrapper
-.st-key-delete-all-user-data
-button:not(:disabled),
-.st-key-delete-all-user-data
-button:not(:disabled) {
-    background: #b91c1c !important;
-    color: #ffffff !important;
-
-    border-color: var(--danger) !important;
-}
-
-.st-key-danger-zone-wrapper
-.st-key-delete-all-user-data
-button:not(:disabled):hover,
-.st-key-delete-all-user-data
-button:not(:disabled):hover {
-    background: #dc2626 !important;
-    border-color: #f87171 !important;
-}
-
-
-/* Botão destrutivo bloqueado */
-
-.st-key-danger-zone-wrapper
-.st-key-delete-all-user-data
-button:disabled,
-.st-key-delete-all-user-data
-button:disabled {
-    background:
-        rgba(127, 29, 29, 0.10) !important;
-
-    color: #86585d !important;
-
-    border-color:
-        rgba(127, 29, 29, 0.50) !important;
-}
-
 
 /* =========================================================
    DIVISORES
