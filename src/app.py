@@ -86,9 +86,15 @@ from src.user_context import (
     get_current_user_id,
 )
 
+FAVICON_PATH = (
+    "assets/branding/"
+    "finantec-favicon-32.png"
+)
+
+
 st.set_page_config(
     page_title="FinanTec",
-    page_icon=":material/account_balance_wallet:",
+    page_icon=FAVICON_PATH,
     layout="wide",
 )
 

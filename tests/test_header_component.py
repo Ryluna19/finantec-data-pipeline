@@ -87,17 +87,36 @@ def test_build_section_header_html_supports_compact_variant():
     assert "<h3>Período analisado</h3>" in html
 
 
-def test_build_brand_header_html_contains_product_identity():
+def test_build_brand_header_html_contains_product_identity(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        header_module,
+        "load_brand_mark_data_uri",
+        lambda: (
+            "data:image/svg+xml;base64,"
+            "PHN2Zy8+"
+        ),
+    )
+
     html = build_brand_header_html()
 
     assert (
         'class="finantec-brand-header"'
         in html
     )
+    assert (
+        'class="finantec-brand-mark"'
+        in html
+    )
+    assert (
+        'src="data:image/svg+xml;base64,PHN2Zy8+"'
+        in html
+    )
     assert "Organização financeira" in html
     assert "FinanTec" in html
     assert "finantec-brand-description" in html
-
+    assert "<svg" not in html
 
 def test_render_header_groups_brand_and_appearance(
     monkeypatch,

@@ -246,15 +246,18 @@ a:hover {
     border-radius: 14px;
 }
 
-.finantec-brand-icon svg {
-    width: 24px;
-    height: 24px;
+.finantec-brand-mark {
+    display:
+        block;
 
-    stroke: currentColor;
-    stroke-width: 1.7;
+    width:
+        34px;
 
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    height:
+        34px;
+
+    object-fit:
+        contain;
 }
 
 .finantec-brand-copy {

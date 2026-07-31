@@ -278,16 +278,20 @@
     }
 
     .finantec-brand-icon {
-        width: 40px;
-        height: 40px;
+    width:
+        44px;
 
-        border-radius: 11px;
-    }
+    height:
+        44px;
+}
 
-    .finantec-brand-icon svg {
-        width: 22px;
-        height: 22px;
-    }
+.finantec-brand-mark {
+    width:
+        44px;
+
+    height:
+        44px;
+}
 
     .finantec-brand-eyebrow,
     .finantec-brand-description {

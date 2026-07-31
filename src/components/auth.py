@@ -21,6 +21,10 @@ from src.user_context import (
 )
 from ui_components import render_html
 
+from components.header import (
+    load_brand_mark_data_uri,
+)
+
 from components.appearance import (
     clear_session_preserving_visual_preferences,
     render_appearance_toolbar,
@@ -53,32 +57,21 @@ def _start_authenticated_session(
 
 def _render_auth_brand_panel() -> None:
     """Exibe a identidade do produto na autenticação."""
+    brand_mark_src = escape(
+        load_brand_mark_data_uri(),
+        quote=True,
+    )
+
     render_html(
-        """
+        f"""
         <section class="finantec-auth-brand">
             <div class="finantec-auth-brand-top">
                 <div class="finantec-auth-logo">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M4 7.5H18C19.1 7.5 20 8.4 20 9.5V17.5C20 18.6 19.1 19.5 18 19.5H5C3.9 19.5 3 18.6 3 17.5V6.5C3 5.4 3.9 4.5 5 4.5H16"
-                        />
-                        <path d="M3 8H18" />
-                        <path
-                            d="M15.5 12H20V16H15.5C14.4 16 13.5 15.1 13.5 14C13.5 12.9 14.4 12 15.5 12Z"
-                        />
-                        <circle
-                            cx="16.5"
-                            cy="14"
-                            r="0.5"
-                            fill="currentColor"
-                            stroke="none"
-                        />
-                    </svg>
+                    <img
+                        class="finantec-auth-brand-mark"
+                        src="{brand_mark_src}"
+                        alt=""
+                    />
                 </div>
 
                 <span class="finantec-auth-product-name">

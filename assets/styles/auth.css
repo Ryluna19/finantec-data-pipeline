@@ -159,15 +159,18 @@ body:has(.finantec-auth-page-marker)
     border-radius: 14px;
 }
 
-.finantec-auth-logo svg {
-    width: 26px;
-    height: 26px;
+.finantec-auth-brand-mark {
+    display:
+        block;
 
-    stroke: currentColor;
-    stroke-width: 1.7;
+    width:
+        34px;
 
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    height:
+        34px;
+
+    object-fit:
+        contain;
 }
 
 .finantec-auth-product-name {
