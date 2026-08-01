@@ -40,6 +40,11 @@ from components.appearance import (
     clear_session_preserving_visual_preferences,
 )
 
+from components.header import (
+    build_page_header_html,
+    build_section_header_html,
+)
+from ui_components import render_html
 
 DATA_MANAGEMENT_FEEDBACK_KEY = (
     "data_management_feedback"
@@ -56,6 +61,140 @@ ACCOUNT_DELETION_CONFIRMATION_TEXT = (
     "EXCLUIR CONTA"
 )
 
+
+def build_data_mode_html(
+    data_mode: str,
+) -> str:
+    """Monta o indicador do conjunto exibido no painel."""
+    mode_content = {
+        "user": {
+            "label": "Meus dados",
+            "description": (
+                "O painel está usando os registros "
+                "pessoais desta conta."
+            ),
+            "variant": "user",
+        },
+        "demo": {
+            "label": "Demonstração",
+            "description": (
+                "O painel está exibindo temporariamente "
+                "os dados simulados do projeto."
+            ),
+            "variant": "demo",
+        },
+        "empty": {
+            "label": "Sem transações",
+            "description": (
+                "Nenhum conjunto de transações está "
+                "disponível no painel."
+            ),
+            "variant": "empty",
+        },
+    }
+
+    current_content = mode_content.get(
+        data_mode
+    )
+
+    if current_content is None:
+        return ""
+
+    return (
+        '<section class="finantec-data-mode-status '
+        f'{current_content["variant"]}">'
+        '<div class="finantec-data-mode-identity">'
+        "<span>Fonte exibida no painel</span>"
+        f'<strong>{current_content["label"]}</strong>'
+        "</div>"
+        f'<p>{current_content["description"]}</p>'
+        "</section>"
+    )
+
+def build_data_summary_html(
+    summary: dict[str, int | bool],
+) -> str:
+    """Monta os indicadores dos dados locais."""
+    source_files = max(
+        int(
+            summary.get(
+                "source_files",
+                0,
+            )
+            or 0
+        ),
+        0,
+    )
+
+    processed_files = max(
+        int(
+            summary.get(
+                "processed_files",
+                0,
+            )
+            or 0
+        ),
+        0,
+    )
+
+    transaction_rows = max(
+        int(
+            summary.get(
+                "transaction_rows",
+                0,
+            )
+            or 0
+        ),
+        0,
+    )
+
+    transaction_value_class = (
+        "finantec-data-summary-value available"
+        if transaction_rows > 0
+        else "finantec-data-summary-value unavailable"
+    )
+
+    return (
+        '<div class="finantec-data-summary-grid">'
+
+        '<article class="finantec-data-summary-card">'
+        '<span class="finantec-data-summary-label">'
+        "Arquivos importados"
+        "</span>"
+        '<strong class="finantec-data-summary-value">'
+        f"{source_files}"
+        "</strong>"
+        '<span class="finantec-data-summary-description">'
+        "Arquivos usados para adicionar transações."
+        "</span>"
+        "</article>"
+
+        '<article class="finantec-data-summary-card">'
+        '<span class="finantec-data-summary-label">'
+        "Arquivos auxiliares"
+        "</span>"
+        '<strong class="finantec-data-summary-value">'
+        f"{processed_files}"
+        "</strong>"
+        '<span class="finantec-data-summary-description">'
+        "Arquivos locais gerados durante o processamento."
+        "</span>"
+        "</article>"
+
+        '<article class="finantec-data-summary-card">'
+        '<span class="finantec-data-summary-label">'
+        "Transações salvas"
+        "</span>"
+        f'<strong class="{transaction_value_class}">'
+        f"{transaction_rows}"
+        "</strong>"
+        '<span class="finantec-data-summary-description">'
+        "Registros pessoais disponíveis no banco local."
+        "</span>"
+        "</article>"
+
+        "</div>"
+    )
 
 def is_account_deletion_confirmed(
     confirmation: str,
@@ -146,22 +285,28 @@ def _refresh_application_data() -> None:
 
 def _render_current_mode() -> None:
     """Exibe a fonte selecionada durante a sessão."""
-    current_mode = st.session_state.get(
-        DATA_MODE_KEY
+    current_mode = str(
+        st.session_state.get(
+            DATA_MODE_KEY,
+            "user",
+        )
     )
 
-    mode_labels = {
-        "user": "Meus dados",
-        "demo": "Demonstração",
-        "empty": "Sem transações",
-    }
+    if current_mode not in {
+        "user",
+        "demo",
+        "empty",
+    }:
+        current_mode = "user"
 
-    if current_mode not in mode_labels:
-        return
+    st.session_state[
+        DATA_MODE_KEY
+    ] = current_mode
 
-    st.info(
-        "Exibindo no painel: "
-        f"**{mode_labels[current_mode]}**"
+    render_html(
+        build_data_mode_html(
+            current_mode
+        )
     )
 
 
@@ -177,84 +322,21 @@ def _render_data_summary() -> dict[str, int | bool]:
         )
     )
 
-    source_files = int(
-        summary["source_files"]
+    render_html(
+        build_section_header_html(
+            title="Resumo dos dados locais",
+            description=(
+                "Informações transacionais armazenadas "
+                "neste dispositivo para o usuário atual."
+            ),
+            compact=True,
+        )
     )
 
-    processed_files = int(
-        summary["processed_files"]
-    )
-
-    transaction_rows = int(
-        summary["transaction_rows"]
-    )
-
-    transaction_value_class = (
-        "finantec-data-summary-value available"
-        if transaction_rows > 0
-        else "finantec-data-summary-value unavailable"
-    )
-
-    heading_html = (
-        '<div class="finantec-section-heading">'
-        "<h3>Resumo dos dados locais</h3>"
-        "<p>"
-        "Informações transacionais armazenadas "
-        "neste dispositivo para o usuário atual."
-        "</p>"
-        "</div>"
-    )
-
-    summary_html = (
-        '<div class="finantec-data-summary-grid">'
-
-        '<div class="finantec-data-summary-card">'
-        '<span class="finantec-data-summary-label">'
-        "Arquivos importados"
-        "</span>"
-        '<strong class="finantec-data-summary-value">'
-        f"{source_files}"
-        "</strong>"
-        '<span class="finantec-data-summary-description">'
-        "Arquivos usados para adicionar transações."
-        "</span>"
-        "</div>"
-
-        '<div class="finantec-data-summary-card">'
-        '<span class="finantec-data-summary-label">'
-        "Arquivos auxiliares"
-        "</span>"
-        '<strong class="finantec-data-summary-value">'
-        f"{processed_files}"
-        "</strong>"
-        '<span class="finantec-data-summary-description">'
-        "Arquivos locais gerados durante o processamento."
-        "</span>"
-        "</div>"
-
-        '<div class="finantec-data-summary-card">'
-        '<span class="finantec-data-summary-label">'
-        "Transações salvas"
-        "</span>"
-        f'<strong class="{transaction_value_class}">'
-        f"{transaction_rows}"
-        "</strong>"
-        '<span class="finantec-data-summary-description">'
-        "Registros pessoais disponíveis no banco local."
-        "</span>"
-        "</div>"
-
-        "</div>"
-    )
-
-    st.markdown(
-        heading_html,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        summary_html,
-        unsafe_allow_html=True,
+    render_html(
+        build_data_summary_html(
+            summary
+        )
     )
 
     return summary
@@ -264,10 +346,21 @@ def _render_user_data_action(
     summary: dict[str, int | bool],
 ) -> None:
     """Permite voltar às transações pessoais do usuário."""
+    is_active = (
+            str(
+                st.session_state.get(
+                    DATA_MODE_KEY,
+                    "user",
+                )
+            )
+            == "user"
+        )
+    
     with st.container(
         border=True,
         key="user-data-action-card",
     ):
+        
         st.markdown(
             "#### Meus dados"
         )
@@ -276,7 +369,6 @@ def _render_user_data_action(
             "Mostra no painel as transações pessoais "
             "armazenadas no banco local."
         )
-
         has_user_transactions = (
             int(
                 summary["transaction_rows"]
@@ -290,9 +382,14 @@ def _render_user_data_action(
             )
 
         if st.button(
-                "Usar meus dados",
-                key="use-user-data",
-            ):
+            (
+                "Meus dados em uso"
+                if is_active
+                else "Usar meus dados"
+            ),
+            key="use-user-data",
+            disabled=is_active,
+        ):
                 st.session_state[
                     DATA_MODE_KEY
                 ] = "user"
@@ -316,6 +413,16 @@ def _render_user_data_action(
 
 def _render_demo_action() -> None:
     """Permite carregar explicitamente a demonstração."""
+    
+    is_active = (
+        str(
+            st.session_state.get(
+                DATA_MODE_KEY,
+                "user",
+            )
+        )
+        == "demo"
+    )
     with st.container(
         border=True,
         key="demo-data-action-card",
@@ -338,9 +445,16 @@ def _render_demo_action() -> None:
         )
 
         if st.button(
-            "Carregar demonstração",
+            (
+                "Demonstração em uso"
+                if is_active
+                else "Carregar demonstração"
+            ),
             key="load-demo-data",
-            disabled=not demo_confirmation,
+            disabled=(
+                is_active
+                or not demo_confirmation
+            ),
         ):
             try:
                 result = run_etl_with_summary(
@@ -570,14 +684,15 @@ def _render_account_deletion_action() -> None:
 
 def render_data_management() -> None:
     """Exibe a área de gerenciamento dos dados."""
-    st.subheader(
-        "Dados e privacidade",
-        anchor="dados-e-privacidade",
-    )
-
-    st.caption(
-        "Escolha quais dados serão exibidos e controle "
-        "as informações associadas à sua conta."
+    render_html(
+        build_page_header_html(
+            title="Dados e privacidade",
+            description=(
+                "Escolha quais dados serão exibidos "
+                "e controle as informações associadas "
+                "à sua conta."
+            ),
+        )
     )
 
     _show_feedback()

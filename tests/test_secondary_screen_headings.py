@@ -108,10 +108,11 @@ def test_profile_uses_standard_page_heading(
     assert fake_streamlit.subheaders == []
 
 
-def test_data_management_heading_uses_a_stable_anchor(
+def test_data_management_uses_standard_page_heading(
     monkeypatch,
 ) -> None:
     fake_streamlit = FakeStreamlit()
+    rendered_html: list[str] = []
     summary: dict[str, int | bool] = {}
 
     monkeypatch.setattr(
@@ -119,36 +120,49 @@ def test_data_management_heading_uses_a_stable_anchor(
         "st",
         fake_streamlit,
     )
+
+    monkeypatch.setattr(
+        data_management_module,
+        "render_html",
+        rendered_html.append,
+    )
+
     monkeypatch.setattr(
         data_management_module,
         "_show_feedback",
         lambda: None,
     )
+
     monkeypatch.setattr(
         data_management_module,
         "_render_current_mode",
         lambda: None,
     )
+
     monkeypatch.setattr(
         data_management_module,
         "_render_data_summary",
         lambda: summary,
     )
+
     monkeypatch.setattr(
         data_management_module,
         "_render_user_data_action",
         lambda _summary: None,
     )
+
     monkeypatch.setattr(
         data_management_module,
         "_render_demo_action",
         lambda: None,
     )
+
     monkeypatch.setattr(
         data_management_module,
         "_render_reset_action",
         lambda: None,
     )
+
     monkeypatch.setattr(
         data_management_module,
         "_render_account_deletion_action",
@@ -157,9 +171,19 @@ def test_data_management_heading_uses_a_stable_anchor(
 
     data_management_module.render_data_management()
 
-    assert fake_streamlit.subheaders == [
-        (
-            "Dados e privacidade",
-            "dados-e-privacidade",
-        )
-    ]
+    assert rendered_html
+
+    page_header_html = rendered_html[0]
+
+    assert (
+        'class="finantec-page-header"'
+        in page_header_html
+    )
+
+    assert (
+        "<h2>Dados e privacidade</h2>"
+        in page_header_html
+    )
+
+    assert fake_streamlit.subheaders == []
+

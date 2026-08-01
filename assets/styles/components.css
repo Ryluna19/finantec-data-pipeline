@@ -2122,6 +2122,120 @@ td.finantec-value-expense {
    RESUMO LOCAL
    ========================================================= */
 
+.finantec-data-mode-status {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        0.85rem
+        1.4rem;
+
+    margin:
+        0
+        0
+        1.2rem;
+
+    padding:
+        0.9rem
+        1rem;
+
+    background:
+        var(--bg-panel);
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-left:
+        4px solid
+        var(--accent);
+
+    border-radius:
+        var(--radius);
+}
+
+.finantec-data-mode-status.user {
+    border-left-color:
+        var(--success);
+}
+
+.finantec-data-mode-status.demo {
+    border-left-color:
+        var(--accent);
+}
+
+.finantec-data-mode-status.empty {
+    border-left-color:
+        var(--border-strong);
+}
+
+.finantec-data-mode-identity {
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        0.2rem;
+}
+
+.finantec-data-mode-identity span {
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.72rem;
+
+    font-weight:
+        700;
+
+    letter-spacing:
+        0.08em;
+
+    text-transform:
+        uppercase;
+}
+
+.finantec-data-mode-identity strong {
+    color:
+        var(--text-main);
+
+    font-size:
+        1rem;
+
+    font-weight:
+        800;
+}
+
+.finantec-data-mode-status p {
+    flex:
+        1
+        1
+        300px;
+
+    margin:
+        0;
+
+    color:
+        var(--support-text-muted);
+
+    font-size:
+        0.88rem;
+
+    line-height:
+        1.5;
+}
+
 .finantec-section-heading {
     margin: 1.5rem 0 0.85rem;
 }
@@ -2223,7 +2337,21 @@ td.finantec-value-expense {
 [data-testid="stVerticalBlockBorderWrapper"],
 .st-key-demo-data-action-card
 [data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 1.1rem 1.2rem !important;
+    padding:
+        1.1rem
+        1.2rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border-color:
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-lg) !important;
+
+    box-shadow:
+        none !important;
 }
 
 .st-key-user-data-action-card h4,

@@ -91,7 +91,10 @@ class FakeStreamlit:
         *_args,
         **kwargs,
     ) -> bool:
-        if label != "Usar meus dados":
+        if label not in {
+            "Usar meus dados",
+            "Meus dados em uso",
+        }:
             return False
 
         self.button_disabled = bool(
@@ -168,6 +171,39 @@ def test_user_data_action_returns_to_personal_context_without_transactions(
         == 1
     )
     assert fake_streamlit.rerun_requested is True
+    
+def test_user_data_action_is_disabled_when_already_active(
+    monkeypatch,
+) -> None:
+    fake_streamlit = FakeStreamlit(
+        click_user_data=True,
+    )
+
+    fake_streamlit.session_state[
+        data_management_module.DATA_MODE_KEY
+    ] = "user"
+
+    monkeypatch.setattr(
+        data_management_module,
+        "st",
+        fake_streamlit,
+    )
+
+    data_management_module._render_user_data_action(
+        {
+            "transaction_rows": 3,
+        }
+    )
+
+    assert (
+        fake_streamlit.button_disabled
+        is True
+    )
+
+    assert (
+        fake_streamlit.rerun_requested
+        is False
+    )
 
 
 def test_user_data_action_keeps_personal_context_with_transactions(

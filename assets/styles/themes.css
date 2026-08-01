@@ -4652,3 +4652,32 @@ button:disabled {
     opacity:
         1 !important;
 }
+
+
+/* =========================================================
+   AÇÕES DE DADOS — TEMA CLARO
+   ========================================================= */
+
+:root:has(.finantec-theme-light)
+.st-key-user-data-action-card
+[data-testid="stVerticalBlockBorderWrapper"],
+:root:has(.finantec-theme-light)
+.st-key-demo-data-action-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        #fffdf9 !important;
+
+    border-color:
+        #d7c9bc !important;
+
+    box-shadow:
+        0
+        8px
+        20px
+        rgba(
+            78,
+            58,
+            42,
+            0.035
+        ) !important;
+}
