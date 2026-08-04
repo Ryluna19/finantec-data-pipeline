@@ -379,8 +379,8 @@ def reset_user_transaction_data(
     }
     
 def delete_user_financial_data(
-    database_path: Path = DATABASE_PATH,
-    user_id: str = LOCAL_USER_ID,
+    database_path: Path,
+    user_id: str,
 ) -> dict[str, int | bool]:
     """Remove os dados financeiros e preserva a conta."""
     normalized_user_id = _normalize_user_id(
@@ -455,8 +455,8 @@ def delete_user_financial_data(
     return result
 
 def delete_user_account_and_data(
-    database_path: Path = DATABASE_PATH,
-    user_id: str = LOCAL_USER_ID,
+    database_path: Path,
+    user_id: str,
 ) -> dict[str, int | bool]:
     """Remove a conta e todos os dados associados ao usuário."""
     normalized_user_id = _normalize_user_id(user_id)
