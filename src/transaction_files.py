@@ -306,6 +306,57 @@ def read_ofx_transactions(
             REQUIRED_TRANSACTION_COLUMNS
         ),
     )
+    
+def list_excel_sheet_names(
+    source: FileSource,
+) -> list[str]:
+    """Lista as abas disponíveis em um arquivo Excel."""
+    _rewind_file(
+        source
+    )
+
+    with pd.ExcelFile(
+        source,
+        engine="openpyxl",
+    ) as workbook:
+        return list(
+            workbook.sheet_names
+        )
+
+
+def read_excel_table(
+    source: FileSource,
+    *,
+    sheet_name: str,
+    header_row: int = 0,
+) -> pd.DataFrame:
+    """Lê uma tabela Excel preservando os cabeçalhos originais."""
+    if (
+        not isinstance(
+            header_row,
+            int,
+        )
+        or isinstance(
+            header_row,
+            bool,
+        )
+        or header_row < 0
+    ):
+        raise ValueError(
+            "A linha de cabeçalho deve ser "
+            "um inteiro maior ou igual a zero."
+        )
+
+    _rewind_file(
+        source
+    )
+
+    return pd.read_excel(
+        source,
+        sheet_name=sheet_name,
+        header=header_row,
+        engine="openpyxl",
+    )
 
 def read_transaction_file(
     source: FileSource,

@@ -18,9 +18,11 @@ from src.transaction_files import (
     create_excel_template,
     export_transactions_to_excel,
     find_matching_transactions,
+    list_excel_sheet_names,
     normalize_transaction_headers,
     prepare_transactions_for_export,
     read_csv_transactions,
+    read_excel_table,
     read_excel_transactions,
     read_ofx_transactions,
     read_transaction_file,
@@ -218,6 +220,142 @@ def test_export_transactions_to_excel_can_be_imported_again() -> None:
         ]
         == 200.50
     )
+    
+def create_external_excel_file() -> BytesIO:
+    """Cria uma planilha externa com cabeçalho fora da primeira linha."""
+    excel_content = BytesIO()
+
+    with pd.ExcelWriter(
+        excel_content,
+        engine="openpyxl",
+    ) as writer:
+        pd.DataFrame(
+            [
+                [
+                    "Relatório mensal",
+                    None,
+                    None,
+                ],
+                [
+                    "Data movimento",
+                    "Histórico",
+                    "Valor movimentado",
+                ],
+                [
+                    "2026-08-01",
+                    "Mercado Central",
+                    -125.90,
+                ],
+                [
+                    "2026-08-02",
+                    "Pagamento recebido",
+                    1600.00,
+                ],
+            ]
+        ).to_excel(
+            writer,
+            sheet_name="Extrato",
+            index=False,
+            header=False,
+        )
+
+        pd.DataFrame(
+            {
+                "Informação": [
+                    "Arquivo fictício",
+                ],
+            }
+        ).to_excel(
+            writer,
+            sheet_name="Resumo",
+            index=False,
+        )
+
+    excel_content.seek(
+        0
+    )
+
+    return excel_content
+
+
+def test_list_excel_sheet_names_returns_available_sheets() -> None:
+    excel_content = (
+        create_external_excel_file()
+    )
+
+    sheet_names = (
+        list_excel_sheet_names(
+            excel_content
+        )
+    )
+
+    assert sheet_names == [
+        "Extrato",
+        "Resumo",
+    ]
+
+
+def test_read_excel_table_uses_selected_header_row() -> None:
+    excel_content = (
+        create_external_excel_file()
+    )
+
+    list_excel_sheet_names(
+        excel_content
+    )
+
+    transactions = read_excel_table(
+        excel_content,
+        sheet_name="Extrato",
+        header_row=1,
+    )
+
+    assert transactions.columns.tolist() == [
+        "Data movimento",
+        "Histórico",
+        "Valor movimentado",
+    ]
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions[
+        "Histórico"
+    ].tolist() == [
+        "Mercado Central",
+        "Pagamento recebido",
+    ]
+
+    assert transactions[
+        "Valor movimentado"
+    ].tolist() == [
+        -125.90,
+        1600.00,
+    ]
+
+
+@pytest.mark.parametrize(
+    "header_row",
+    [
+        -1,
+        1.5,
+        True,
+    ],
+)
+def test_read_excel_table_rejects_invalid_header_row(
+    header_row: object,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="inteiro maior ou igual a zero",
+    ):
+        read_excel_table(
+            create_external_excel_file(),
+            sheet_name="Extrato",
+            header_row=header_row,
+        )
+        
 def test_read_ofx_transactions_maps_statement_to_contract() -> None:
     fixture_path = Path(
         "tests/fixtures/ofx/"
