@@ -20,9 +20,7 @@ from src.transaction_validation import (
     prepare_valid_transactions_for_database,
     split_transactions_by_validity,
 )
-from src.user_context import (
-    LOCAL_USER_ID,
-)
+
 
 
 IMPORT_DATABASE_SOURCE = (
@@ -104,7 +102,7 @@ def save_imported_transactions_to_database(
     transactions: pd.DataFrame,
     database_path: Path,
     table_name: str,
-    user_id: str = LOCAL_USER_ID,
+    user_id: str,
 ) -> int:
     """Insere diretamente no SQLite as linhas selecionadas."""
     prepared_transactions = (

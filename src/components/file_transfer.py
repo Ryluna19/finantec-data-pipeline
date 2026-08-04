@@ -22,8 +22,7 @@ from src.import_transaction_database_service import (
 from src.transaction_files import (
     create_excel_template,
     export_transactions_to_excel,
-    read_csv_transactions,
-    read_excel_transactions,
+    read_transaction_file,
     split_imported_transactions_by_match,
 )
 from src.transaction_validation import (
@@ -80,39 +79,10 @@ def _advance_import_widget_version() -> None:
 def read_uploaded_transactions(
     uploaded_file: Any,
 ) -> pd.DataFrame:
-    """Lê as transações de acordo com a extensão enviada."""
-    file_extension = Path(
-        uploaded_file.name
-    ).suffix.lower()
-
-    if file_extension == ".csv":
-        return read_csv_transactions(
-            uploaded_file
-        )
-
-    if file_extension == ".xlsx":
-        try:
-            return read_excel_transactions(
-                uploaded_file
-            )
-
-        except ValueError as error:
-            if (
-                "Worksheet named"
-                in str(
-                    error
-                )
-            ):
-                raise ValueError(
-                    "O arquivo Excel precisa conter uma aba "
-                    "chamada 'Transacoes'."
-                ) from error
-
-            raise
-
-    raise ValueError(
-        "Formato não suportado. "
-        "Envie um arquivo CSV ou XLSX."
+    """Encaminha o arquivo enviado para o leitor adequado."""
+    return read_transaction_file(
+        source=uploaded_file,
+        file_name=uploaded_file.name,
     )
 
 def _format_preview_date(

@@ -21,6 +21,7 @@ from src.transaction_files import (
     prepare_transactions_for_export,
     read_csv_transactions,
     read_excel_transactions,
+    read_transaction_file,
     split_imported_transactions_by_match,
 )
 from src.transaction_validation import (
@@ -215,6 +216,108 @@ def test_export_transactions_to_excel_can_be_imported_again() -> None:
         == 200.50
     )
 
+def test_read_transaction_file_dispatches_csv() -> None:
+    csv_content = (
+        "DATA,TIPO,DESCRIÇÃO,CATEGORIA,VALOR\n"
+        "2026-08-01,receita,Bolsa-estágio,Trabalho,1600.00\n"
+    )
+
+    transactions = read_transaction_file(
+        source=BytesIO(
+            csv_content.encode(
+                "utf-8-sig"
+            )
+        ),
+        file_name="transacoes.csv",
+    )
+
+    assert len(
+        transactions
+    ) == 1
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert (
+        transactions.loc[
+            0,
+            "descricao",
+        ]
+        == "Bolsa-estágio"
+    )
+
+
+def test_read_transaction_file_dispatches_excel() -> None:
+    excel_content = (
+        export_transactions_to_excel(
+            create_test_transactions()
+        )
+    )
+
+    transactions = read_transaction_file(
+        source=BytesIO(
+            excel_content
+        ),
+        file_name="transacoes.xlsx",
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+
+def test_read_transaction_file_explains_missing_excel_sheet() -> None:
+    excel_content = BytesIO()
+
+    with pd.ExcelWriter(
+        excel_content,
+        engine="openpyxl",
+    ) as writer:
+        pd.DataFrame(
+            {
+                "valor": [
+                    100.0,
+                ],
+            }
+        ).to_excel(
+            writer,
+            sheet_name="OutraAba",
+            index=False,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "aba chamada "
+            "'Transacoes'"
+        ),
+    ):
+        read_transaction_file(
+            source=BytesIO(
+                excel_content.getvalue()
+            ),
+            file_name="transacoes.xlsx",
+        )
+
+
+def test_read_transaction_file_rejects_unsupported_format() -> None:
+    with pytest.raises(
+        ValueError,
+        match="Formato não suportado",
+    ):
+        read_transaction_file(
+            source=BytesIO(
+                b"unsupported"
+            ),
+            file_name="transacoes.ofx",
+        )
 
 def test_create_excel_template_contains_expected_sheets() -> None:
     """Verifica as abas existentes no modelo Excel."""

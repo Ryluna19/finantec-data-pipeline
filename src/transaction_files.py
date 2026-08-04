@@ -137,6 +137,44 @@ def read_excel_transactions(
 
     return normalize_transaction_headers(transactions)
 
+def read_transaction_file(
+    source: FileSource,
+    file_name: str | Path,
+) -> pd.DataFrame:
+    """Lê transações de acordo com a extensão do arquivo."""
+    file_extension = Path(
+        file_name
+    ).suffix.lower()
+
+    if file_extension == ".csv":
+        return read_csv_transactions(
+            source
+        )
+
+    if file_extension == ".xlsx":
+        try:
+            return read_excel_transactions(
+                source
+            )
+
+        except ValueError as error:
+            if (
+                "Worksheet named"
+                in str(
+                    error
+                )
+            ):
+                raise ValueError(
+                    "O arquivo Excel precisa conter "
+                    "uma aba chamada 'Transacoes'."
+                ) from error
+
+            raise
+
+    raise ValueError(
+        "Formato não suportado. "
+        "Envie um arquivo CSV ou XLSX."
+    )
 
 def prepare_transactions_for_export(
     transactions: pd.DataFrame,
