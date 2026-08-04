@@ -19,6 +19,7 @@ from src.transaction_files import (
     export_transactions_to_excel,
     find_matching_transactions,
     list_excel_sheet_names,
+    normalize_transaction_column_name,
     normalize_transaction_headers,
     prepare_transactions_for_export,
     read_csv_transactions,
@@ -27,11 +28,18 @@ from src.transaction_files import (
     read_ofx_transactions,
     read_transaction_file,
     split_imported_transactions_by_match,
+    suggest_transaction_column_mapping,
+    translate_transaction_table,
 )
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
     split_transactions_by_validity,
 )
+
+
+# ------------------------------------------------------------------------
+# DADOS AUXILIARES
+# ------------------------------------------------------------------------
 
 
 def create_test_transactions() -> pd.DataFrame:
@@ -72,6 +80,99 @@ def create_test_transactions() -> pd.DataFrame:
     )
 
 
+def create_external_excel_file() -> BytesIO:
+    """Cria uma planilha externa com cabeçalho fora da primeira linha."""
+    excel_content = BytesIO()
+
+    with pd.ExcelWriter(
+        excel_content,
+        engine="openpyxl",
+    ) as writer:
+        pd.DataFrame(
+            [
+                [
+                    "Relatório mensal",
+                    None,
+                    None,
+                ],
+                [
+                    "Data movimento",
+                    "Histórico",
+                    "Valor movimentado",
+                ],
+                [
+                    "2026-08-01",
+                    "Mercado Central",
+                    -125.90,
+                ],
+                [
+                    "2026-08-02",
+                    "Pagamento recebido",
+                    1600.00,
+                ],
+            ]
+        ).to_excel(
+            writer,
+            sheet_name="Extrato",
+            index=False,
+            header=False,
+        )
+
+        pd.DataFrame(
+            {
+                "Informação": [
+                    "Arquivo fictício",
+                ],
+            }
+        ).to_excel(
+            writer,
+            sheet_name="Resumo",
+            index=False,
+        )
+
+    excel_content.seek(
+        0
+    )
+
+    return excel_content
+
+
+# ------------------------------------------------------------------------
+# NORMALIZAÇÃO E LEITURA FLEXÍVEL DE EXCEL
+# ------------------------------------------------------------------------
+
+
+def test_normalize_transaction_column_name_handles_accents() -> None:
+    assert (
+        normalize_transaction_column_name(
+            "  Descrição do Lançamento  "
+        )
+        == "descricao_do_lancamento"
+    )
+
+
+def test_normalize_transaction_headers_accepts_display_labels() -> None:
+    """Converte cabeçalhos visuais para o contrato interno."""
+    transactions = pd.DataFrame(
+        columns=[
+            "DATA",
+            "TIPO",
+            "DESCRIÇÃO",
+            "CATEGORIA",
+            "VALOR",
+        ]
+    )
+
+    normalized = normalize_transaction_headers(
+        transactions
+    )
+
+    assert (
+        normalized.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+
 def test_read_csv_transactions_reads_uploaded_content() -> None:
     """Verifica a leitura de um CSV enviado em memória."""
     csv_content = (
@@ -105,26 +206,889 @@ def test_read_csv_transactions_reads_uploaded_content() -> None:
     )
 
 
-def test_normalize_transaction_headers_accepts_display_labels() -> None:
-    """Converte cabeçalhos visuais para o contrato interno."""
-    transactions = pd.DataFrame(
-        columns=[
-            "DATA",
-            "TIPO",
-            "DESCRIÇÃO",
-            "CATEGORIA",
-            "VALOR",
-        ]
+def test_list_excel_sheet_names_returns_available_sheets() -> None:
+    excel_content = (
+        create_external_excel_file()
     )
 
-    normalized = normalize_transaction_headers(
+    sheet_names = (
+        list_excel_sheet_names(
+            excel_content
+        )
+    )
+
+    assert sheet_names == [
+        "Extrato",
+        "Resumo",
+    ]
+
+
+def test_read_excel_table_uses_selected_header_row() -> None:
+    excel_content = (
+        create_external_excel_file()
+    )
+
+    list_excel_sheet_names(
+        excel_content
+    )
+
+    transactions = read_excel_table(
+        excel_content,
+        sheet_name="Extrato",
+        header_row=1,
+    )
+
+    assert transactions.columns.tolist() == [
+        "Data movimento",
+        "Histórico",
+        "Valor movimentado",
+    ]
+
+    assert len(
         transactions
+    ) == 2
+
+    assert transactions[
+        "Histórico"
+    ].tolist() == [
+        "Mercado Central",
+        "Pagamento recebido",
+    ]
+
+    assert transactions[
+        "Valor movimentado"
+    ].tolist() == [
+        -125.90,
+        1600.00,
+    ]
+
+
+@pytest.mark.parametrize(
+    "header_row",
+    [
+        -1,
+        1.5,
+        True,
+    ],
+)
+def test_read_excel_table_rejects_invalid_header_row(
+    header_row: object,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="inteiro maior ou igual a zero",
+    ):
+        read_excel_table(
+            create_external_excel_file(),
+            sheet_name="Extrato",
+            header_row=header_row,
+        )
+
+
+def test_suggest_transaction_column_mapping_recognizes_external_names() -> None:
+    suggestions = (
+        suggest_transaction_column_mapping(
+            [
+                "Data movimento",
+                "Histórico",
+                "Valor movimentado",
+                "Número do documento",
+            ]
+        )
+    )
+
+    assert suggestions == {
+        "data": "Data movimento",
+        "tipo": None,
+        "descricao": "Histórico",
+        "categoria": None,
+        "valor": "Valor movimentado",
+    }
+
+
+def test_suggest_transaction_column_mapping_recognizes_contract() -> None:
+    suggestions = (
+        suggest_transaction_column_mapping(
+            REQUIRED_TRANSACTION_COLUMNS
+        )
+    )
+
+    assert suggestions == {
+        "data": "data",
+        "tipo": "tipo",
+        "descricao": "descricao",
+        "categoria": "categoria",
+        "valor": "valor",
+    }
+
+
+def test_suggest_transaction_column_mapping_does_not_guess_split_amounts() -> None:
+    suggestions = (
+        suggest_transaction_column_mapping(
+            [
+                "Data",
+                "Histórico",
+                "Débito",
+                "Crédito",
+            ]
+        )
+    )
+
+    assert suggestions == {
+        "data": "Data",
+        "tipo": None,
+        "descricao": "Histórico",
+        "categoria": None,
+        "valor": None,
+    }
+
+
+def test_translate_transaction_table_uses_signed_amounts() -> None:
+    external_table = read_excel_table(
+        create_external_excel_file(),
+        sheet_name="Extrato",
+        header_row=1,
+    )
+
+    column_mapping = (
+        suggest_transaction_column_mapping(
+            external_table.columns
+        )
+    )
+
+    translated = (
+        translate_transaction_table(
+            external_table,
+            column_mapping,
+        )
     )
 
     assert (
-        normalized.columns.tolist()
+        translated.columns.tolist()
         == REQUIRED_TRANSACTION_COLUMNS
     )
+
+    assert translated.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-01",
+            "tipo": "despesa",
+            "descricao": (
+                "Mercado Central"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 125.90,
+        },
+        {
+            "data": "2026-08-02",
+            "tipo": "receita",
+            "descricao": (
+                "Pagamento recebido"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 1600.00,
+        },
+    ]
+
+
+def test_translate_transaction_table_preserves_mapped_fields() -> None:
+    external_table = pd.DataFrame(
+        {
+            "Quando": [
+                "2026-08-01",
+                "2026-08-02",
+            ],
+            "Natureza": [
+                "receita",
+                "despesa",
+            ],
+            "Detalhes": [
+                "Pagamento",
+                "Mercado",
+            ],
+            "Classificação": [
+                "Trabalho",
+                "",
+            ],
+            "Montante": [
+                1000.00,
+                -150.00,
+            ],
+        }
+    )
+
+    translated = (
+        translate_transaction_table(
+            external_table,
+            {
+                "data": "Quando",
+                "tipo": "Natureza",
+                "descricao": "Detalhes",
+                "categoria": (
+                    "Classificação"
+                ),
+                "valor": "Montante",
+            },
+        )
+    )
+
+    assert translated.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-01",
+            "tipo": "receita",
+            "descricao": "Pagamento",
+            "categoria": "Trabalho",
+            "valor": 1000.00,
+        },
+        {
+            "data": "2026-08-02",
+            "tipo": "despesa",
+            "descricao": "Mercado",
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 150.00,
+        },
+    ]
+
+
+def test_translate_transaction_table_rejects_missing_mapping() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "colunas de: valor"
+        ),
+    ):
+        translate_transaction_table(
+            pd.DataFrame(
+                {
+                    "Data": [
+                        "2026-08-01",
+                    ],
+                    "Histórico": [
+                        "Mercado",
+                    ],
+                }
+            ),
+            {
+                "data": "Data",
+                "tipo": None,
+                "descricao": "Histórico",
+                "categoria": None,
+                "valor": None,
+            },
+        )
+
+
+def test_translate_transaction_table_rejects_unknown_source_column() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Valor inexistente"
+        ),
+    ):
+        translate_transaction_table(
+            pd.DataFrame(
+                {
+                    "Data": [
+                        "2026-08-01",
+                    ],
+                    "Histórico": [
+                        "Mercado",
+                    ],
+                    "Valor": [
+                        -50.00,
+                    ],
+                }
+            ),
+            {
+                "data": "Data",
+                "tipo": None,
+                "descricao": "Histórico",
+                "categoria": None,
+                "valor": (
+                    "Valor inexistente"
+                ),
+            },
+        )
+
+
+def test_external_excel_fixture_is_translated_and_validated() -> None:
+    """Valida a tradução completa de uma planilha externa realista."""
+    fixture_path = Path(
+        "tests/fixtures/excel/"
+        "external_signed_amounts.xlsx"
+    )
+
+    assert list_excel_sheet_names(
+        fixture_path
+    ) == [
+        "Resumo",
+        "Extrato Conta",
+    ]
+
+    external_table = read_excel_table(
+        fixture_path,
+        sheet_name="Extrato Conta",
+        header_row=4,
+    )
+
+    column_mapping = (
+        suggest_transaction_column_mapping(
+            external_table.columns
+        )
+    )
+
+    assert column_mapping == {
+        "data": "Data Movimento",
+        "tipo": None,
+        "descricao": "Histórico",
+        "categoria": None,
+        "valor": "Valor Movimentado",
+    }
+
+    translated_transactions = (
+        translate_transaction_table(
+            external_table,
+            column_mapping,
+        )
+    )
+
+    (
+        valid_transactions,
+        rejected_transactions,
+    ) = split_transactions_by_validity(
+        translated_transactions
+    )
+
+    assert len(
+        external_table
+    ) == 60
+
+    assert len(
+        valid_transactions
+    ) == 60
+
+    assert rejected_transactions.empty
+
+    assert (
+        valid_transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert (
+        valid_transactions[
+            "categoria"
+        ]
+        .eq(
+            "Não categorizado"
+        )
+        .all()
+    )
+
+    assert (
+        valid_transactions[
+            "valor"
+        ]
+        .gt(
+            0
+        )
+        .all()
+    )
+
+    assert set(
+        valid_transactions[
+            "tipo"
+        ]
+    ) == {
+        "receita",
+        "despesa",
+    }
+
+    first_rows = (
+        valid_transactions
+        .head(
+            3
+        )
+        .copy()
+    )
+
+    first_rows[
+        "data"
+    ] = (
+        pd.to_datetime(
+            first_rows[
+                "data"
+            ],
+            errors="raise",
+        )
+        .dt.strftime(
+            "%Y-%m-%d"
+        )
+    )
+
+    assert first_rows.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-06-01",
+            "tipo": "despesa",
+            "descricao": "Academia",
+            "categoria": "Não categorizado",
+            "valor": 96.63,
+        },
+        {
+            "data": "2026-06-02",
+            "tipo": "despesa",
+            "descricao": "Recarga Bilhete Único",
+            "categoria": "Não categorizado",
+            "valor": 48.94,
+        },
+        {
+            "data": "2026-06-03",
+            "tipo": "receita",
+            "descricao": "Transferência recebida",
+            "categoria": "Não categorizado",
+            "valor": 214.64,
+        },
+    ]
+
+
+# ------------------------------------------------------------------------
+# LEITURA DE OFX
+# ------------------------------------------------------------------------
+
+
+def test_read_ofx_transactions_maps_statement_to_contract() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    transactions = (
+        read_ofx_transactions(
+            fixture_path
+        )
+    )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-01",
+            "tipo": "receita",
+            "descricao": (
+                "Bolsa-estagio"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 1600.0,
+        },
+        {
+            "data": "2026-08-02",
+            "tipo": "despesa",
+            "descricao": (
+                "Mercado Teste"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 200.5,
+        },
+    ]
+
+
+def test_read_ofx_transactions_supports_credit_card_statement() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "credit_card_statement.ofx"
+    )
+
+    transactions = read_ofx_transactions(
+        fixture_path
+    )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-05",
+            "tipo": "despesa",
+            "descricao": (
+                "Restaurante Teste"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 120.9,
+        },
+        {
+            "data": "2026-08-07",
+            "tipo": "receita",
+            "descricao": (
+                "Loja Teste"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 30.0,
+        },
+    ]
+
+
+def test_read_ofx_transactions_supports_xml_format() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "xml_bank_statement.ofx"
+    )
+
+    transactions = read_ofx_transactions(
+        fixture_path
+    )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert transactions.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-10",
+            "tipo": "receita",
+            "descricao": (
+                "Pagamento XML"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 900.0,
+        },
+        {
+            "data": "2026-08-11",
+            "tipo": "despesa",
+            "descricao": (
+                "Compra XML"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 75.25,
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    (
+        "removed_fragments",
+        "expected_description",
+    ),
+    [
+        (
+            (
+                b"<NAME>Bolsa-estagio</NAME>",
+            ),
+            "Pagamento mensal",
+        ),
+        (
+            (
+                b"<NAME>Bolsa-estagio</NAME>",
+                b"<MEMO>Pagamento mensal</MEMO>",
+            ),
+            "credit-001",
+        ),
+    ],
+)
+def test_read_ofx_transactions_uses_description_fallback(
+    removed_fragments: tuple[bytes, ...],
+    expected_description: str,
+) -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    content = fixture_path.read_bytes()
+
+    for fragment in removed_fragments:
+        content = content.replace(
+            fragment,
+            b"",
+        )
+
+    transactions = read_ofx_transactions(
+        BytesIO(
+            content
+        )
+    )
+
+    assert (
+        transactions.loc[
+            0,
+            "descricao",
+        ]
+        == expected_description
+    )
+
+
+def test_ofx_zero_amount_is_rejected_by_common_validation() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    content = fixture_path.read_bytes().replace(
+        b"<TRNAMT>-200.50</TRNAMT>",
+        b"<TRNAMT>0.00</TRNAMT>",
+    )
+
+    imported_transactions = (
+        read_ofx_transactions(
+            BytesIO(
+                content
+            )
+        )
+    )
+
+    (
+        valid_transactions,
+        rejected_transactions,
+    ) = split_transactions_by_validity(
+        imported_transactions
+    )
+
+    assert (
+        valid_transactions[
+            "descricao"
+        ].tolist()
+        == [
+            "Bolsa-estagio",
+        ]
+    )
+
+    assert len(
+        rejected_transactions
+    ) == 1
+
+
+@pytest.mark.parametrize(
+    (
+        "content",
+        "expected_message",
+    ),
+    [
+        (
+            b"",
+            "Não foi possível interpretar",
+        ),
+        (
+            b"isto nao e um arquivo ofx",
+            "Não foi possível interpretar",
+        ),
+        (
+            (
+                b"OFXHEADER:100\n"
+                b"DATA:OFXSGML\n"
+                b"VERSION:102\n"
+                b"\n"
+                b"<OFX><STMTTRN>"
+            ),
+            "não contém um extrato reconhecido",
+        ),
+    ],
+)
+def test_read_ofx_transactions_rejects_invalid_content(
+    content: bytes,
+    expected_message: str,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match=expected_message,
+    ):
+        read_ofx_transactions(
+            BytesIO(
+                content
+            )
+        )
+
+
+# ------------------------------------------------------------------------
+# DESPACHO POR FORMATO
+# ------------------------------------------------------------------------
+
+
+def test_read_transaction_file_dispatches_csv() -> None:
+    csv_content = (
+        "DATA,TIPO,DESCRIÇÃO,CATEGORIA,VALOR\n"
+        "2026-08-01,receita,Bolsa-estágio,Trabalho,1600.00\n"
+    )
+
+    transactions = read_transaction_file(
+        source=BytesIO(
+            csv_content.encode(
+                "utf-8-sig"
+            )
+        ),
+        file_name="transacoes.csv",
+    )
+
+    assert len(
+        transactions
+    ) == 1
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert (
+        transactions.loc[
+            0,
+            "descricao",
+        ]
+        == "Bolsa-estágio"
+    )
+
+
+def test_read_transaction_file_dispatches_excel() -> None:
+    excel_content = (
+        export_transactions_to_excel(
+            create_test_transactions()
+        )
+    )
+
+    transactions = read_transaction_file(
+        source=BytesIO(
+            excel_content
+        ),
+        file_name="transacoes.xlsx",
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+
+def test_read_transaction_file_dispatches_ofx() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    with fixture_path.open(
+        "rb"
+    ) as source:
+        transactions = read_transaction_file(
+            source=source,
+            file_name="bank_statement.ofx",
+        )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions[
+        "tipo"
+    ].tolist() == [
+        "receita",
+        "despesa",
+    ]
+
+    assert transactions[
+        "valor"
+    ].tolist() == [
+        1600.0,
+        200.5,
+    ]
+
+
+def test_read_transaction_file_explains_missing_excel_sheet() -> None:
+    excel_content = BytesIO()
+
+    with pd.ExcelWriter(
+        excel_content,
+        engine="openpyxl",
+    ) as writer:
+        pd.DataFrame(
+            {
+                "valor": [
+                    100.0,
+                ],
+            }
+        ).to_excel(
+            writer,
+            sheet_name="OutraAba",
+            index=False,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "aba chamada "
+            "'Transacoes'"
+        ),
+    ):
+        read_transaction_file(
+            source=BytesIO(
+                excel_content.getvalue()
+            ),
+            file_name="transacoes.xlsx",
+        )
+
+
+def test_read_transaction_file_rejects_unsupported_format() -> None:
+    with pytest.raises(
+        ValueError,
+        match="Formato não suportado",
+    ):
+        read_transaction_file(
+            source=BytesIO(
+                b"unsupported"
+            ),
+            file_name="transacoes.pdf",
+        )
+
+
+# ------------------------------------------------------------------------
+# EXPORTAÇÃO E MODELO EXCEL
+# ------------------------------------------------------------------------
 
 
 def test_prepare_transactions_for_export_removes_technical_columns() -> None:
@@ -220,545 +1184,7 @@ def test_export_transactions_to_excel_can_be_imported_again() -> None:
         ]
         == 200.50
     )
-    
-def create_external_excel_file() -> BytesIO:
-    """Cria uma planilha externa com cabeçalho fora da primeira linha."""
-    excel_content = BytesIO()
 
-    with pd.ExcelWriter(
-        excel_content,
-        engine="openpyxl",
-    ) as writer:
-        pd.DataFrame(
-            [
-                [
-                    "Relatório mensal",
-                    None,
-                    None,
-                ],
-                [
-                    "Data movimento",
-                    "Histórico",
-                    "Valor movimentado",
-                ],
-                [
-                    "2026-08-01",
-                    "Mercado Central",
-                    -125.90,
-                ],
-                [
-                    "2026-08-02",
-                    "Pagamento recebido",
-                    1600.00,
-                ],
-            ]
-        ).to_excel(
-            writer,
-            sheet_name="Extrato",
-            index=False,
-            header=False,
-        )
-
-        pd.DataFrame(
-            {
-                "Informação": [
-                    "Arquivo fictício",
-                ],
-            }
-        ).to_excel(
-            writer,
-            sheet_name="Resumo",
-            index=False,
-        )
-
-    excel_content.seek(
-        0
-    )
-
-    return excel_content
-
-
-def test_list_excel_sheet_names_returns_available_sheets() -> None:
-    excel_content = (
-        create_external_excel_file()
-    )
-
-    sheet_names = (
-        list_excel_sheet_names(
-            excel_content
-        )
-    )
-
-    assert sheet_names == [
-        "Extrato",
-        "Resumo",
-    ]
-
-
-def test_read_excel_table_uses_selected_header_row() -> None:
-    excel_content = (
-        create_external_excel_file()
-    )
-
-    list_excel_sheet_names(
-        excel_content
-    )
-
-    transactions = read_excel_table(
-        excel_content,
-        sheet_name="Extrato",
-        header_row=1,
-    )
-
-    assert transactions.columns.tolist() == [
-        "Data movimento",
-        "Histórico",
-        "Valor movimentado",
-    ]
-
-    assert len(
-        transactions
-    ) == 2
-
-    assert transactions[
-        "Histórico"
-    ].tolist() == [
-        "Mercado Central",
-        "Pagamento recebido",
-    ]
-
-    assert transactions[
-        "Valor movimentado"
-    ].tolist() == [
-        -125.90,
-        1600.00,
-    ]
-
-
-@pytest.mark.parametrize(
-    "header_row",
-    [
-        -1,
-        1.5,
-        True,
-    ],
-)
-def test_read_excel_table_rejects_invalid_header_row(
-    header_row: object,
-) -> None:
-    with pytest.raises(
-        ValueError,
-        match="inteiro maior ou igual a zero",
-    ):
-        read_excel_table(
-            create_external_excel_file(),
-            sheet_name="Extrato",
-            header_row=header_row,
-        )
-        
-def test_read_ofx_transactions_maps_statement_to_contract() -> None:
-    fixture_path = Path(
-        "tests/fixtures/ofx/"
-        "bank_statement.ofx"
-    )
-
-    transactions = (
-        read_ofx_transactions(
-            fixture_path
-        )
-    )
-
-    assert (
-        transactions.columns.tolist()
-        == REQUIRED_TRANSACTION_COLUMNS
-    )
-
-    assert len(
-        transactions
-    ) == 2
-
-    assert transactions.to_dict(
-        orient="records"
-    ) == [
-        {
-            "data": "2026-08-01",
-            "tipo": "receita",
-            "descricao": (
-                "Bolsa-estagio"
-            ),
-            "categoria": (
-                "Não categorizado"
-            ),
-            "valor": 1600.0,
-        },
-        {
-            "data": "2026-08-02",
-            "tipo": "despesa",
-            "descricao": (
-                "Mercado Teste"
-            ),
-            "categoria": (
-                "Não categorizado"
-            ),
-            "valor": 200.5,
-        },
-    ]
-
-def test_read_ofx_transactions_supports_credit_card_statement() -> None:
-    fixture_path = Path(
-        "tests/fixtures/ofx/"
-        "credit_card_statement.ofx"
-    )
-
-    transactions = read_ofx_transactions(
-        fixture_path
-    )
-
-    assert (
-        transactions.columns.tolist()
-        == REQUIRED_TRANSACTION_COLUMNS
-    )
-
-    assert len(
-        transactions
-    ) == 2
-
-    assert transactions.to_dict(
-        orient="records"
-    ) == [
-        {
-            "data": "2026-08-05",
-            "tipo": "despesa",
-            "descricao": (
-                "Restaurante Teste"
-            ),
-            "categoria": (
-                "Não categorizado"
-            ),
-            "valor": 120.9,
-        },
-        {
-            "data": "2026-08-07",
-            "tipo": "receita",
-            "descricao": (
-                "Loja Teste"
-            ),
-            "categoria": (
-                "Não categorizado"
-            ),
-            "valor": 30.0,
-        },
-    ]
-
-@pytest.mark.parametrize(
-    (
-        "removed_fragments",
-        "expected_description",
-    ),
-    [
-        (
-            (
-                b"<NAME>Bolsa-estagio</NAME>",
-            ),
-            "Pagamento mensal",
-        ),
-        (
-            (
-                b"<NAME>Bolsa-estagio</NAME>",
-                b"<MEMO>Pagamento mensal</MEMO>",
-            ),
-            "credit-001",
-        ),
-    ],
-)
-def test_read_ofx_transactions_uses_description_fallback(
-    removed_fragments: tuple[bytes, ...],
-    expected_description: str,
-) -> None:
-    fixture_path = Path(
-        "tests/fixtures/ofx/"
-        "bank_statement.ofx"
-    )
-
-    content = fixture_path.read_bytes()
-
-    for fragment in removed_fragments:
-        content = content.replace(
-            fragment,
-            b"",
-        )
-
-    transactions = read_ofx_transactions(
-        BytesIO(
-            content
-        )
-    )
-
-    assert (
-        transactions.loc[
-            0,
-            "descricao",
-        ]
-        == expected_description
-    )
-def test_ofx_zero_amount_is_rejected_by_common_validation() -> None:
-    fixture_path = Path(
-        "tests/fixtures/ofx/"
-        "bank_statement.ofx"
-    )
-
-    content = fixture_path.read_bytes().replace(
-        b"<TRNAMT>-200.50</TRNAMT>",
-        b"<TRNAMT>0.00</TRNAMT>",
-    )
-
-    imported_transactions = (
-        read_ofx_transactions(
-            BytesIO(
-                content
-            )
-        )
-    )
-
-    (
-        valid_transactions,
-        rejected_transactions,
-    ) = split_transactions_by_validity(
-        imported_transactions
-    )
-
-    assert (
-        valid_transactions[
-            "descricao"
-        ].tolist()
-        == [
-            "Bolsa-estagio",
-        ]
-    )
-
-    assert len(
-        rejected_transactions
-    ) == 1
-
-@pytest.mark.parametrize(
-    (
-        "content",
-        "expected_message",
-    ),
-    [
-        (
-            b"",
-            "Não foi possível interpretar",
-        ),
-        (
-            b"isto nao e um arquivo ofx",
-            "Não foi possível interpretar",
-        ),
-        (
-            (
-                b"OFXHEADER:100\n"
-                b"DATA:OFXSGML\n"
-                b"VERSION:102\n"
-                b"\n"
-                b"<OFX><STMTTRN>"
-            ),
-            "não contém um extrato reconhecido",
-        ),
-    ],
-)
-def test_read_ofx_transactions_rejects_invalid_content(
-    content: bytes,
-    expected_message: str,
-) -> None:
-    with pytest.raises(
-        ValueError,
-        match=expected_message,
-    ):
-        read_ofx_transactions(
-            BytesIO(
-                content
-            )
-        )
-def test_read_ofx_transactions_supports_xml_format() -> None:
-    fixture_path = Path(
-        "tests/fixtures/ofx/"
-        "xml_bank_statement.ofx"
-    )
-
-    transactions = read_ofx_transactions(
-        fixture_path
-    )
-
-    assert (
-        transactions.columns.tolist()
-        == REQUIRED_TRANSACTION_COLUMNS
-    )
-
-    assert transactions.to_dict(
-        orient="records"
-    ) == [
-        {
-            "data": "2026-08-10",
-            "tipo": "receita",
-            "descricao": (
-                "Pagamento XML"
-            ),
-            "categoria": (
-                "Não categorizado"
-            ),
-            "valor": 900.0,
-        },
-        {
-            "data": "2026-08-11",
-            "tipo": "despesa",
-            "descricao": (
-                "Compra XML"
-            ),
-            "categoria": (
-                "Não categorizado"
-            ),
-            "valor": 75.25,
-        },
-    ]
-
-def test_read_transaction_file_dispatches_csv() -> None:
-    csv_content = (
-        "DATA,TIPO,DESCRIÇÃO,CATEGORIA,VALOR\n"
-        "2026-08-01,receita,Bolsa-estágio,Trabalho,1600.00\n"
-    )
-
-    transactions = read_transaction_file(
-        source=BytesIO(
-            csv_content.encode(
-                "utf-8-sig"
-            )
-        ),
-        file_name="transacoes.csv",
-    )
-
-    assert len(
-        transactions
-    ) == 1
-
-    assert (
-        transactions.columns.tolist()
-        == REQUIRED_TRANSACTION_COLUMNS
-    )
-
-    assert (
-        transactions.loc[
-            0,
-            "descricao",
-        ]
-        == "Bolsa-estágio"
-    )
-
-
-def test_read_transaction_file_dispatches_excel() -> None:
-    excel_content = (
-        export_transactions_to_excel(
-            create_test_transactions()
-        )
-    )
-
-    transactions = read_transaction_file(
-        source=BytesIO(
-            excel_content
-        ),
-        file_name="transacoes.xlsx",
-    )
-
-    assert len(
-        transactions
-    ) == 2
-
-    assert (
-        transactions.columns.tolist()
-        == REQUIRED_TRANSACTION_COLUMNS
-    )
-
-def test_read_transaction_file_dispatches_ofx() -> None:
-    fixture_path = Path(
-        "tests/fixtures/ofx/"
-        "bank_statement.ofx"
-    )
-
-    with fixture_path.open(
-        "rb"
-    ) as source:
-        transactions = read_transaction_file(
-            source=source,
-            file_name="bank_statement.ofx",
-        )
-
-    assert (
-        transactions.columns.tolist()
-        == REQUIRED_TRANSACTION_COLUMNS
-    )
-
-    assert len(
-        transactions
-    ) == 2
-
-    assert transactions[
-        "tipo"
-    ].tolist() == [
-        "receita",
-        "despesa",
-    ]
-
-    assert transactions[
-        "valor"
-    ].tolist() == [
-        1600.0,
-        200.5,
-    ]
-
-def test_read_transaction_file_explains_missing_excel_sheet() -> None:
-    excel_content = BytesIO()
-
-    with pd.ExcelWriter(
-        excel_content,
-        engine="openpyxl",
-    ) as writer:
-        pd.DataFrame(
-            {
-                "valor": [
-                    100.0,
-                ],
-            }
-        ).to_excel(
-            writer,
-            sheet_name="OutraAba",
-            index=False,
-        )
-
-    with pytest.raises(
-        ValueError,
-        match=(
-            "aba chamada "
-            "'Transacoes'"
-        ),
-    ):
-        read_transaction_file(
-            source=BytesIO(
-                excel_content.getvalue()
-            ),
-            file_name="transacoes.xlsx",
-        )
-
-
-def test_read_transaction_file_rejects_unsupported_format() -> None:
-    with pytest.raises(
-        ValueError,
-        match="Formato não suportado",
-    ):
-        read_transaction_file(
-            source=BytesIO(
-                b"unsupported"
-            ),
-            file_name="transacoes.pdf",
-        )
 
 def test_create_excel_template_contains_expected_sheets() -> None:
     """Verifica as abas existentes no modelo Excel."""
@@ -827,68 +1253,6 @@ def test_create_excel_template_contains_instructions() -> None:
     assert instructions["CAMPO"].tolist() == (
         REQUIRED_TRANSACTION_COLUMNS
     )
-
-
-def test_find_matching_transactions_detects_existing_rows() -> None:
-    """Identifica linhas importadas iguais às existentes."""
-    imported_transactions = (
-        create_test_transactions()
-    )
-
-    existing_transactions = (
-        create_test_transactions()
-        .head(1)
-        .copy()
-    )
-
-    matches = find_matching_transactions(
-        imported_transactions,
-        existing_transactions,
-    )
-
-    assert len(matches) == 1
-
-    assert (
-        matches.iloc[0]["descricao"]
-        == "Bolsa-estágio"
-    )
-
-
-def test_split_matching_transactions_respects_occurrence_count() -> None:
-    """Respeita a quantidade de ocorrências existentes."""
-    base_transaction = (
-        create_test_transactions()
-        .head(1)
-        .copy()
-    )
-
-    imported_transactions = pd.concat(
-        [
-            base_transaction,
-            base_transaction,
-        ],
-        ignore_index=True,
-    )
-
-    existing_transactions = (
-        base_transaction.copy()
-    )
-
-    (
-        new_transactions,
-        matching_transactions,
-    ) = split_imported_transactions_by_match(
-        imported_transactions,
-        existing_transactions,
-    )
-
-    assert len(
-        matching_transactions
-    ) == 1
-
-    assert len(
-        new_transactions
-    ) == 1
 
 
 def test_excel_template_has_visual_configuration() -> None:
@@ -1107,3 +1471,70 @@ def test_exported_excel_has_table_and_number_formats() -> None:
         .horizontal
         == "right"
     )
+
+
+# ------------------------------------------------------------------------
+# DETECÇÃO DE TRANSAÇÕES REPETIDAS
+# ------------------------------------------------------------------------
+
+
+def test_find_matching_transactions_detects_existing_rows() -> None:
+    """Identifica linhas importadas iguais às existentes."""
+    imported_transactions = (
+        create_test_transactions()
+    )
+
+    existing_transactions = (
+        create_test_transactions()
+        .head(1)
+        .copy()
+    )
+
+    matches = find_matching_transactions(
+        imported_transactions,
+        existing_transactions,
+    )
+
+    assert len(matches) == 1
+
+    assert (
+        matches.iloc[0]["descricao"]
+        == "Bolsa-estágio"
+    )
+
+
+def test_split_matching_transactions_respects_occurrence_count() -> None:
+    """Respeita a quantidade de ocorrências existentes."""
+    base_transaction = (
+        create_test_transactions()
+        .head(1)
+        .copy()
+    )
+
+    imported_transactions = pd.concat(
+        [
+            base_transaction,
+            base_transaction,
+        ],
+        ignore_index=True,
+    )
+
+    existing_transactions = (
+        base_transaction.copy()
+    )
+
+    (
+        new_transactions,
+        matching_transactions,
+    ) = split_imported_transactions_by_match(
+        imported_transactions,
+        existing_transactions,
+    )
+
+    assert len(
+        matching_transactions
+    ) == 1
+
+    assert len(
+        new_transactions
+    ) == 1

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from codecs import BOM_UTF8
 from collections import Counter
+from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
 from typing import BinaryIO
@@ -76,6 +77,52 @@ STORED_TRANSACTION_COLUMNS = [
     *REQUIRED_TRANSACTION_COLUMNS,
 ]
 
+TRANSACTION_COLUMN_ALIASES = {
+    "data": (
+        "data",
+        "data_movimento",
+        "data_movimentacao",
+        "data_lancamento",
+        "data_transacao",
+        "dt_movimento",
+        "dt_lancamento",
+        "date",
+    ),
+    "tipo": (
+        "tipo",
+        "tipo_transacao",
+        "tipo_movimento",
+        "natureza",
+        "debito_credito",
+        "credito_debito",
+    ),
+    "descricao": (
+        "descricao",
+        "historico",
+        "historico_lancamento",
+        "descricao_lancamento",
+        "lancamento",
+        "estabelecimento",
+        "detalhes",
+        "memo",
+    ),
+    "categoria": (
+        "categoria",
+        "categoria_transacao",
+        "categoria_lancamento",
+        "classificacao",
+    ),
+    "valor": (
+        "valor",
+        "valor_movimentado",
+        "valor_movimento",
+        "valor_lancamento",
+        "valor_transacao",
+        "montante",
+        "amount",
+    ),
+}
+
 
 def _rewind_file(source: FileSource) -> None:
     """Reposiciona arquivos em memória antes de uma nova leitura."""
@@ -85,30 +132,45 @@ def _rewind_file(source: FileSource) -> None:
         seek(0)
 
 
+def normalize_transaction_column_name(
+    column: object,
+) -> str:
+    """Normaliza um nome de coluna para comparação interna."""
+    normalized_column = unicodedata.normalize(
+        "NFKD",
+        str(column),
+    )
+
+    normalized_column = normalized_column.encode(
+        "ascii",
+        "ignore",
+    ).decode(
+        "ascii"
+    )
+
+    return (
+        normalized_column
+        .strip()
+        .lower()
+        .replace(
+            " ",
+            "_",
+        )
+    )
+
+
 def normalize_transaction_headers(
     transactions: pd.DataFrame,
 ) -> pd.DataFrame:
     """Normaliza os cabeçalhos recebidos para o contrato interno."""
     normalized_transactions = transactions.copy()
 
-    normalized_columns = []
-
-    for column in normalized_transactions.columns:
-        normalized_column = unicodedata.normalize(
-            "NFKD",
-            str(column),
+    normalized_transactions.columns = [
+        normalize_transaction_column_name(
+            column
         )
-
-        normalized_column = normalized_column.encode(
-            "ascii",
-            "ignore",
-        ).decode("ascii")
-
-        normalized_column = normalized_column.strip().lower().replace(" ", "_")
-
-        normalized_columns.append(normalized_column)
-
-    normalized_transactions.columns = normalized_columns
+        for column in normalized_transactions.columns
+    ]
 
     return normalized_transactions
 
@@ -356,6 +418,265 @@ def read_excel_table(
         sheet_name=sheet_name,
         header=header_row,
         engine="openpyxl",
+    )
+
+def suggest_transaction_column_mapping(
+    columns: Iterable[object],
+) -> dict[str, str | None]:
+    """Sugere quais colunas externas representam o contrato interno."""
+    source_columns: dict[
+        str,
+        str,
+    ] = {}
+
+    for column in columns:
+        original_name = str(
+            column
+        ).strip()
+
+        normalized_name = (
+            normalize_transaction_column_name(
+                column
+            )
+        )
+
+        if (
+            normalized_name
+            and normalized_name
+            not in source_columns
+        ):
+            source_columns[
+                normalized_name
+            ] = original_name
+
+    suggestions: dict[
+        str,
+        str | None,
+    ] = {}
+
+    for (
+        target_column,
+        aliases,
+    ) in TRANSACTION_COLUMN_ALIASES.items():
+        suggestions[
+            target_column
+        ] = next(
+            (
+                source_columns[
+                    alias
+                ]
+                for alias in aliases
+                if alias in source_columns
+            ),
+            None,
+        )
+
+    return suggestions
+
+def translate_transaction_table(
+    transactions: pd.DataFrame,
+    column_mapping: dict[
+        str,
+        str | None,
+    ],
+    *,
+    default_category: str = "Não categorizado",
+) -> pd.DataFrame:
+    """Traduz uma tabela externa para o contrato interno."""
+    if transactions.empty:
+        return pd.DataFrame(
+            columns=(
+                REQUIRED_TRANSACTION_COLUMNS
+            )
+        )
+
+    required_mappings = (
+        "data",
+        "descricao",
+        "valor",
+    )
+
+    missing_mappings = [
+        target_column
+        for target_column in required_mappings
+        if not column_mapping.get(
+            target_column
+        )
+    ]
+
+    if missing_mappings:
+        raise ValueError(
+            "O mapeamento precisa informar "
+            "as colunas de: "
+            + ", ".join(
+                missing_mappings
+            )
+            + "."
+        )
+
+    mapped_source_columns = {
+        target_column: source_column
+        for (
+            target_column,
+            source_column,
+        ) in column_mapping.items()
+        if source_column
+    }
+
+    missing_source_columns = [
+        source_column
+        for source_column in (
+            mapped_source_columns.values()
+        )
+        if source_column not in transactions.columns
+    ]
+
+    if missing_source_columns:
+        raise ValueError(
+            "As seguintes colunas não foram "
+            "encontradas na tabela: "
+            + ", ".join(
+                sorted(
+                    set(
+                        missing_source_columns
+                    )
+                )
+            )
+            + "."
+        )
+
+    normalized_default_category = str(
+        default_category
+    ).strip()
+
+    if not normalized_default_category:
+        raise ValueError(
+            "A categoria padrão não pode "
+            "ficar vazia."
+        )
+
+    data_source = mapped_source_columns[
+        "data"
+    ]
+
+    description_source = (
+        mapped_source_columns[
+            "descricao"
+        ]
+    )
+
+    amount_source = (
+        mapped_source_columns[
+            "valor"
+        ]
+    )
+
+    numeric_amounts = pd.to_numeric(
+        transactions[
+            amount_source
+        ],
+        errors="coerce",
+    )
+
+    type_source = (
+        mapped_source_columns.get(
+            "tipo"
+        )
+    )
+
+    if type_source is not None:
+        transaction_types = (
+            transactions[
+                type_source
+            ]
+            .copy()
+        )
+
+    else:
+        transaction_types = pd.Series(
+            "despesa",
+            index=transactions.index,
+            dtype="object",
+        )
+
+        transaction_types.loc[
+            numeric_amounts > 0
+        ] = "receita"
+
+    category_source = (
+        mapped_source_columns.get(
+            "categoria"
+        )
+    )
+
+    if category_source is not None:
+        categories = (
+            transactions[
+                category_source
+            ]
+            .copy()
+        )
+
+        categories = categories.where(
+            categories.notna(),
+            normalized_default_category,
+        )
+
+        categories = (
+            categories
+            .astype(
+                str
+            )
+            .str
+            .strip()
+        )
+
+        categories = categories.mask(
+            categories.eq(
+                ""
+            ),
+            normalized_default_category,
+        )
+
+    else:
+        categories = pd.Series(
+            normalized_default_category,
+            index=transactions.index,
+            dtype="object",
+        )
+
+    translated_transactions = (
+        pd.DataFrame(
+            {
+                "data": (
+                    transactions[
+                        data_source
+                    ]
+                    .copy()
+                ),
+                "tipo": transaction_types,
+                "descricao": (
+                    transactions[
+                        description_source
+                    ]
+                    .copy()
+                ),
+                "categoria": categories,
+                "valor": (
+                    numeric_amounts.abs()
+                ),
+            }
+        )
+    )
+
+    return (
+        translated_transactions[
+            REQUIRED_TRANSACTION_COLUMNS
+        ]
+        .copy()
+        .reset_index(
+            drop=True
+        )
     )
 
 def read_transaction_file(
