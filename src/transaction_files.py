@@ -123,6 +123,24 @@ TRANSACTION_COLUMN_ALIASES = {
     ),
 }
 
+DEBIT_COLUMN_ALIASES = (
+    "debito",
+    "valor_debito",
+    "debit",
+    "withdrawal",
+    "saida",
+    "saidas",
+)
+
+CREDIT_COLUMN_ALIASES = (
+    "credito",
+    "valor_credito",
+    "credit",
+    "deposit",
+    "entrada",
+    "entradas",
+)
+
 
 def _rewind_file(source: FileSource) -> None:
     """Reposiciona arquivos em memória antes de uma nova leitura."""
@@ -473,6 +491,167 @@ def suggest_transaction_column_mapping(
 
     return suggestions
 
+def suggest_split_amount_column_mapping(
+    columns: Iterable[object],
+) -> dict[str, str | None]:
+    """Sugere colunas externas separadas de débito e crédito."""
+    source_columns: dict[str, str] = {}
+
+    for column in columns:
+        original_name = str(
+            column
+        ).strip()
+
+        normalized_name = (
+            normalize_transaction_column_name(
+                column
+            )
+        )
+
+        if (
+            normalized_name
+            and normalized_name
+            not in source_columns
+        ):
+            source_columns[
+                normalized_name
+            ] = original_name
+
+    debit_column = next(
+        (
+            source_columns[alias]
+            for alias in DEBIT_COLUMN_ALIASES
+            if alias in source_columns
+        ),
+        None,
+    )
+
+    credit_column = next(
+        (
+            source_columns[alias]
+            for alias in CREDIT_COLUMN_ALIASES
+            if alias in source_columns
+        ),
+        None,
+    )
+
+    return {
+        "debito": debit_column,
+        "credito": credit_column,
+    }
+
+def suggest_excel_header_row(
+    source: FileSource,
+    *,
+    sheet_name: str,
+    max_rows: int = 25,
+) -> int:
+    """Sugere a linha que contém o cabeçalho da tabela."""
+    if (
+        not isinstance(max_rows, int)
+        or isinstance(max_rows, bool)
+        or max_rows <= 0
+    ):
+        raise ValueError(
+            "A quantidade máxima de linhas deve ser "
+            "um inteiro maior que zero."
+        )
+
+    _rewind_file(source)
+
+    raw_rows = pd.read_excel(
+        source,
+        sheet_name=sheet_name,
+        header=None,
+        nrows=max_rows,
+        engine="openpyxl",
+    )
+
+    if raw_rows.empty:
+        return 0
+
+    best_row_index = 0
+    best_score = (
+        -1,
+        -1,
+    )
+
+    for row_index, row in raw_rows.iterrows():
+        possible_columns = [
+            value
+            for value in row.tolist()
+            if pd.notna(value)
+        ]
+
+        suggested_mapping = (
+            suggest_transaction_column_mapping(
+                possible_columns
+            )
+        )
+
+        split_amount_mapping = (
+            suggest_split_amount_column_mapping(
+                possible_columns
+            )
+        )
+
+        has_single_amount = (
+            suggested_mapping[
+                "valor"
+            ]
+            is not None
+        )
+
+        has_split_amounts = (
+            split_amount_mapping[
+                "debito"
+            ]
+            is not None
+            and split_amount_mapping[
+                "credito"
+            ]
+            is not None
+        )
+
+        required_score = sum(
+            suggested_mapping[field]
+            is not None
+            for field in (
+                "data",
+                "descricao",
+            )
+        )
+
+        required_score += int(
+            has_single_amount
+            or has_split_amounts
+        )
+
+        total_score = sum(
+            mapped_column is not None
+            for mapped_column
+            in suggested_mapping.values()
+        )
+
+        total_score += sum(
+            mapped_column is not None
+            for mapped_column
+            in split_amount_mapping.values()
+        )
+
+        current_score = (
+            required_score,
+            total_score,
+        )
+
+        if current_score > best_score:
+            best_score = current_score
+            best_row_index = int(
+                row_index
+            )
+
+    return best_row_index
+
 def translate_transaction_table(
     transactions: pd.DataFrame,
     column_mapping: dict[
@@ -667,6 +846,217 @@ def translate_transaction_table(
                 ),
             }
         )
+    )
+
+    return (
+        translated_transactions[
+            REQUIRED_TRANSACTION_COLUMNS
+        ]
+        .copy()
+        .reset_index(
+            drop=True
+        )
+    )
+
+def translate_split_amount_transaction_table(
+    transactions: pd.DataFrame,
+    *,
+    date_column: str,
+    description_column: str,
+    debit_column: str,
+    credit_column: str,
+    category_column: str | None = None,
+    default_category: str = "Não categorizado",
+) -> pd.DataFrame:
+    """Traduz débito e crédito separados para o contrato interno."""
+    if transactions.empty:
+        return pd.DataFrame(
+            columns=(
+                REQUIRED_TRANSACTION_COLUMNS
+            )
+        )
+
+    if debit_column == credit_column:
+        raise ValueError(
+            "As colunas de débito e crédito "
+            "precisam ser diferentes."
+        )
+
+    source_columns = [
+        date_column,
+        description_column,
+        debit_column,
+        credit_column,
+    ]
+
+    if category_column is not None:
+        source_columns.append(
+            category_column
+        )
+
+    missing_source_columns = [
+        source_column
+        for source_column in source_columns
+        if source_column
+        not in transactions.columns
+    ]
+
+    if missing_source_columns:
+        raise ValueError(
+            "As seguintes colunas não foram "
+            "encontradas na tabela: "
+            + ", ".join(
+                sorted(
+                    set(
+                        missing_source_columns
+                    )
+                )
+            )
+            + "."
+        )
+
+    normalized_default_category = str(
+        default_category
+    ).strip()
+
+    if not normalized_default_category:
+        raise ValueError(
+            "A categoria padrão não pode "
+            "ficar vazia."
+        )
+
+    debit_amounts = pd.to_numeric(
+        transactions[
+            debit_column
+        ],
+        errors="coerce",
+    )
+
+    credit_amounts = pd.to_numeric(
+        transactions[
+            credit_column
+        ],
+        errors="coerce",
+    )
+
+    has_debit = (
+        debit_amounts.notna()
+        & debit_amounts.ne(
+            0
+        )
+    )
+
+    has_credit = (
+        credit_amounts.notna()
+        & credit_amounts.ne(
+            0
+        )
+    )
+
+    valid_debit_rows = (
+        has_debit
+        & ~has_credit
+    )
+
+    valid_credit_rows = (
+        has_credit
+        & ~has_debit
+    )
+
+    transaction_types = pd.Series(
+        pd.NA,
+        index=transactions.index,
+        dtype="object",
+    )
+
+    transaction_types.loc[
+        valid_debit_rows
+    ] = "despesa"
+
+    transaction_types.loc[
+        valid_credit_rows
+    ] = "receita"
+
+    transaction_amounts = pd.Series(
+        float(
+            "nan"
+        ),
+        index=transactions.index,
+        dtype="float64",
+    )
+
+    transaction_amounts.loc[
+        valid_debit_rows
+    ] = (
+        debit_amounts.loc[
+            valid_debit_rows
+        ]
+        .abs()
+    )
+
+    transaction_amounts.loc[
+        valid_credit_rows
+    ] = (
+        credit_amounts.loc[
+            valid_credit_rows
+        ]
+        .abs()
+    )
+
+    if category_column is not None:
+        categories = (
+            transactions[
+                category_column
+            ]
+            .copy()
+        )
+
+        categories = categories.where(
+            categories.notna(),
+            normalized_default_category,
+        )
+
+        categories = (
+            categories
+            .astype(
+                str
+            )
+            .str
+            .strip()
+        )
+
+        categories = categories.mask(
+            categories.eq(
+                ""
+            ),
+            normalized_default_category,
+        )
+
+    else:
+        categories = pd.Series(
+            normalized_default_category,
+            index=transactions.index,
+            dtype="object",
+        )
+
+    translated_transactions = pd.DataFrame(
+        {
+            "data": (
+                transactions[
+                    date_column
+                ]
+                .copy()
+            ),
+            "tipo": transaction_types,
+            "descricao": (
+                transactions[
+                    description_column
+                ]
+                .copy()
+            ),
+            "categoria": categories,
+            "valor": transaction_amounts,
+        }
     )
 
     return (

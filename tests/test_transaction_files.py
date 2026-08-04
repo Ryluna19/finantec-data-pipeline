@@ -27,9 +27,12 @@ from src.transaction_files import (
     read_excel_transactions,
     read_ofx_transactions,
     read_transaction_file,
+    suggest_excel_header_row,
     split_imported_transactions_by_match,
     suggest_transaction_column_mapping,
     translate_transaction_table,
+    suggest_split_amount_column_mapping,
+    translate_split_amount_transaction_table,
 )
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
@@ -222,6 +225,19 @@ def test_list_excel_sheet_names_returns_available_sheets() -> None:
         "Resumo",
     ]
 
+def test_suggest_excel_header_row_finds_transaction_columns() -> None:
+    excel_content = (
+        create_external_excel_file()
+    )
+
+    suggested_header_row = (
+        suggest_excel_header_row(
+            excel_content,
+            sheet_name="Extrato",
+        )
+    )
+
+    assert suggested_header_row == 1
 
 def test_read_excel_table_uses_selected_header_row() -> None:
     excel_content = (
@@ -342,6 +358,23 @@ def test_suggest_transaction_column_mapping_does_not_guess_split_amounts() -> No
         "valor": None,
     }
 
+def test_suggest_split_amount_column_mapping_recognizes_columns() -> None:
+    suggestions = (
+        suggest_split_amount_column_mapping(
+            [
+                "Data",
+                "Histórico",
+                "Débito",
+                "Crédito",
+                "Categoria",
+            ]
+        )
+    )
+
+    assert suggestions == {
+        "debito": "Débito",
+        "credito": "Crédito",
+    }
 
 def test_translate_transaction_table_uses_signed_amounts() -> None:
     external_table = read_excel_table(
@@ -519,7 +552,123 @@ def test_translate_transaction_table_rejects_unknown_source_column() -> None:
             },
         )
 
+def test_translate_split_amount_transaction_table_maps_both_columns() -> None:
+    external_table = pd.DataFrame(
+        {
+            "Data": [
+                "2026-07-01",
+                "2026-07-02",
+            ],
+            "Histórico": [
+                "Mercado",
+                "Salário",
+            ],
+            "Débito": [
+                145.60,
+                None,
+            ],
+            "Crédito": [
+                None,
+                1900.00,
+            ],
+            "Categoria": [
+                "Alimentação",
+                "Trabalho",
+            ],
+        }
+    )
 
+    translated = (
+        translate_split_amount_transaction_table(
+            external_table,
+            date_column="Data",
+            description_column="Histórico",
+            debit_column="Débito",
+            credit_column="Crédito",
+            category_column="Categoria",
+        )
+    )
+
+    assert translated.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-07-01",
+            "tipo": "despesa",
+            "descricao": "Mercado",
+            "categoria": "Alimentação",
+            "valor": 145.60,
+        },
+        {
+            "data": "2026-07-02",
+            "tipo": "receita",
+            "descricao": "Salário",
+            "categoria": "Trabalho",
+            "valor": 1900.00,
+        },
+    ]
+
+def test_translate_split_amount_transaction_table_rejects_ambiguous_rows() -> None:
+    external_table = pd.DataFrame(
+        {
+            "Data": [
+                "2026-07-01",
+                "2026-07-02",
+                "2026-07-03",
+                "2026-07-04",
+            ],
+            "Histórico": [
+                "Débito válido",
+                "Crédito válido",
+                "Ambos preenchidos",
+                "Ambos vazios",
+            ],
+            "Débito": [
+                100.00,
+                None,
+                50.00,
+                None,
+            ],
+            "Crédito": [
+                None,
+                200.00,
+                75.00,
+                None,
+            ],
+        }
+    )
+
+    translated = (
+        translate_split_amount_transaction_table(
+            external_table,
+            date_column="Data",
+            description_column="Histórico",
+            debit_column="Débito",
+            credit_column="Crédito",
+        )
+    )
+
+    (
+        valid_transactions,
+        rejected_transactions,
+    ) = split_transactions_by_validity(
+        translated
+    )
+
+    assert valid_transactions[
+        "descricao"
+    ].tolist() == [
+        "Débito válido",
+        "Crédito válido",
+    ]
+
+    assert rejected_transactions[
+        "descricao"
+    ].tolist() == [
+        "Ambos preenchidos",
+        "Ambos vazios",
+    ]
+    
 def test_external_excel_fixture_is_translated_and_validated() -> None:
     """Valida a tradução completa de uma planilha externa realista."""
     fixture_path = Path(
@@ -534,10 +683,19 @@ def test_external_excel_fixture_is_translated_and_validated() -> None:
         "Extrato Conta",
     ]
 
+    suggested_header_row = (
+    suggest_excel_header_row(
+        fixture_path,
+        sheet_name="Extrato Conta",
+    )
+    )
+
+    assert suggested_header_row == 4
+
     external_table = read_excel_table(
         fixture_path,
         sheet_name="Extrato Conta",
-        header_row=4,
+        header_row=suggested_header_row,
     )
 
     column_mapping = (
@@ -1538,3 +1696,71 @@ def test_split_matching_transactions_respects_occurrence_count() -> None:
     assert len(
         new_transactions
     ) == 1
+    
+def test_split_amount_excel_fixture_is_translated_and_validated() -> None:
+    fixture_path = Path(
+        "tests/fixtures/excel/"
+        "external_split_debit_credit.xlsx"
+    )
+
+    suggested_header_row = (
+        suggest_excel_header_row(
+            fixture_path,
+            sheet_name="Conta Corrente",
+        )
+    )
+
+    assert suggested_header_row == 4
+
+    external_table = read_excel_table(
+        fixture_path,
+        sheet_name="Conta Corrente",
+        header_row=suggested_header_row,
+    )
+
+    split_mapping = (
+        suggest_split_amount_column_mapping(
+            external_table.columns
+        )
+    )
+
+    assert split_mapping == {
+        "debito": "Débito",
+        "credito": "Crédito",
+    }
+
+    translated = (
+        translate_split_amount_transaction_table(
+            external_table,
+            date_column="Data",
+            description_column="Histórico",
+            debit_column="Débito",
+            credit_column="Crédito",
+            category_column="Categoria",
+        )
+    )
+
+    (
+        valid_transactions,
+        rejected_transactions,
+    ) = split_transactions_by_validity(
+        translated
+    )
+
+    assert len(
+        valid_transactions
+    ) == 12
+
+    assert rejected_transactions.empty
+
+    assert (
+        valid_transactions[
+            "tipo"
+        ]
+        .value_counts()
+        .to_dict()
+        == {
+            "despesa": 7,
+            "receita": 5,
+        }
+    )
