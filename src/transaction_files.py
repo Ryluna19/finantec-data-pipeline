@@ -12,6 +12,9 @@ import pandas as pd
 import unicodedata
 
 from ofxparse import OfxParser
+from ofxparse.ofxparse import (
+    OfxParserException,
+)
 
 from src.transaction_identity import (
     TRANSACTION_ID_COLUMN,
@@ -171,11 +174,21 @@ def read_ofx_transactions(
             )
         )
 
-    ofx = OfxParser.parse(
-        BytesIO(
-            source_content
+    try:
+        ofx = OfxParser.parse(
+            BytesIO(
+                source_content
+            )
         )
-    )
+
+    except (
+        OfxParserException,
+        ValueError,
+    ) as error:
+        raise ValueError(
+            "Não foi possível interpretar o arquivo OFX. "
+            "Verifique se o arquivo é válido e tente novamente."
+        ) from error
 
     account = getattr(
         ofx,

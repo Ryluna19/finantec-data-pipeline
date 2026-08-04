@@ -265,6 +265,46 @@ def test_read_ofx_transactions_maps_statement_to_contract() -> None:
         },
     ]
 
+@pytest.mark.parametrize(
+    (
+        "content",
+        "expected_message",
+    ),
+    [
+        (
+            b"",
+            "Não foi possível interpretar",
+        ),
+        (
+            b"isto nao e um arquivo ofx",
+            "Não foi possível interpretar",
+        ),
+        (
+            (
+                b"OFXHEADER:100\n"
+                b"DATA:OFXSGML\n"
+                b"VERSION:102\n"
+                b"\n"
+                b"<OFX><STMTTRN>"
+            ),
+            "não contém um extrato reconhecido",
+        ),
+    ],
+)
+def test_read_ofx_transactions_rejects_invalid_content(
+    content: bytes,
+    expected_message: str,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match=expected_message,
+    ):
+        read_ofx_transactions(
+            BytesIO(
+                content
+            )
+        )
+
 def test_read_transaction_file_dispatches_csv() -> None:
     csv_content = (
         "DATA,TIPO,DESCRIÇÃO,CATEGORIA,VALOR\n"
