@@ -287,6 +287,58 @@ def test_delete_user_profile(
         is None
     )
 
+def test_delete_user_profile_preserves_other_users(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "finantec.db"
+    )
+
+    save_user_profile(
+        database_path=database_path,
+        user_id="user-1",
+        profile=build_profile(
+            name="Ryan"
+        ),
+    )
+
+    save_user_profile(
+        database_path=database_path,
+        user_id="user-2",
+        profile=build_profile(
+            name="Marina"
+        ),
+    )
+
+    deleted = delete_user_profile(
+        database_path=database_path,
+        user_id="user-1",
+    )
+
+    assert deleted is True
+
+    assert (
+        load_user_profile(
+            database_path=database_path,
+            user_id="user-1",
+        )
+        is None
+    )
+
+    second_profile = load_user_profile(
+        database_path=database_path,
+        user_id="user-2",
+    )
+
+    assert second_profile is not None
+
+    assert (
+        second_profile[
+            "nome"
+        ]
+        == "Marina"
+    )
 
 def test_rejects_negative_monthly_income():
     profile = build_profile()

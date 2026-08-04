@@ -258,6 +258,70 @@ def test_goals_are_isolated_by_user(
     )
 
 
+def test_goal_operations_do_not_cross_user_boundary(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "finantec.db"
+    )
+
+    created_goal = create_financial_goal(
+        database_path=database_path,
+        user_id="user-1",
+        goal=build_goal(
+            "Meta privada"
+        ),
+    )
+
+    goal_id = created_goal[
+        "goal_id"
+    ]
+
+    assert (
+        get_financial_goal(
+            database_path=database_path,
+            user_id="user-2",
+            goal_id=goal_id,
+        )
+        is None
+    )
+
+    with pytest.raises(
+        FinancialGoalNotFoundError
+    ):
+        update_financial_goal(
+            database_path=database_path,
+            user_id="user-2",
+            goal_id=goal_id,
+            goal=build_goal(
+                "Tentativa de alteração"
+            ),
+        )
+
+    deleted = delete_financial_goal(
+        database_path=database_path,
+        user_id="user-2",
+        goal_id=goal_id,
+    )
+
+    assert deleted is False
+
+    owner_goal = get_financial_goal(
+        database_path=database_path,
+        user_id="user-1",
+        goal_id=goal_id,
+    )
+
+    assert owner_goal is not None
+
+    assert (
+        owner_goal[
+            "nome"
+        ]
+        == "Meta privada"
+    )
+
 def test_rejects_duplicate_goal_name(
     tmp_path,
 ):

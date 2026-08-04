@@ -237,6 +237,100 @@ def test_budgets_are_isolated_by_user(tmp_path):
     assert second_user_budgets[0]["category"] == "Transporte"
 
 
+def test_budget_operations_do_not_cross_user_boundary(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "finantec.db"
+    )
+
+    created_budget = create_monthly_budget(
+        database_path=database_path,
+        user_id="user-1",
+        budget=build_budget(
+            category="Alimentação",
+            period="2026-07",
+        ),
+    )
+
+    budget_id = created_budget[
+        "budget_id"
+    ]
+
+    assert (
+        get_monthly_budget(
+            database_path=database_path,
+            user_id="user-2",
+            budget_id=budget_id,
+        )
+        is None
+    )
+
+    with pytest.raises(
+        MonthlyBudgetNotFoundError
+    ):
+        update_monthly_budget(
+            database_path=database_path,
+            user_id="user-2",
+            budget_id=budget_id,
+            budget=build_budget(
+                category="Transporte",
+                period="2026-07",
+            ),
+        )
+
+    with pytest.raises(
+        MonthlyBudgetNotFoundError
+    ):
+        split_monthly_budget_from_period(
+            database_path=database_path,
+            user_id="user-2",
+            budget_id=budget_id,
+            split_period="2026-09",
+            budget=build_budget(
+                category="Transporte",
+                period="2026-09",
+            ),
+        )
+
+    deleted = delete_monthly_budget(
+        database_path=database_path,
+        user_id="user-2",
+        budget_id=budget_id,
+    )
+
+    assert deleted is False
+
+    owner_budget = get_monthly_budget(
+        database_path=database_path,
+        user_id="user-1",
+        budget_id=budget_id,
+    )
+
+    assert owner_budget is not None
+
+    assert (
+        owner_budget[
+            "category"
+        ]
+        == "Alimentação"
+    )
+
+    assert (
+        owner_budget[
+            "period"
+        ]
+        == "2026-07"
+    )
+
+    assert (
+        owner_budget[
+            "end_period"
+        ]
+        is None
+    )
+
 def test_rejects_duplicate_category_in_period(tmp_path):
     database_path = tmp_path / "finantec.db"
 
