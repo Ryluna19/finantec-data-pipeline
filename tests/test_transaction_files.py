@@ -28,6 +28,7 @@ from src.transaction_files import (
 )
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
+    split_transactions_by_validity,
 )
 
 
@@ -265,6 +266,142 @@ def test_read_ofx_transactions_maps_statement_to_contract() -> None:
         },
     ]
 
+def test_read_ofx_transactions_supports_credit_card_statement() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "credit_card_statement.ofx"
+    )
+
+    transactions = read_ofx_transactions(
+        fixture_path
+    )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-05",
+            "tipo": "despesa",
+            "descricao": (
+                "Restaurante Teste"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 120.9,
+        },
+        {
+            "data": "2026-08-07",
+            "tipo": "receita",
+            "descricao": (
+                "Loja Teste"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 30.0,
+        },
+    ]
+
+@pytest.mark.parametrize(
+    (
+        "removed_fragments",
+        "expected_description",
+    ),
+    [
+        (
+            (
+                b"<NAME>Bolsa-estagio</NAME>",
+            ),
+            "Pagamento mensal",
+        ),
+        (
+            (
+                b"<NAME>Bolsa-estagio</NAME>",
+                b"<MEMO>Pagamento mensal</MEMO>",
+            ),
+            "credit-001",
+        ),
+    ],
+)
+def test_read_ofx_transactions_uses_description_fallback(
+    removed_fragments: tuple[bytes, ...],
+    expected_description: str,
+) -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    content = fixture_path.read_bytes()
+
+    for fragment in removed_fragments:
+        content = content.replace(
+            fragment,
+            b"",
+        )
+
+    transactions = read_ofx_transactions(
+        BytesIO(
+            content
+        )
+    )
+
+    assert (
+        transactions.loc[
+            0,
+            "descricao",
+        ]
+        == expected_description
+    )
+def test_ofx_zero_amount_is_rejected_by_common_validation() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    content = fixture_path.read_bytes().replace(
+        b"<TRNAMT>-200.50</TRNAMT>",
+        b"<TRNAMT>0.00</TRNAMT>",
+    )
+
+    imported_transactions = (
+        read_ofx_transactions(
+            BytesIO(
+                content
+            )
+        )
+    )
+
+    (
+        valid_transactions,
+        rejected_transactions,
+    ) = split_transactions_by_validity(
+        imported_transactions
+    )
+
+    assert (
+        valid_transactions[
+            "descricao"
+        ].tolist()
+        == [
+            "Bolsa-estagio",
+        ]
+    )
+
+    assert len(
+        rejected_transactions
+    ) == 1
+
 @pytest.mark.parametrize(
     (
         "content",
@@ -304,6 +441,47 @@ def test_read_ofx_transactions_rejects_invalid_content(
                 content
             )
         )
+def test_read_ofx_transactions_supports_xml_format() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "xml_bank_statement.ofx"
+    )
+
+    transactions = read_ofx_transactions(
+        fixture_path
+    )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert transactions.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-10",
+            "tipo": "receita",
+            "descricao": (
+                "Pagamento XML"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 900.0,
+        },
+        {
+            "data": "2026-08-11",
+            "tipo": "despesa",
+            "descricao": (
+                "Compra XML"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 75.25,
+        },
+    ]
 
 def test_read_transaction_file_dispatches_csv() -> None:
     csv_content = (

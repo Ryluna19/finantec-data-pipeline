@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-
+from codecs import BOM_UTF8
 from collections import Counter
 from io import BytesIO
 from pathlib import Path
@@ -170,9 +170,16 @@ def read_ofx_transactions(
     ):
         source_content = (
             source_content.encode(
-                "utf-8-sig"
+                "utf-8"
             )
         )
+
+    if source_content.startswith(
+        BOM_UTF8
+    ):
+        source_content = source_content[
+            len(BOM_UTF8):
+        ]
 
     try:
         ofx = OfxParser.parse(
