@@ -11,6 +11,8 @@ from typing import BinaryIO
 import pandas as pd
 import unicodedata
 
+from ofxparse import OfxParser
+
 from src.transaction_identity import (
     TRANSACTION_ID_COLUMN,
     ensure_transaction_ids,
@@ -137,6 +139,154 @@ def read_excel_transactions(
 
     return normalize_transaction_headers(transactions)
 
+def read_ofx_transactions(
+    source: FileSource,
+) -> pd.DataFrame:
+    """Converte um extrato OFX para o contrato interno."""
+    if isinstance(
+        source,
+        (
+            str,
+            Path,
+        ),
+    ):
+        source_content = Path(
+            source
+        ).read_bytes()
+
+    else:
+        _rewind_file(
+            source
+        )
+
+        source_content = source.read()
+
+    if isinstance(
+        source_content,
+        str,
+    ):
+        source_content = (
+            source_content.encode(
+                "utf-8-sig"
+            )
+        )
+
+    ofx = OfxParser.parse(
+        BytesIO(
+            source_content
+        )
+    )
+
+    account = getattr(
+        ofx,
+        "account",
+        None,
+    )
+
+    statement = getattr(
+        account,
+        "statement",
+        None,
+    )
+
+    if statement is None:
+        raise ValueError(
+            "O arquivo OFX não contém "
+            "um extrato reconhecido."
+        )
+
+    imported_rows: list[
+        dict[str, object]
+    ] = []
+
+    for transaction in (
+        statement.transactions
+    ):
+        transaction_date = getattr(
+            transaction,
+            "date",
+            None,
+        )
+
+        if transaction_date is None:
+            raise ValueError(
+                "O arquivo OFX possui "
+                "uma transação sem data."
+            )
+
+        raw_amount = getattr(
+            transaction,
+            "amount",
+            None,
+        )
+
+        if raw_amount is None:
+            raise ValueError(
+                "O arquivo OFX possui "
+                "uma transação sem valor."
+            )
+
+        amount = float(
+            raw_amount
+        )
+
+        description = next(
+            (
+                str(value).strip()
+                for value in (
+                    getattr(
+                        transaction,
+                        "payee",
+                        None,
+                    ),
+                    getattr(
+                        transaction,
+                        "memo",
+                        None,
+                    ),
+                    getattr(
+                        transaction,
+                        "id",
+                        None,
+                    ),
+                )
+                if (
+                    value is not None
+                    and str(value).strip()
+                )
+            ),
+            "Transação OFX",
+        )
+
+        imported_rows.append(
+            {
+                "data": (
+                    transaction_date
+                    .date()
+                    .isoformat()
+                ),
+                "tipo": (
+                    "receita"
+                    if amount > 0
+                    else "despesa"
+                ),
+                "descricao": description,
+                "categoria": (
+                    "Não categorizado"
+                ),
+                "valor": abs(
+                    amount
+                ),
+            }
+        )
+
+    return pd.DataFrame(
+        imported_rows,
+        columns=(
+            REQUIRED_TRANSACTION_COLUMNS
+        ),
+    )
+
 def read_transaction_file(
     source: FileSource,
     file_name: str | Path,
@@ -171,9 +321,14 @@ def read_transaction_file(
 
             raise
 
+    if file_extension == ".ofx":
+        return read_ofx_transactions(
+            source
+        )
+
     raise ValueError(
         "Formato não suportado. "
-        "Envie um arquivo CSV ou XLSX."
+        "Envie um arquivo CSV, XLSX ou OFX."
     )
 
 def prepare_transactions_for_export(

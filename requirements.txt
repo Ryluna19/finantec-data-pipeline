@@ -2,4 +2,5 @@
 pandas
 altair
 openpyxl
+ofxparse2==0.2.2
 pytest

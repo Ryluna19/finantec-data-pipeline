@@ -826,6 +826,7 @@ def _render_transaction_import_controls(
         type=[
             "xlsx",
             "csv",
+            "ofx",
         ],
         accept_multiple_files=False,
         key=(
@@ -833,8 +834,9 @@ def _render_transaction_import_controls(
             f"{widget_version}"
         ),
         help=(
-            "O arquivo deve usar as colunas "
-            "do modelo do FinanTec."
+            "Arquivos CSV e XLSX devem usar as colunas "
+            "do modelo do FinanTec. Extratos OFX são "
+            "convertidos automaticamente."
         ),
     )
 

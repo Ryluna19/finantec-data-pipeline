@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -21,6 +22,7 @@ from src.transaction_files import (
     prepare_transactions_for_export,
     read_csv_transactions,
     read_excel_transactions,
+    read_ofx_transactions,
     read_transaction_file,
     split_imported_transactions_by_match,
 )
@@ -215,6 +217,53 @@ def test_export_transactions_to_excel_can_be_imported_again() -> None:
         ]
         == 200.50
     )
+def test_read_ofx_transactions_maps_statement_to_contract() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    transactions = (
+        read_ofx_transactions(
+            fixture_path
+        )
+    )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions.to_dict(
+        orient="records"
+    ) == [
+        {
+            "data": "2026-08-01",
+            "tipo": "receita",
+            "descricao": (
+                "Bolsa-estagio"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 1600.0,
+        },
+        {
+            "data": "2026-08-02",
+            "tipo": "despesa",
+            "descricao": (
+                "Mercado Teste"
+            ),
+            "categoria": (
+                "Não categorizado"
+            ),
+            "valor": 200.5,
+        },
+    ]
 
 def test_read_transaction_file_dispatches_csv() -> None:
     csv_content = (
@@ -272,6 +321,42 @@ def test_read_transaction_file_dispatches_excel() -> None:
         == REQUIRED_TRANSACTION_COLUMNS
     )
 
+def test_read_transaction_file_dispatches_ofx() -> None:
+    fixture_path = Path(
+        "tests/fixtures/ofx/"
+        "bank_statement.ofx"
+    )
+
+    with fixture_path.open(
+        "rb"
+    ) as source:
+        transactions = read_transaction_file(
+            source=source,
+            file_name="bank_statement.ofx",
+        )
+
+    assert (
+        transactions.columns.tolist()
+        == REQUIRED_TRANSACTION_COLUMNS
+    )
+
+    assert len(
+        transactions
+    ) == 2
+
+    assert transactions[
+        "tipo"
+    ].tolist() == [
+        "receita",
+        "despesa",
+    ]
+
+    assert transactions[
+        "valor"
+    ].tolist() == [
+        1600.0,
+        200.5,
+    ]
 
 def test_read_transaction_file_explains_missing_excel_sheet() -> None:
     excel_content = BytesIO()
@@ -316,7 +401,7 @@ def test_read_transaction_file_rejects_unsupported_format() -> None:
             source=BytesIO(
                 b"unsupported"
             ),
-            file_name="transacoes.ofx",
+            file_name="transacoes.pdf",
         )
 
 def test_create_excel_template_contains_expected_sheets() -> None:
