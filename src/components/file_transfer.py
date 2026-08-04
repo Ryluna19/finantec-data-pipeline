@@ -858,8 +858,7 @@ def render_transaction_import(
     render_import_result()
 
     st.caption(
-        "Envie um arquivo CSV ou Excel para adicionar "
-        "um novo lote de transações."
+        "Envie um arquivo CSV, Excel ou OFX para adicionar um novo lote de transações."
     )
 
     return _render_transaction_import_controls(
