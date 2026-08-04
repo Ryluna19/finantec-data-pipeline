@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 import pytest
+import src.account_repository as account_repository
 
 from src.account_repository import (
     ACCOUNT_TABLE_NAME,
@@ -37,6 +38,217 @@ def test_password_hash_is_not_plain_text():
         password_hash,
     )
 
+def test_new_password_hash_uses_current_scrypt_parameters():
+    password_hash = hash_password(
+        "senha-segura-123"
+    )
+
+    (
+        scheme,
+        n_text,
+        r_text,
+        p_text,
+        _,
+        _,
+    ) = password_hash.split(
+        "$",
+        maxsplit=5,
+    )
+
+    assert (
+        scheme
+        == account_repository.PASSWORD_SCHEME
+    )
+
+    assert (
+        int(n_text)
+        == account_repository.SCRYPT_N
+    )
+
+    assert (
+        int(r_text)
+        == account_repository.SCRYPT_R
+    )
+
+    assert (
+        int(p_text)
+        == account_repository.SCRYPT_P
+    )
+
+def test_password_hash_with_previous_cost_remains_valid(
+    monkeypatch,
+):
+    password = "senha-segura-123"
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            account_repository,
+            "SCRYPT_P",
+            1,
+        )
+
+        previous_password_hash = (
+            account_repository.hash_password(
+                password
+            )
+        )
+
+    assert verify_password(
+        password,
+        previous_password_hash,
+    )
+
+    assert not verify_password(
+        "senha-incorreta",
+        previous_password_hash,
+    )
+
+def test_authentication_rehashes_previous_password_cost(
+    tmp_path,
+    monkeypatch,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    password = "senha-segura-123"
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            account_repository,
+            "SCRYPT_P",
+            1,
+        )
+
+        create_user_account(
+            database_path=database_path,
+            username="ryan",
+            password=password,
+        )
+
+    authenticated_account = (
+        authenticate_user_account(
+            database_path=database_path,
+            username="ryan",
+            password=password,
+        )
+    )
+
+    assert authenticated_account is not None
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        row = connection.execute(
+            f"""
+            SELECT password_hash
+            FROM {ACCOUNT_TABLE_NAME}
+            WHERE username_key = ?
+            """,
+            (
+                "ryan",
+            ),
+        ).fetchone()
+
+    assert row is not None
+
+    updated_password_hash = str(
+        row[
+            0
+        ]
+    )
+
+    assert not (
+        account_repository
+        .password_hash_needs_rehash(
+            updated_password_hash
+        )
+    )
+
+    assert verify_password(
+        password,
+        updated_password_hash,
+    )
+
+def test_failed_authentication_does_not_rehash_password(
+    tmp_path,
+    monkeypatch,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            account_repository,
+            "SCRYPT_P",
+            1,
+        )
+
+        create_user_account(
+            database_path=database_path,
+            username="ryan",
+            password="senha-segura-123",
+        )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        previous_row = connection.execute(
+            f"""
+            SELECT password_hash
+            FROM {ACCOUNT_TABLE_NAME}
+            WHERE username_key = ?
+            """,
+            (
+                "ryan",
+            ),
+        ).fetchone()
+
+    assert previous_row is not None
+
+    previous_password_hash = str(
+        previous_row[
+            0
+        ]
+    )
+
+    authenticated_account = (
+        authenticate_user_account(
+            database_path=database_path,
+            username="ryan",
+            password="senha-incorreta",
+        )
+    )
+
+    assert authenticated_account is None
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        current_row = connection.execute(
+            f"""
+            SELECT password_hash
+            FROM {ACCOUNT_TABLE_NAME}
+            WHERE username_key = ?
+            """,
+            (
+                "ryan",
+            ),
+        ).fetchone()
+
+    assert current_row is not None
+
+    assert (
+        str(
+            current_row[
+                0
+            ]
+        )
+        == previous_password_hash
+    )
 
 def test_same_password_generates_different_hashes():
     password = "senha-segura-123"

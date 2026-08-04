@@ -60,11 +60,15 @@ def test_default_context_remains_compatible(
         ),
         database_path=database_path,
         table_name=TABLE_NAME,
+        user_id=LOCAL_USER_ID,
+        data_mode="user",
     )
 
     loaded = load_transactions(
         database_path=database_path,
         table_name=TABLE_NAME,
+        user_id=LOCAL_USER_ID,
+        data_mode="user",
     )
 
     assert len(

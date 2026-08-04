@@ -15,10 +15,10 @@ from src.transaction_identity import (
 from src.transaction_validation import (
     REQUIRED_TRANSACTION_COLUMNS,
 )
+
 from src.user_context import (
     LOCAL_USER_ID,
 )
-
 
 USER_ID_COLUMN = "user_id"
 DATA_MODE_COLUMN = "data_mode"
@@ -436,8 +436,8 @@ def replace_transactions(
     transactions: pd.DataFrame,
     database_path: Path,
     table_name: str,
-    user_id: str = LOCAL_USER_ID,
-    data_mode: str = "user",
+    user_id: str,
+    data_mode: str,
 ) -> None:
     """Substitui somente as transações do contexto informado."""
     normalized_table_name = (
@@ -534,8 +534,8 @@ def insert_transactions(
     transactions: pd.DataFrame,
     database_path: Path,
     table_name: str,
-    user_id: str = LOCAL_USER_ID,
-    data_mode: str = "user",
+    user_id: str,
+    data_mode: str,
 ) -> int:
     """Insere novas transações sem substituir o contexto."""
     normalized_table_name = (
@@ -662,8 +662,8 @@ def insert_transactions(
 def load_transactions(
     database_path: Path,
     table_name: str,
-    user_id: str = LOCAL_USER_ID,
-    data_mode: str = "user",
+    user_id: str,
+    data_mode: str,
 ) -> pd.DataFrame:
     """Carrega somente as transações do contexto informado."""
     normalized_table_name = (
@@ -731,8 +731,8 @@ def load_transaction(
     database_path: Path,
     table_name: str,
     transaction_id: str,
-    user_id: str = LOCAL_USER_ID,
-    data_mode: str = "user",
+    user_id: str,
+    data_mode: str,
 ) -> dict[str, Any] | None:
     """Carrega uma transação específica do contexto."""
     normalized_table_name = (
@@ -826,8 +826,8 @@ def update_transaction(
     table_name: str,
     transaction_id: str,
     updates: Mapping[str, object],
-    user_id: str = LOCAL_USER_ID,
-    data_mode: str = "user",
+    user_id: str,
+    data_mode: str,
 ) -> dict[str, Any]:
     """Atualiza uma transação sem alterar seu contexto ou ID."""
     normalized_table_name = (
@@ -968,8 +968,8 @@ def delete_transaction(
     database_path: Path,
     table_name: str,
     transaction_id: str,
-    user_id: str = LOCAL_USER_ID,
-    data_mode: str = "user",
+    user_id: str,
+    data_mode: str,
 ) -> bool:
     """Exclui uma transação específica do contexto."""
     normalized_table_name = (

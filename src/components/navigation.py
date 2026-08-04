@@ -38,6 +38,17 @@ SECTION_TRIGGER_LABELS = {
     DATA_SECTION: "Dados",
 }
 
+SECTION_ICONS = {
+    MAIN_SECTION: (
+        ":material/space_dashboard:"
+    ),
+    PROFILE_SECTION: (
+        ":material/person:"
+    ),
+    DATA_SECTION: (
+        ":material/shield_lock:"
+    ),
+}
 
 def get_active_section() -> str:
     """Obtém a seção externa atualmente aberta."""
@@ -89,6 +100,21 @@ def get_section_trigger_label(
         ],
     )
 
+def get_section_icon(
+    section: str,
+) -> str:
+    """Retorna o ícone associado à seção da aplicação."""
+    normalized_section = str(
+        section
+    ).strip()
+
+    return SECTION_ICONS.get(
+        normalized_section,
+        SECTION_ICONS[
+            MAIN_SECTION
+        ],
+    )
+
 
 def _open_section(
     section: str,
@@ -121,15 +147,10 @@ def render_user_navigation(
         get_active_section()
     )
 
-    name = str(
-        profile.get(
-            "nome",
-            "Perfil local",
-        )
-        or "Perfil local"
-    ).strip()
-
     active_label = get_section_trigger_label(
+        active_section
+    )
+    active_icon = get_section_icon(
         active_section
     )
 
@@ -147,10 +168,7 @@ def render_user_navigation(
                     SECTION_OPTIONS
                 ),
                 key="finantec-user-menu",
-                icon=(
-                    ":material/"
-                    "space_dashboard:"
-                ),
+                icon=active_icon,
                 type="secondary",
                 width="stretch",
             )
@@ -165,10 +183,6 @@ def render_user_navigation(
                 _open_section(
                     selected_section
                 )
-
-            st.caption(
-                f"Perfil ativo: {name}"
-            )
 
             if data_mode == "demo":
                 st.caption(

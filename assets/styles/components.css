@@ -948,6 +948,101 @@ label span {
 }
 
 /* =========================================================
+   SIMULADOR LIVRE DE METAS
+   ========================================================= */
+
+
+.st-key-goal-simulation-source-card,
+div[class*="st-key-goal-simulation-parameters-"] {
+    box-sizing:
+        border-box;
+
+    margin-bottom:
+        1rem;
+
+    padding:
+        1.05rem
+        1.15rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-lg) !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-goal-simulation-source-card
+> [data-testid="stVerticalBlock"],
+div[class*="st-key-goal-simulation-parameters-"]
+> [data-testid="stVerticalBlock"] {
+    gap:
+        0.8rem !important;
+}
+
+.st-key-goal-simulation-source-card
+[data-testid="stVerticalBlockBorderWrapper"],
+div[class*="st-key-goal-simulation-parameters-"]
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0 !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-free-goal-simulation-card {
+    box-sizing:
+        border-box;
+
+    padding:
+        1.15rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-lg) !important;
+
+    box-shadow:
+        none !important;
+
+    overflow:
+        hidden;
+}
+
+.st-key-free-goal-simulation-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0 !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
+}
+
+/* =========================================================
    METAS SALVAS
    ========================================================= */
 
@@ -2344,7 +2439,8 @@ td.finantec-value-expense {
     background:
         var(--bg-panel) !important;
 
-    border-color:
+    border:
+        1px solid
         var(--border-light) !important;
 
     border-radius:
@@ -3036,15 +3132,44 @@ hr {
         0;
 }
 
-.st-key-dashboard-period-filter-card
-[data-testid="stVerticalBlockBorderWrapper"],
-.st-key-dashboard-period-filter-card[data-testid="stVerticalBlockBorderWrapper"],
-.st-key-transactions-period-filter-card
-[data-testid="stVerticalBlockBorderWrapper"],
-.st-key-transactions-period-filter-card[data-testid="stVerticalBlockBorderWrapper"] {
+.st-key-dashboard-period-filter-card,
+.st-key-transactions-period-filter-card {
+    box-sizing:
+        border-box;
+
     padding:
         0.95rem
         1rem !important;
+
+    background:
+        var(--bg-panel) !important;
+
+    border:
+        1px solid
+        var(--border-light) !important;
+
+    border-radius:
+        var(--radius-lg) !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-dashboard-period-filter-card
+[data-testid="stVerticalBlockBorderWrapper"],
+.st-key-transactions-period-filter-card
+[data-testid="stVerticalBlockBorderWrapper"] {
+    padding:
+        0 !important;
+
+    background:
+        transparent !important;
+
+    border:
+        0 !important;
+
+    box-shadow:
+        none !important;
 }
 
 .st-key-dashboard-period-filter-card
@@ -3594,7 +3719,8 @@ div[class*="st-key-period-transactions-card"]
     background:
         var(--bg-panel) !important;
 
-    border-color:
+    border:
+        1px solid
         var(--border-light) !important;
 
     border-radius:

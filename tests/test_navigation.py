@@ -46,16 +46,21 @@ class NavigationStreamlit:
         self.session_state: dict = {}
         self.sidebar = SidebarContext()
         self.menu_labels: list[str] = []
+        self.menu_icons: list[str] = []
         self.captions: list[str] = []
 
     def menu_button(
         self,
         *,
         label: str,
+        icon: str,
         **_kwargs,
     ) -> None:
         self.menu_labels.append(
             label
+        )
+        self.menu_icons.append(
+            icon
         )
         return None
 
@@ -101,14 +106,16 @@ def test_demo_keeps_personal_identity_and_shows_mode(
     assert fake_streamlit.menu_labels == [
     "Painel",
     ]
+    assert fake_streamlit.menu_icons == [
+        ":material/space_dashboard:",
+    ]
     assert fake_streamlit.captions == [
-    "Navegação principal",
-    "Perfil ativo: Ryan",
-    "Modo demonstração ativo",
+        "Navegação principal",
+        "Modo demonstração ativo",
     ]
 
 
-def test_unconfigured_profile_uses_navigation_fallback(
+def test_user_mode_shows_only_navigation_heading(
     monkeypatch,
 ) -> None:
     fake_streamlit = (
@@ -131,7 +138,57 @@ def test_unconfigured_profile_uses_navigation_fallback(
     assert fake_streamlit.menu_labels == [
     "Painel",
     ]
+    assert fake_streamlit.menu_icons == [
+        ":material/space_dashboard:",
+    ]
     assert fake_streamlit.captions == [
-    "Navegação principal",
-    "Perfil ativo: Perfil local",
+        "Navegação principal",
+    ]
+
+def test_navigation_icon_matches_active_section(
+    monkeypatch,
+) -> None:
+    fake_streamlit = (
+        NavigationStreamlit()
+    )
+
+    fake_streamlit.session_state[
+        navigation_module.APP_SECTION_KEY
+    ] = navigation_module.PROFILE_SECTION
+
+    monkeypatch.setattr(
+        navigation_module,
+        "st",
+        fake_streamlit,
+    )
+
+    navigation_module.render_user_navigation(
+        {},
+        data_mode="user",
+    )
+
+    assert fake_streamlit.menu_labels == [
+        "Perfil",
+    ]
+    assert fake_streamlit.menu_icons == [
+        ":material/person:",
+    ]
+
+    fake_streamlit.menu_labels.clear()
+    fake_streamlit.menu_icons.clear()
+
+    fake_streamlit.session_state[
+        navigation_module.APP_SECTION_KEY
+    ] = navigation_module.DATA_SECTION
+
+    navigation_module.render_user_navigation(
+        {},
+        data_mode="user",
+    )
+
+    assert fake_streamlit.menu_labels == [
+        "Dados",
+    ]
+    assert fake_streamlit.menu_icons == [
+        ":material/shield_lock:",
     ]

@@ -188,12 +188,8 @@
             0.65rem;
     }
 
-    .st-key-dashboard-period-filter-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-dashboard-period-filter-card[data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-transactions-period-filter-card
-    [data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-transactions-period-filter-card[data-testid="stVerticalBlockBorderWrapper"] {
+    .st-key-dashboard-period-filter-card,
+    .st-key-transactions-period-filter-card {
         padding:
             0.8rem !important;
     }
@@ -209,6 +205,9 @@
     }
 
     .st-key-finantec-global-header-shell {
+        margin-top:
+            0;
+
         padding:
             0.72rem !important;
 

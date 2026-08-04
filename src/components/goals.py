@@ -1510,120 +1510,191 @@ def _render_goal_simulation(
 
         return
 
-    simulation_mode = st.radio(
-        "Simular por",
-        options=[
-            SIMULATION_MODE_DEADLINE,
-            SIMULATION_MODE_MONTHLY,
-        ],
-        horizontal=True,
-        key=("goal-simulation-mode-" f"{goal_id}"),
-    )
-
-    if simulation_mode == SIMULATION_MODE_DEADLINE:
-        maximum_deadline = max(
-            60,
-            min(
-                max(
-                    stored_deadline * 2,
-                    stored_deadline,
+    with st.container(
+        border=False,
+        key=(
+            "goal-simulation-parameters-"
+            f"{goal_id}"
+        ),
+    ):
+        render_html(
+            build_section_header_html(
+                title="Parâmetros da simulação",
+                description=(
+                    "Escolha como deseja calcular "
+                    "o caminho até a meta."
                 ),
-                600,
-            ),
-        )
-
-        selected_deadline = st.slider(
-            "Em quantos meses deseja concluir?",
-            min_value=1,
-            max_value=maximum_deadline,
-            value=min(
-                stored_deadline,
-                maximum_deadline,
-            ),
-            step=1,
-            key=("goal-deadline-slider-" f"{goal_id}"),
-        )
-
-        simulation = calculate_monthly_goal(
-            valor_meta=goal_value,
-            prazo_meses=(selected_deadline),
-            valor_ja_reservado=(current_value),
-        )
-
-        monthly_amount = float(simulation["valor_mensal_necessario"] or 0.0)
-
-        _render_goal_summary(
-            goal_name=goal_name,
-            goal_value=goal_value,
-            current_value=current_value,
-            remaining_value=remaining_value,
-            fourth_label=("Necessário por mês"),
-            fourth_value=(format_currency(monthly_amount)),
-            fourth_description=(f"Para concluir em " f"{selected_deadline} meses."),
-        )
-
-        _render_balance_evaluation(
-            monthly_amount=monthly_amount,
-            available_balance=(available_balance),
-        )
-
-    else:
-        maximum_monthly_amount = max(
-            500.0,
-            float(ceil(remaining_value / 50) * 50),
-        )
-
-        suggested_monthly_amount = remaining_value / max(
-            stored_deadline,
-            1,
-        )
-
-        suggested_monthly_amount = round(suggested_monthly_amount / 50) * 50
-
-        suggested_monthly_amount = min(
-            max(
-                suggested_monthly_amount,
-                50.0,
-            ),
-            maximum_monthly_amount,
-        )
-
-        selected_monthly_amount = st.slider(
-            "Quanto consegue guardar por mês?",
-            min_value=50.0,
-            max_value=(maximum_monthly_amount),
-            value=float(suggested_monthly_amount),
-            step=50.0,
-            format="R$ %.2f",
-            key=("goal-monthly-slider-" f"{goal_id}"),
-        )
-
-        estimated_months = calculate_estimated_months(
-            remaining_value=(remaining_value),
-            monthly_amount=(selected_monthly_amount),
-        )
-
-        months_label = (
-            "Prazo inválido"
-            if estimated_months is None
-            else (
-                f"{estimated_months} " + ("mês" if estimated_months == 1 else "meses")
+                compact=True,
             )
         )
 
+        simulation_mode = st.radio(
+            "Simular por",
+            options=[
+                SIMULATION_MODE_DEADLINE,
+                SIMULATION_MODE_MONTHLY,
+            ],
+            horizontal=True,
+            key=(
+                "goal-simulation-mode-"
+                f"{goal_id}"
+            ),
+        )
+
+        if (
+            simulation_mode
+            == SIMULATION_MODE_DEADLINE
+        ):
+            maximum_deadline = max(
+                60,
+                min(
+                    max(
+                        stored_deadline * 2,
+                        stored_deadline,
+                    ),
+                    600,
+                ),
+            )
+
+            selected_deadline = st.slider(
+                "Em quantos meses deseja concluir?",
+                min_value=1,
+                max_value=maximum_deadline,
+                value=min(
+                    stored_deadline,
+                    maximum_deadline,
+                ),
+                step=1,
+                key=(
+                    "goal-deadline-slider-"
+                    f"{goal_id}"
+                ),
+            )
+
+            simulation = calculate_monthly_goal(
+                valor_meta=goal_value,
+                prazo_meses=selected_deadline,
+                valor_ja_reservado=current_value,
+            )
+
+            evaluated_monthly_amount = float(
+                simulation[
+                    "valor_mensal_necessario"
+                ]
+                or 0.0
+            )
+
+            result_fourth_label = (
+                "Necessário por mês"
+            )
+
+            result_fourth_value = format_currency(
+                evaluated_monthly_amount
+            )
+
+            result_fourth_description = (
+                "Para concluir em "
+                f"{selected_deadline} meses."
+            )
+
+        else:
+            maximum_monthly_amount = max(
+                500.0,
+                float(
+                    ceil(
+                        remaining_value
+                        / 50
+                    )
+                    * 50
+                ),
+            )
+
+            suggested_monthly_amount = (
+                remaining_value
+                / max(
+                    stored_deadline,
+                    1,
+                )
+            )
+
+            suggested_monthly_amount = (
+                round(
+                    suggested_monthly_amount
+                    / 50
+                )
+                * 50
+            )
+
+            suggested_monthly_amount = min(
+                max(
+                    suggested_monthly_amount,
+                    50.0,
+                ),
+                maximum_monthly_amount,
+            )
+
+            evaluated_monthly_amount = st.slider(
+                "Quanto consegue guardar por mês?",
+                min_value=50.0,
+                max_value=maximum_monthly_amount,
+                value=float(
+                    suggested_monthly_amount
+                ),
+                step=50.0,
+                format="R$ %.2f",
+                key=(
+                    "goal-monthly-slider-"
+                    f"{goal_id}"
+                ),
+            )
+
+            estimated_months = (
+                calculate_estimated_months(
+                    remaining_value=remaining_value,
+                    monthly_amount=(
+                        evaluated_monthly_amount
+                    ),
+                )
+            )
+
+            result_fourth_label = (
+                "Prazo estimado"
+            )
+
+            result_fourth_value = (
+                "Prazo inválido"
+                if estimated_months is None
+                else (
+                    f"{estimated_months} "
+                    + (
+                        "mês"
+                        if estimated_months == 1
+                        else "meses"
+                    )
+                )
+            )
+
+            result_fourth_description = (
+                "Considerando o valor mensal "
+                "selecionado."
+            )
         _render_goal_summary(
             goal_name=goal_name,
             goal_value=goal_value,
             current_value=current_value,
             remaining_value=remaining_value,
-            fourth_label="Prazo estimado",
-            fourth_value=months_label,
-            fourth_description=("Considerando o valor mensal selecionado."),
+            fourth_label=result_fourth_label,
+            fourth_value=result_fourth_value,
+            fourth_description=(
+                result_fourth_description
+            ),
         )
 
         _render_balance_evaluation(
-            monthly_amount=(selected_monthly_amount),
-            available_balance=(available_balance),
+            monthly_amount=(
+                evaluated_monthly_amount
+            ),
+            available_balance=available_balance,
         )
 
     st.caption(
@@ -1773,41 +1844,73 @@ def _render_goal_simulator_view(
 
         st.session_state[GOAL_SIMULATION_SOURCE_KEY] = selected_source
 
-    simulation_source = st.radio(
-        "Usar",
-        options=[
-            SIMULATION_SOURCE_SAVED,
-            SIMULATION_SOURCE_FREE,
-        ],
-        horizontal=True,
-        key=GOAL_SIMULATION_SOURCE_KEY,
-    )
+        selected_goal_id: str | None = None
+
+    with st.container(
+        border=False,
+        key="goal-simulation-source-card",
+    ):
+        render_html(
+            build_section_header_html(
+                title="Origem da simulação",
+                description=(
+                    "Escolha entre uma meta já salva "
+                    "ou uma simulação livre."
+                ),
+                compact=True,
+            )
+        )
+
+        simulation_source = st.radio(
+            "Usar",
+            options=[
+                SIMULATION_SOURCE_SAVED,
+                SIMULATION_SOURCE_FREE,
+            ],
+            horizontal=True,
+            key=GOAL_SIMULATION_SOURCE_KEY,
+        )
+
+        if simulation_source == SIMULATION_SOURCE_SAVED:
+            goal_ids = [
+                str(goal["goal_id"])
+                for goal in goals
+            ]
+
+            selected_goal_id = st.session_state.get(
+                SELECTED_GOAL_KEY
+            )
+
+            if selected_goal_id not in goal_ids:
+                st.session_state[
+                    SELECTED_GOAL_KEY
+                ] = goal_ids[0]
+
+            selected_goal_id = st.selectbox(
+                "Meta",
+                options=goal_ids,
+                key=SELECTED_GOAL_KEY,
+                format_func=(
+                    lambda goal_id: str(
+                        _find_goal(
+                            goals,
+                            goal_id,
+                        )["nome"]
+                    )
+                ),
+            )
 
     if simulation_source == SIMULATION_SOURCE_FREE:
-        _render_free_goal_simulation(summary)
-
+        _render_free_goal_simulation(
+            summary
+        )
         return
 
-    goal_ids = [str(goal["goal_id"]) for goal in goals]
-
-    selected_goal_id = st.session_state.get(SELECTED_GOAL_KEY)
-
-    if selected_goal_id not in goal_ids:
-        st.session_state[SELECTED_GOAL_KEY] = goal_ids[0]
-
-    selected_goal_id = st.selectbox(
-        "Meta",
-        options=goal_ids,
-        key=SELECTED_GOAL_KEY,
-        format_func=(
-            lambda goal_id: str(
-                _find_goal(
-                    goals,
-                    goal_id,
-                )["nome"]
-            )
-        ),
-    )
+    if selected_goal_id is None:
+        st.warning(
+            "Nenhuma meta foi selecionada para a simulação."
+        )
+        return
 
     selected_goal = _find_goal(
         goals,
@@ -1815,8 +1918,9 @@ def _render_goal_simulator_view(
     )
 
     if selected_goal is None:
-        st.warning("A meta selecionada não foi encontrada.")
-
+        st.warning(
+            "A meta selecionada não foi encontrada."
+        )
         return
 
     _render_goal_simulation(

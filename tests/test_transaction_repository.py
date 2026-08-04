@@ -6,6 +6,9 @@ from src.transaction_repository import (
     load_transactions,
     replace_transactions,
 )
+from src.user_context import (
+    LOCAL_USER_ID,
+)
 
 
 def create_test_transactions() -> pd.DataFrame:
@@ -65,12 +68,16 @@ def test_replace_and_load_transactions(
         transactions=transactions,
         database_path=database_path,
         table_name=table_name,
+        user_id=LOCAL_USER_ID,
+        data_mode="user",
     )
 
     loaded_transactions = (
         load_transactions(
             database_path=database_path,
             table_name=table_name,
+            user_id=LOCAL_USER_ID,
+            data_mode="user",
         )
     )
 
@@ -116,18 +123,24 @@ def test_replace_transactions_replaces_existing_data(
         transactions=transactions,
         database_path=database_path,
         table_name=table_name,
+        user_id=LOCAL_USER_ID,
+        data_mode="user",
     )
 
     replace_transactions(
         transactions=transactions.head(1),
         database_path=database_path,
         table_name=table_name,
+        user_id=LOCAL_USER_ID,
+        data_mode="user",
     )
 
     loaded_transactions = (
         load_transactions(
             database_path=database_path,
             table_name=table_name,
+            user_id=LOCAL_USER_ID,
+            data_mode="user",
         )
     )
 

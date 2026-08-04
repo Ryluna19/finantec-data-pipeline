@@ -24,7 +24,7 @@ SCRYPT_N = 2**14
 
 SCRYPT_R = 8
 
-SCRYPT_P = 1
+SCRYPT_P = 5
 
 
 class DuplicateUserAccountError(
@@ -344,6 +344,68 @@ def verify_password(
         expected_digest,
     )
 
+def password_hash_needs_rehash(
+    stored_password_hash: object,
+) -> bool:
+    """Informa se o hash deve usar os parâmetros atuais."""
+    if not isinstance(
+        stored_password_hash,
+        str,
+    ):
+        return True
+
+    try:
+        (
+            scheme,
+            n_text,
+            r_text,
+            p_text,
+            encoded_salt,
+            encoded_digest,
+        ) = stored_password_hash.split(
+            "$",
+            maxsplit=5,
+        )
+
+        salt = base64.urlsafe_b64decode(
+            encoded_salt.encode(
+                "ascii"
+            )
+        )
+
+        digest = base64.urlsafe_b64decode(
+            encoded_digest.encode(
+                "ascii"
+            )
+        )
+
+        stored_n = int(
+            n_text
+        )
+
+        stored_r = int(
+            r_text
+        )
+
+        stored_p = int(
+            p_text
+        )
+
+    except (
+        TypeError,
+        ValueError,
+        UnicodeError,
+    ):
+        return True
+
+    return (
+        scheme != PASSWORD_SCHEME
+        or stored_n != SCRYPT_N
+        or stored_r != SCRYPT_R
+        or stored_p != SCRYPT_P
+        or len(salt) != PASSWORD_SALT_BYTES
+        or len(digest) != PASSWORD_HASH_BYTES
+    )
 
 def _row_to_account(
     row: sqlite3.Row,
@@ -604,6 +666,64 @@ def authenticate_user_account(
                 ),
             ).fetchone()
 
+            if row is None:
+                return None
+
+            stored_password_hash = str(
+                row[
+                    "password_hash"
+                ]
+            )
+
+            if not verify_password(
+                password,
+                stored_password_hash,
+            ):
+                return None
+
+            if password_hash_needs_rehash(
+                stored_password_hash
+            ):
+                updated_password_hash = (
+                    hash_password(
+                        password
+                    )
+                )
+
+                connection.execute(
+                    f"""
+                    UPDATE {ACCOUNT_TABLE_NAME}
+                    SET
+                        password_hash = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ?
+                    """,
+                    (
+                        updated_password_hash,
+                        row[
+                            "user_id"
+                        ],
+                    ),
+                )
+
+                row = connection.execute(
+                    f"""
+                    SELECT
+                        user_id,
+                        username,
+                        password_hash,
+                        created_at,
+                        updated_at
+                    FROM {ACCOUNT_TABLE_NAME}
+                    WHERE user_id = ?
+                    """,
+                    (
+                        row[
+                            "user_id"
+                        ],
+                    ),
+                ).fetchone()
+
     except sqlite3.Error as error:
         raise RuntimeError(
             "Não foi possível autenticar "
@@ -611,15 +731,10 @@ def authenticate_user_account(
         ) from error
 
     if row is None:
-        return None
-
-    if not verify_password(
-        password,
-        row[
-            "password_hash"
-        ],
-    ):
-        return None
+        raise RuntimeError(
+            "A conta foi autenticada, mas não pôde "
+            "ser carregada novamente."
+        )
 
     return _row_to_account(
         row
@@ -652,25 +767,3 @@ def has_user_accounts(
         ) from error
 
     return row is not None
-
-def test_reports_whether_accounts_exist(
-    tmp_path,
-):
-    database_path = (
-        tmp_path
-        / "accounts.db"
-    )
-
-    assert not has_user_accounts(
-        database_path
-    )
-
-    create_user_account(
-        database_path=database_path,
-        username="ryan",
-        password="senha-segura-123",
-    )
-
-    assert has_user_accounts(
-        database_path
-    )

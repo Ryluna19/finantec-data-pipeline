@@ -147,18 +147,22 @@ a:hover {
     width:
         100%;
 
-    margin-bottom:
-        0.2rem;
+    margin:
+        0.75rem
+        0
+        0.65rem;
 
     padding:
-        0.85rem
-        1rem !important;
+        0.9rem
+        1rem
+        0.95rem !important;
 
     border:
-        0 !important;
+        1px solid
+        transparent !important;
 
     border-radius:
-        16px;
+        14px;
 
     overflow:
         visible !important;
@@ -265,16 +269,28 @@ a:hover {
 }
 
 .finantec-brand-eyebrow {
-    margin-bottom: 0.25rem;
+    margin:
+        0
+        0
+        0.18rem;
 
-    color: var(--text-muted);
+    color:
+        var(--text-muted);
 
-    font-size: 0.72rem;
-    line-height: 1.2;
-    font-weight: 750;
+    font-size:
+        0.7rem;
 
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
+    line-height:
+        1.2;
+
+    font-weight:
+        750;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        0.14em;
 }
 
 .finantec-brand-title-row h1 {
@@ -295,14 +311,22 @@ a:hover {
 }
 
 .finantec-brand-description {
-    max-width: 680px;
+    max-width:
+        680px;
 
-    margin: 0.5rem 0 0;
+    margin:
+        0.42rem
+        0
+        0.14rem;
 
-    color: var(--text-muted) !important;
+    color:
+        var(--text-muted) !important;
 
-    font-size: 0.92rem !important;
-    line-height: 1.55 !important;
+    font-size:
+        0.88rem !important;
+
+    line-height:
+        1.35 !important;
 }
 
 .finantec-brand-header::after {
@@ -430,27 +454,48 @@ a:hover {
    ABAS
    ========================================================= */
 
-.stTabs [data-baseweb="tab-list"] {
+.stTabs [role="tablist"] {
+    box-sizing:
+        border-box;
+
+    display:
+        flex !important;
+
+    width:
+        100% !important;
+
+    max-width:
+        none !important;
+
     gap:
         1.1rem;
 
+    border:
+        0 !important;
+
     border-bottom:
         1px solid
-        var(--border);
-}
+        var(--border) !important;
 
-.stTabs [role="tabpanel"] {
-    padding-top:
-        0.85rem;
+    background:
+        transparent !important;
+
+    box-shadow:
+        none !important;
 }
 
 .stTabs [data-baseweb="tab"],
 .stTabs button[role="tab"] {
+    position:
+        relative;
+
+    z-index:
+        1;
+
     padding:
         0.5rem
         0
         0.6rem;
-
     color:
         var(--text-muted) !important;
 
