@@ -20,10 +20,14 @@ from src.import_transaction_database_service import (
     save_imported_transactions_to_database,
 )
 from src.transaction_files import (
+    CREDIT_COLUMN_ALIASES,
+    DEBIT_COLUMN_ALIASES,
+    TRANSACTION_COLUMN_ALIASES,
     TRANSACTION_SHEET_NAME,
     create_excel_template,
     export_transactions_to_excel,
     list_excel_sheet_names,
+    normalize_transaction_column_name,
     read_excel_table,
     read_transaction_file,
     split_imported_transactions_by_match,
@@ -122,35 +126,220 @@ def _get_excel_mapping_option_index(
         suggested_column
     )
 
+def _render_single_choice(
+    label: str,
+    options: list[str],
+    *,
+    default: str | None,
+    format_func: Any,
+    key: str,
+) -> str | None:
+    """Exibe uma escolha única com fallback para radio."""
+    segmented_control = getattr(
+        st,
+        "segmented_control",
+        None,
+    )
+
+    if callable(
+        segmented_control
+    ):
+        selected_option = segmented_control(
+            label,
+            options=options,
+            selection_mode="single",
+            default=default,
+            format_func=format_func,
+            key=key,
+        )
+
+        if selected_option is None:
+            return default
+
+        return str(
+            selected_option
+        )
+
+    radio_index = (
+        options.index(
+            default
+        )
+        if default is not None
+        else None
+    )
+
+    selected_option = st.radio(
+        label,
+        options=options,
+        index=radio_index,
+        format_func=format_func,
+        horizontal=True,
+        key=key,
+    )
+
+    if selected_option is None:
+        return None
+
+    return str(
+        selected_option
+    )
 
 def _suggest_excel_sheet_index(
+    uploaded_file: Any,
     sheet_names: list[str],
 ) -> int:
-    """Prioriza abas que aparentam conter transações."""
+    """Prioriza a aba que mais se parece com uma tabela de transações."""
     preferred_terms = (
         "extrato",
         "transa",
         "moviment",
         "fatura",
+        "conta",
+        "lancament",
+        "activity",
+    )
+
+    best_index = 0
+    best_score = (
+        -1,
+        -1,
+        -1,
     )
 
     for index, sheet_name in enumerate(
         sheet_names
     ):
-        normalized_name = (
+        try:
+            header_row = suggest_excel_header_row(
+                uploaded_file,
+                sheet_name=sheet_name,
+            )
+
+            table = read_excel_table(
+                uploaded_file,
+                sheet_name=sheet_name,
+                header_row=header_row,
+            )
+
+        except (
+            ValueError,
+            OSError,
+            KeyError,
+        ):
+            continue
+
+        standard_mapping = (
+            suggest_transaction_column_mapping(
+                table.columns
+            )
+        )
+
+        split_mapping = (
+            suggest_split_amount_column_mapping(
+                table.columns
+            )
+        )
+
+        has_single_amount = (
+            standard_mapping[
+                "valor"
+            ]
+            is not None
+        )
+
+        has_split_amounts = (
+            split_mapping[
+                "debito"
+            ]
+            is not None
+            and split_mapping[
+                "credito"
+            ]
+            is not None
+        )
+
+        contract_score = sum(
+            standard_mapping[field]
+            is not None
+            for field in (
+                "data",
+                "descricao",
+            )
+        )
+
+        contract_score += int(
+            has_single_amount
+            or has_split_amounts
+        )
+
+        mapped_score = sum(
+            value is not None
+            for value in (
+                standard_mapping.values()
+            )
+        )
+
+        mapped_score += sum(
+            value is not None
+            for value in (
+                split_mapping.values()
+            )
+        )
+
+        normalized_sheet_name = (
             str(sheet_name)
             .strip()
             .lower()
         )
 
-        if any(
-            term in normalized_name
-            for term in preferred_terms
-        ):
-            return index
+        name_score = int(
+            any(
+                term in normalized_sheet_name
+                for term in preferred_terms
+            )
+        )
 
-    return 0
+        current_score = (
+            contract_score,
+            mapped_score,
+            name_score,
+        )
 
+        if current_score > best_score:
+            best_score = current_score
+            best_index = index
+
+    return best_index
+
+def _render_import_section(
+    title: str,
+    description: str | None = None,
+) -> None:
+    """Exibe um título de seção no fluxo de importação."""
+    section_title = (
+        '<div style="'
+        "margin:1.25rem 0 0.35rem;"
+        "padding-left:0.65rem;"
+        "border-left:3px solid "
+        "var(--accent, #f97316);"
+        "color:var(--text-main);"
+        "font-size:1rem;"
+        "font-weight:800;"
+        "line-height:1.3;"
+        '">'
+        f"{escape(title)}"
+        "</div>"
+    )
+
+    st.markdown(
+        section_title,
+        unsafe_allow_html=True,
+    )
+
+    if description:
+        st.caption(
+            description
+        )
 
 def _render_assisted_excel_transactions(
     uploaded_file: Any,
@@ -175,6 +364,13 @@ def _render_assisted_excel_transactions(
         "Selecione a aba, informe onde está o cabeçalho "
         "e confirme quais colunas representam cada campo."
     )
+    _render_import_section(
+        "Identificação da planilha",
+        (
+            "Confirme a aba e a linha de cabeçalho "
+            "sugeridas automaticamente."
+        ),
+    )
 
     widget_version = (
         _get_import_widget_version()
@@ -190,7 +386,8 @@ def _render_assisted_excel_transactions(
         "Aba com as transações",
         options=sheet_names,
         index=_suggest_excel_sheet_index(
-            sheet_names
+            uploaded_file,
+            sheet_names,
         ),
         key=(
             "assisted-excel-sheet-"
@@ -223,6 +420,12 @@ def _render_assisted_excel_transactions(
             "das colunas não tiverem sido encontrados."
         ),
     )
+    st.caption(
+        "Sugestão automática: "
+        f"aba “{sheet_name}” e cabeçalho na linha "
+        f"{suggested_header_row + 1}. "
+        "Altere somente se a prévia estiver incorreta."
+    )
 
     external_table = read_excel_table(
         uploaded_file,
@@ -246,16 +449,18 @@ def _render_assisted_excel_transactions(
 
         return None
 
-    st.caption(
-        "Prévia da tabela encontrada antes da conversão"
+    _render_import_section(
+        "Prévia dos dados encontrados",
+        (
+            "Confira se os nomes das colunas e os "
+            "primeiros registros foram identificados corretamente."
+        ),
     )
 
-    st.dataframe(
+    render_transaction_preview_table(
         external_table.head(
             8
-        ),
-        hide_index=True,
-        use_container_width=True,
+        )
     )
 
     suggested_mapping = (
@@ -277,8 +482,12 @@ def _render_assisted_excel_transactions(
         *external_table.columns.tolist(),
     ]
 
-    st.markdown(
-        "#### Mapeamento das colunas"
+    _render_import_section(
+        "Mapeamento das colunas",
+        (
+            "Associe as colunas da planilha aos campos "
+            "utilizados pelo FinanTec."
+        ),
     )
 
     data_column, description_column = (
@@ -352,27 +561,40 @@ def _render_assisted_excel_transactions(
         else SINGLE_AMOUNT_MODE
     )
 
-    amount_modes = [
-        SINGLE_AMOUNT_MODE,
-        SPLIT_AMOUNT_MODE,
-    ]
+    use_split_amount_columns = st.toggle(
+    "Usar colunas separadas de débito e crédito",
+    value=(
+        suggested_amount_mode
+        == SPLIT_AMOUNT_MODE
+    ),
+    key=(
+        "assisted-excel-split-amounts-"
+        f"{mapping_identity}"
+    ),
+    help=(
+        "Ative quando a planilha possui uma coluna "
+        "para débitos e outra para créditos. "
+        "Deixe desativado quando existe apenas uma "
+        "coluna de valor."
+    ),
+)
 
-    amount_mode = st.radio(
-        "Como os valores estão organizados?",
-        options=amount_modes,
-        index=amount_modes.index(
-            suggested_amount_mode
-        ),
-        format_func=lambda mode: (
-            AMOUNT_MODE_LABELS[
-                mode
-            ]
-        ),
-        horizontal=True,
-        key=(
-            "assisted-excel-amount-mode-"
-            f"{mapping_identity}"
-        ),
+    amount_mode = (
+        SPLIT_AMOUNT_MODE
+        if use_split_amount_columns
+        else SINGLE_AMOUNT_MODE
+    )
+
+    st.caption(
+        (
+            "Formato detectado: débito e crédito "
+            "em colunas separadas."
+        )
+        if use_split_amount_columns
+        else (
+            "Formato detectado: uma única coluna "
+            "de valor."
+        )
     )
 
     mapped_type: object | None = None
@@ -710,6 +932,39 @@ def _get_preview_columns(
         *extra_columns,
     ]
 
+def _get_preview_column_role(
+    column: str,
+) -> str:
+    """Identifica o papel visual de uma coluna na prévia."""
+    normalized_column = (
+        normalize_transaction_column_name(
+            column
+        )
+    )
+
+    if (
+        normalized_column
+        in TRANSACTION_COLUMN_ALIASES[
+            "data"
+        ]
+    ):
+        return "date"
+
+    if normalized_column in DEBIT_COLUMN_ALIASES:
+        return "debit"
+
+    if normalized_column in CREDIT_COLUMN_ALIASES:
+        return "credit"
+
+    if (
+        normalized_column
+        in TRANSACTION_COLUMN_ALIASES[
+            "valor"
+        ]
+    ):
+        return "amount"
+
+    return "text"
 
 def _get_preview_column_label(
     column: str,
@@ -730,10 +985,14 @@ def _get_preview_column_label(
 
     return labels.get(
         column,
-        column.replace(
+        str(
+            column
+        )
+        .replace(
             "_",
             " ",
-        ).strip().capitalize(),
+        )
+        .strip(),
     )
 
 
@@ -753,11 +1012,11 @@ def render_transaction_preview_table(
             "z-index:1;"
             "padding:0.72rem 0.8rem;"
             "background:var(--bg-table-head);"
-            "color:var(--text-soft);"
-            "border-bottom:1px solid var(--border-light);"
+            "color:var(--text-main);"
+            "border-bottom:2px solid var(--border-light);"
             "text-align:left;"
-            "font-size:0.72rem;"
-            "font-weight:700;"
+            "font-size:0.75rem;"
+            "font-weight:800;"
             "letter-spacing:0.02em;"
             "text-transform:uppercase;"
             '">'
@@ -795,20 +1054,30 @@ def render_transaction_preview_table(
                 "",
             )
 
-            if column == "data":
+            column_role = (
+                _get_preview_column_role(
+                    column
+                )
+            )
+
+            if pd.isna(
+                raw_value
+            ):
+                display_value = "—"
+
+            elif column_role == "date":
                 display_value = _format_preview_date(
                     raw_value
                 )
 
-            elif column == "valor":
+            elif column_role in {
+                "amount",
+                "debit",
+                "credit",
+            }:
                 display_value = _format_preview_amount(
                     raw_value
                 )
-
-            elif pd.isna(
-                raw_value
-            ):
-                display_value = "—"
 
             else:
                 display_value = escape(
@@ -823,16 +1092,50 @@ def render_transaction_preview_table(
                 "vertical-align:middle;"
             )
 
-            if column == "valor":
-                value_color = (
-                    "var(--success)"
-                    if transaction_type == "receita"
-                    else (
-                        "var(--danger)"
-                        if transaction_type == "despesa"
-                        else "var(--text-main)"
-                    )
+            if column_role in {
+                "amount",
+                "debit",
+                "credit",
+            }:
+                numeric_value = pd.to_numeric(
+                    raw_value,
+                    errors="coerce",
                 )
+
+                if column_role == "debit":
+                    value_color = "var(--danger)"
+
+                elif column_role == "credit":
+                    value_color = "var(--success)"
+
+                elif transaction_type == "receita":
+                    value_color = "var(--success)"
+
+                elif transaction_type == "despesa":
+                    value_color = "var(--danger)"
+
+                elif (
+                    pd.notna(
+                        numeric_value
+                    )
+                    and float(
+                        numeric_value
+                    ) > 0
+                ):
+                    value_color = "var(--success)"
+
+                elif (
+                    pd.notna(
+                        numeric_value
+                    )
+                    and float(
+                        numeric_value
+                    ) < 0
+                ):
+                    value_color = "var(--danger)"
+
+                else:
+                    value_color = "var(--text-main)"
 
                 cell_style += (
                     "text-align:right;"
@@ -1048,13 +1351,13 @@ def render_matching_transactions(
         _get_import_widget_version()
     )
 
-    return st.radio(
+    return _render_single_choice(
         "Como deseja tratar essas linhas?",
         options=[
             SKIP_MATCHES,
             INCLUDE_MATCHES,
         ],
-        index=None,
+        default=None,
         format_func=lambda option: {
             SKIP_MATCHES: (
                 "Ignorar linhas que já existem"
@@ -1078,6 +1381,13 @@ def render_import_confirmation(
     existing_transactions: pd.DataFrame,
 ) -> bool:
     """Solicita uma decisão e importa o lote selecionado."""
+    _render_import_section(
+        "Confirmação da importação",
+        (
+            "Confira possíveis duplicatas e quantas linhas "
+            "serão adicionadas ao banco."
+        ),
+    )
     (
         new_transactions,
         matching_transactions,
@@ -1286,6 +1596,13 @@ def render_uploaded_file_preview(
         rejected_transactions,
     ) = split_transactions_by_validity(
         transactions
+    )
+    _render_import_section(
+        "Resultado da conversão",
+        (
+            "Revise as transações no formato do FinanTec "
+            "antes de confirmar a importação."
+        ),
     )
 
     render_validation_summary(

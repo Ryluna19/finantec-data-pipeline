@@ -51,7 +51,13 @@ class FakeStreamlit:
             DummyContext(),
             DummyContext(),
         )
-
+    def markdown(
+        self,
+        *args,
+        **kwargs,
+    ):
+        """Simula a renderização de Markdown do Streamlit."""
+        return None
     def container(
         self,
         *args,
@@ -110,7 +116,7 @@ class FakeStreamlit:
         **kwargs,
     ) -> bool:
         return self.button_result
-
+    
 
 def build_imported_transactions() -> pd.DataFrame:
     """Cria duas transações válidas para importação."""

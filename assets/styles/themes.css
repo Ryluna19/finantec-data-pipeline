@@ -4865,3 +4865,401 @@ details[open] > summary {
         1px solid
         var(--border) !important;
 }
+
+/* =========================================================
+   CONTROLES NATIVOS NO TEMA CLARO
+   ========================================================= */
+
+/*
+   Regra central para os controles do Streamlit.
+
+   Evita criar correções locais para cada página,
+   formulário ou modal que possua selectbox.
+*/
+
+
+/* ---------------------------------------------------------
+   Selectbox — estrutura React Aria atual
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+.stSelectbox
+.react-aria-ComboBox
+> [role="group"] {
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        #2d2621 !important;
+
+    border:
+        1px solid
+        #d7c9bc !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+:root:has(.finantec-theme-light)
+.stSelectbox
+.react-aria-ComboBox
+> [role="group"]
+> * {
+    background:
+        transparent !important;
+
+    background-color:
+        transparent !important;
+}
+
+
+/* ---------------------------------------------------------
+   Selectbox — compatibilidade com BaseWeb
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+.stSelectbox
+[data-baseweb="select"]
+> div {
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        #2d2621 !important;
+
+    border-color:
+        #d7c9bc !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* Texto selecionado ou pesquisado. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox
+input[role="combobox"],
+:root:has(.finantec-theme-light)
+.stSelectbox
+input[role="combobox"]::placeholder {
+    color:
+        #2d2621 !important;
+
+    -webkit-text-fill-color:
+        #2d2621 !important;
+
+    opacity:
+        1 !important;
+}
+
+
+/* Ícones e botão de abertura. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox
+button[aria-label="Open"],
+:root:has(.finantec-theme-light)
+.stSelectbox
+svg {
+    background:
+        transparent !important;
+
+    color:
+        #695c52 !important;
+
+    fill:
+        currentColor !important;
+}
+
+
+/* Estado de foco. */
+
+:root:has(.finantec-theme-light)
+.stSelectbox
+.react-aria-ComboBox
+> [role="group"]:focus-within,
+:root:has(.finantec-theme-light)
+.stSelectbox
+[data-baseweb="select"]
+> div:focus-within {
+    border-color:
+        var(--accent) !important;
+
+    box-shadow:
+        0 0 0 2px
+        var(--accent-focus) !important;
+}
+
+
+/* ---------------------------------------------------------
+   Menu suspenso dos selects
+   --------------------------------------------------------- */
+
+/*
+   O menu pode ser renderizado fora do modal,
+   por isso não é limitado a section[role="dialog"].
+*/
+
+:root:has(.finantec-theme-light)
+[data-baseweb="popover"],
+:root:has(.finantec-theme-light)
+[data-testid="stPopoverBody"],
+:root:has(.finantec-theme-light)
+[role="listbox"] {
+    background:
+        #fffdf9 !important;
+
+    background-color:
+        #fffdf9 !important;
+
+    color:
+        #2d2621 !important;
+}
+
+
+:root:has(.finantec-theme-light)
+[role="option"] {
+    background:
+        #fffdf9 !important;
+
+    background-color:
+        #fffdf9 !important;
+
+    color:
+        #2d2621 !important;
+
+    -webkit-text-fill-color:
+        #2d2621 !important;
+}
+
+
+:root:has(.finantec-theme-light)
+[role="option"]:hover,
+:root:has(.finantec-theme-light)
+[role="option"][aria-selected="true"] {
+    background:
+        #f3ebe3 !important;
+
+    background-color:
+        #f3ebe3 !important;
+}
+
+
+/* ---------------------------------------------------------
+   Controles segmentados
+   --------------------------------------------------------- */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"] {
+    gap:
+        0.35rem;
+}
+
+
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button {
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        #4f443b !important;
+
+    border:
+        1px solid
+        #d7c9bc !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button
+* {
+    color:
+        inherit !important;
+
+    -webkit-text-fill-color:
+        currentColor !important;
+}
+
+
+/* Opção selecionada. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button[aria-pressed="true"],
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button[aria-selected="true"],
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button[data-active="true"],
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button[data-testid*="Active"] {
+    background:
+        #fff3ea !important;
+
+    background-color:
+        #fff3ea !important;
+
+    color:
+        #2d2621 !important;
+
+    border-color:
+        var(--accent) !important;
+
+    box-shadow:
+        inset 0 0 0 1px
+        var(--accent) !important;
+}
+
+
+/* Opção não selecionada. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button[aria-pressed="false"],
+:root:has(.finantec-theme-light)
+[data-testid="stSegmentedControl"]
+button[aria-selected="false"] {
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    color:
+        #695c52 !important;
+}
+
+/* ---------------------------------------------------------
+   Toggle no tema claro
+   --------------------------------------------------------- */
+
+/* Estado desligado — trilho. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+label:has(
+    input[role="switch"]:not(:checked)
+)
+> div:first-of-type {
+    background:
+        #b8aaa0 !important;
+
+    background-color:
+        #b8aaa0 !important;
+
+    border:
+        1px solid
+        #97897f !important;
+
+    box-shadow:
+        inset 0 0 0 1px
+        rgba(45, 38, 33, 0.08) !important;
+}
+
+
+/* Estado desligado — botão circular. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+label:has(
+    input[role="switch"]:not(:checked)
+)
+> div:first-of-type
+> div {
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    border:
+        1px solid
+        #8f8177 !important;
+
+    box-shadow:
+        0 1px 3px
+        rgba(45, 38, 33, 0.25) !important;
+}
+
+
+/* Estado ligado — trilho. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+label:has(
+    input[role="switch"]:checked
+)
+> div:first-of-type {
+    background:
+        var(--accent) !important;
+
+    background-color:
+        var(--accent) !important;
+
+    border:
+        1px solid
+        var(--accent) !important;
+}
+
+
+/* Estado ligado — botão circular. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+label:has(
+    input[role="switch"]:checked
+)
+> div:first-of-type
+> div {
+    background:
+        #ffffff !important;
+
+    background-color:
+        #ffffff !important;
+
+    border:
+        1px solid
+        rgba(45, 38, 33, 0.18) !important;
+}
+
+
+/* Texto e ícone de ajuda. */
+
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+[data-testid="stWidgetLabel"],
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+[data-testid="stWidgetLabel"]
+p,
+:root:has(.finantec-theme-light)
+[data-testid="stCheckbox"]
+[data-testid="stWidgetLabel"]
+button {
+    color:
+        #4f443b !important;
+
+    -webkit-text-fill-color:
+        #4f443b !important;
+
+    opacity:
+        1 !important;
+}

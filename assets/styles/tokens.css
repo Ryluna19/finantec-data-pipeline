@@ -65,3 +65,16 @@
     --shadow: none;
     --shadow-soft: none;
 }
+
+/* =========================================================
+   ESQUEMA NATIVO DE CORES
+   ========================================================= */
+
+:root:has(.finantec-theme-light) {
+    color-scheme: light;
+}
+
+:root:has(.finantec-theme-dark) {
+    color-scheme: dark;
+}
+
