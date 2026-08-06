@@ -1652,30 +1652,3 @@ def render_transaction_import(
     return _render_transaction_import_controls(
         existing_transactions
     )
-
-
-def render_transaction_file_tools(
-    period_transactions: pd.DataFrame,
-    existing_transactions: pd.DataFrame,
-) -> bool:
-    """Mantém o fluxo combinado de arquivos por compatibilidade."""
-    st.subheader(
-        "Importação e exportação"
-    )
-
-    render_import_result()
-
-    st.caption(
-        "Baixe o modelo, exporte os dados atuais "
-        "ou importe um novo lote de transações."
-    )
-
-    render_transaction_downloads(
-        period_transactions
-    )
-
-    st.divider()
-
-    return _render_transaction_import_controls(
-        existing_transactions
-    )
