@@ -138,15 +138,15 @@
     --bg-table-row-alt: #f8f2eb;
     --bg-table-hover: #fef6f0;
 
-    --border: #ebe5df;
-    --border-light: #d7c9bc;
-    --border-strong: #bca999;
+    --border: #ded1c5;
+    --border-light: #c9b8a9;
+    --border-strong: #a88f7c;
 
-    --text: #1a1a1a;
-    --text-main: #1a1a1a;
-    --text-soft: #554b43;
-    --text-muted: #75685e;
-    --text-disabled: #96897e;
+    --text: #17120f;
+    --text-main: #17120f;
+    --text-soft: #40352d;
+    --text-muted: #5d4e44;
+    --text-disabled: #7f6f64;
 
     --orange: #c45810;
 
@@ -1382,6 +1382,35 @@ button:disabled {
 .finantec-data-summary-description {
     color: var(--text-muted) !important;
 }
+/* Identidade global com mais presença no tema claro. */
+
+:root:has(.finantec-theme-light)
+.finantec-brand-eyebrow {
+    color:
+        var(--text-soft) !important;
+
+    font-size:
+        0.76rem;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        0.14em;
+}
+
+
+:root:has(.finantec-theme-light)
+.finantec-brand-description {
+    color:
+        var(--text-soft) !important;
+
+    font-size:
+        0.96rem !important;
+
+    font-weight:
+        500;
+}
 
 :root:has(.finantec-theme-light)
 label,
@@ -1498,7 +1527,6 @@ label,
     box-shadow:
         var(--shadow-soft) !important;
 }
-
 
 /* Valores monetários semânticos */
 
