@@ -37,9 +37,10 @@ duplicados.
 O FinanTec centraliza esses fluxos em uma aplicação local:
 
 - registra e consulta transações;
-- importa arquivos CSV e Excel;
-- valida e sinaliza rejeições;
-- identifica possíveis duplicatas;
+- importa arquivos CSV, Excel e OFX;
+- auxilia o mapeamento de planilhas Excel com estruturas externas;
+- valida os dados e sinaliza linhas rejeitadas;
+- identifica possíveis duplicatas e utiliza a opção segura de ignorá-las por padrão;
 - calcula indicadores por período;
 - acompanha metas persistentes;
 - separa dados pessoais e demonstração;
@@ -133,7 +134,8 @@ existentes.
 
 - consulta e filtros como conteúdo principal;
 - cadastro manual sob demanda;
-- importação de CSV e Excel sob demanda;
+- importação de CSV, Excel e OFX sob demanda;
+- importação assistida de planilhas externas com prévia e mapeamento de colunas;
 - exportação limitada ao período selecionado;
 - edição e exclusão de registros persistidos;
 - confirmação antes de excluir;

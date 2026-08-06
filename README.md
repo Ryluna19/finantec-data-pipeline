@@ -72,7 +72,12 @@ Demonstrar um fluxo de dados aplicado a uma ferramenta financeira local:
 - comando centralizado de execução com `main.py`;
 - entrada manual de transações pelo dashboard;
 - edição e exclusão de transações persistidas;
-- importação e exportação de arquivos CSV e Excel.
+- importação de arquivos CSV e Excel no formato do FinanTec;
+- importação de arquivos OFX com conversão automática;
+- importação assistida de planilhas Excel externas, com seleção de aba e cabeçalho;
+- mapeamento de colunas para valor único, tipo explícito ou débito e crédito separados;
+- prévia, validação e tratamento seguro de possíveis duplicatas;
+- exportação das transações do período em Excel;
 - orçamento mensal por categoria;
 - criação, edição e exclusão de limites mensais;
 - comparação entre valor planejado, gasto real e saldo disponível;
@@ -90,6 +95,7 @@ Demonstrar um fluxo de dados aplicado a uma ferramenta financeira local:
 - pytest
 - Altair
 - openpyxl
+- ofxparse2
 - CSV
 - JSON
 

@@ -72,7 +72,7 @@ pytest
 | `tests/test_rejections.py` | Geração do relatório de transações rejeitadas e acúmulo de motivos de rejeição. |
 | `tests/test_sqlite_load.py` | Carga dos dados tratados em SQLite usando banco temporário. |
 | `tests/test_transaction_editor.py` | Valida a camada de preparação, salvamento e carregamento das transações manuais. |
-| `tests/test_transaction_*.py` | Persistência, identidade, importação, sincronização e composição de transações. |
+| `tests/test_transaction_*.py` | Persistência, identidade, importação de CSV, Excel e OFX, mapeamento assistido, duplicatas, sincronização e composição de transações. |
 | `tests/test_goal_*.py` | Persistência, cálculos e composição de metas. |
 | `tests/test_budget_repository.py` | Persistência, isolamento, duplicidade, validações e CRUD de limites mensais. |
 | `tests/test_budget_component.py` | Períodos disponíveis, resumos, estados e funções auxiliares da interface de orçamento. |
@@ -343,7 +343,10 @@ A versão atual possui validação automatizada para:
 - relatório de rejeições;
 - carga em SQLite;
 - editor manual de transações;
-- importação, duplicatas e identidade;
+- importação de CSV, Excel e OFX;
+- detecção de aba e cabeçalho em planilhas externas;
+- mapeamento de valor único, tipo explícito e débito/crédito separados;
+- validação, duplicatas e identidade das transações;
 - repositórios de transações, perfil, metas e conversas;
 - reset limitado das transações pessoais;
 - respostas financeiras locais preservadas;

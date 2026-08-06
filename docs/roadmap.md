@@ -18,7 +18,10 @@ Já estão implementados:
 
 - SQLite como fonte principal dos dados;
 - entrada manual e CRUD de transações;
-- importação de CSV e Excel com validação e duplicatas;
+- importação de CSV, Excel e OFX;
+- importação assistida de planilhas externas com detecção de aba e cabeçalho;
+- suporte a valor único, tipo explícito e débito/crédito separados;
+- validação prévia e tratamento seguro de possíveis duplicatas;
 - exportação por período;
 - separação entre dados pessoais e demonstração;
 - perfil com renda calculada pelas fontes cadastradas;
@@ -179,7 +182,7 @@ Os testes devem continuar focados em comportamentos de risco:
 
 - isolamento entre usuários e modos de dados;
 - persistência e CRUD;
-- importação, rejeições e duplicatas;
+- importação de arquivos, mapeamento assistido, rejeições e duplicatas;
 - exclusão limitada e preservação de dados;
 - cálculos financeiros, orçamento e metas;
 - migrações de banco;
