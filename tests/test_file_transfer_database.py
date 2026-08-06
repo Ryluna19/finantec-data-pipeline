@@ -515,15 +515,13 @@ def test_all_matching_rows_prevent_empty_import(
     )
 
 
-def test_matching_rows_require_explicit_strategy(
+def test_missing_duplicate_strategy_uses_safe_fallback(
     monkeypatch,
-):
-    """Não importa duplicatas antes da escolha do usuário."""
-    fake_streamlit = (
-        configure_component(
-            monkeypatch,
-            button_result=True,
-        )
+) -> None:
+    """Ignora possíveis duplicatas quando não há estratégia."""
+    configure_component(
+        monkeypatch,
+        button_result=True,
     )
 
     valid_transactions = (
@@ -538,7 +536,10 @@ def test_matching_rows_require_explicit_strategy(
         .copy()
     )
 
-    save_called = False
+    captured: dict[
+        str,
+        pd.DataFrame,
+    ] = {}
 
     monkeypatch.setattr(
         file_transfer,
@@ -552,9 +553,9 @@ def test_matching_rows_require_explicit_strategy(
         table_name,
         user_id,
     ):
-        nonlocal save_called
-
-        save_called = True
+        captured[
+            "transactions"
+        ] = transactions.copy()
 
         return len(
             transactions
@@ -578,17 +579,30 @@ def test_matching_rows_require_explicit_strategy(
         )
     )
 
-    assert result is False
-    assert save_called is False
-
-    assert any(
-        "Escolha como tratar"
-        in message
-        for message
-        in fake_streamlit.info_messages
+    expected_transactions = (
+        valid_transactions
+        .tail(
+            1
+        )
+        .reset_index(
+            drop=True
+        )
     )
 
+    imported_transactions = (
+        captured[
+            "transactions"
+        ]
+        .reset_index(
+            drop=True
+        )
+    )
 
+    assert result is True
+
+    assert imported_transactions.equals(
+        expected_transactions
+    )
 def test_transaction_downloads_exports_only_received_period(
     monkeypatch,
 ):

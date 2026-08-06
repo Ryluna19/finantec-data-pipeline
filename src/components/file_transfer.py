@@ -59,12 +59,6 @@ IMPORT_WIDGET_VERSION_KEY = (
 SINGLE_AMOUNT_MODE = "single_amount"
 SPLIT_AMOUNT_MODE = "split_amount"
 
-AMOUNT_MODE_LABELS = {
-    SINGLE_AMOUNT_MODE: "Uma única coluna de valor",
-    SPLIT_AMOUNT_MODE: "Débito e crédito separados",
-}
-
-
 def _get_import_widget_version() -> int:
     """Retorna a versão atual dos widgets de importação."""
     if (
@@ -124,64 +118,6 @@ def _get_excel_mapping_option_index(
 
     return options.index(
         suggested_column
-    )
-
-def _render_single_choice(
-    label: str,
-    options: list[str],
-    *,
-    default: str | None,
-    format_func: Any,
-    key: str,
-) -> str | None:
-    """Exibe uma escolha única com fallback para radio."""
-    segmented_control = getattr(
-        st,
-        "segmented_control",
-        None,
-    )
-
-    if callable(
-        segmented_control
-    ):
-        selected_option = segmented_control(
-            label,
-            options=options,
-            selection_mode="single",
-            default=default,
-            format_func=format_func,
-            key=key,
-        )
-
-        if selected_option is None:
-            return default
-
-        return str(
-            selected_option
-        )
-
-    radio_index = (
-        options.index(
-            default
-        )
-        if default is not None
-        else None
-    )
-
-    selected_option = st.radio(
-        label,
-        options=options,
-        index=radio_index,
-        format_func=format_func,
-        horizontal=True,
-        key=key,
-    )
-
-    if selected_option is None:
-        return None
-
-    return str(
-        selected_option
     )
 
 def _suggest_excel_sheet_index(
@@ -1332,48 +1268,57 @@ def render_validation_summary(
 
 def render_matching_transactions(
     matching_transactions: pd.DataFrame,
-) -> str | None:
-    """Exibe duplicatas e exige uma escolha explícita."""
+) -> str:
+    """Exibe duplicatas e permite incluí-las explicitamente."""
+    matching_count = len(
+        matching_transactions
+    )
+
     st.warning(
         "Foram encontradas "
-        f"{len(matching_transactions)} ocorrência(s) "
+        f"{matching_count} ocorrência(s) "
         "correspondente(s) a transações já existentes."
     )
 
     with st.expander(
         "Ver possíveis duplicatas"
     ):
-     render_transaction_preview_table(
+        render_transaction_preview_table(
             matching_transactions
-     )
+        )
 
     widget_version = (
         _get_import_widget_version()
     )
 
-    return _render_single_choice(
-        "Como deseja tratar essas linhas?",
-        options=[
-            SKIP_MATCHES,
-            INCLUDE_MATCHES,
-        ],
-        default=None,
-        format_func=lambda option: {
-            SKIP_MATCHES: (
-                "Ignorar linhas que já existem"
-            ),
-            INCLUDE_MATCHES: (
-                "Importar todas as linhas, "
-                "incluindo possíveis duplicatas"
-            ),
-        }[
-            option
-        ],
+    include_matches = st.toggle(
+        "Importar também as possíveis duplicatas",
+        value=False,
         key=(
-            "duplicate_import_strategy_"
+            "include-duplicate-import-"
             f"{widget_version}"
         ),
+        help=(
+            "Quando ativado, o FinanTec também importa "
+            "as linhas que correspondem a transações "
+            "já existentes."
+        ),
     )
+
+    if include_matches:
+        st.caption(
+            f"As {matching_count} possível(is) duplicata(s) "
+            "também serão importadas."
+        )
+
+        return INCLUDE_MATCHES
+
+    st.caption(
+        "Somente as linhas novas serão importadas. "
+        "As possíveis duplicatas serão ignoradas."
+    )
+
+    return SKIP_MATCHES
 
 
 def render_import_confirmation(
@@ -1406,14 +1351,6 @@ def render_import_confirmation(
                 matching_transactions
             )
         )
-
-        if duplicate_strategy is None:
-            st.info(
-                "Escolha como tratar as linhas "
-                "já existentes para continuar."
-            )
-
-            return False
 
     if (
         duplicate_strategy
