@@ -160,17 +160,6 @@ def load_data(
         load_rejections(),
     )
 
-
-def select_period(
-    transactions: pd.DataFrame,
-) -> tuple[int, str, pd.DataFrame]:
-    """Mantém compatibilidade com chamadas antigas do seletor."""
-    return render_period_selector(
-        transactions,
-        key_prefix="legacy",
-    )
-
-
 def build_current_month_summary(
     transactions: pd.DataFrame,
     reference_date: date | None = None,
