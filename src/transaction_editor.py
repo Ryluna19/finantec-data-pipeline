@@ -24,7 +24,6 @@ from src.manual_transaction_service import (
     MANUAL_TRANSACTION_COLUMNS,
     STORED_TRANSACTION_COLUMNS,
     add_pending_transaction,
-    build_manual_transaction_source_key,
     clear_manual_transactions,
     create_empty_manual_transactions,
     load_manual_transactions,
@@ -97,19 +96,6 @@ CATEGORIAS_SUGERIDAS = [
 # -----------------------------------------------------------------------------
 # Compatibilidade com chamadas e testes existentes
 # -----------------------------------------------------------------------------
-
-
-def get_manual_transaction_source_key() -> str:
-    """Retorna a chave estável da fonte manual atual."""
-    return (
-        build_manual_transaction_source_key(
-            source_file=(
-                ARQUIVO_TRANSACOES_MANUAIS
-            ),
-            project_root=PROJECT_ROOT,
-        )
-    )
-
 
 def criar_dataframe_vazio() -> pd.DataFrame:
     """Cria uma tabela manual vazia."""
