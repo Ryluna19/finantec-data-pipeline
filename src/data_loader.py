@@ -125,22 +125,6 @@ def merge_profile_with_goals(
     return merged_profile
 
 
-def merge_profile_with_legacy_goals(
-    profile: dict,
-    seed_profile: dict,
-) -> dict:
-    """Mantém compatibilidade com chamadas e testes antigos."""
-    return merge_profile_with_goals(
-        profile=profile,
-        goals=list(
-            seed_profile.get(
-                "objetivos_financeiros",
-                [],
-            )
-        ),
-    )
-
-
 def build_demo_financial_goals(
     seed_profile: dict,
 ) -> list[dict]:
