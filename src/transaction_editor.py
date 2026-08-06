@@ -80,11 +80,6 @@ ARQUIVO_TRANSACOES_MANUAIS = (
     / "transacoes_manuais.csv"
 )
 
-# Alias temporário para preservar testes e imports existentes.
-COLUNAS_TRANSACOES = (
-    MANUAL_TRANSACTION_COLUMNS
-)
-
 CATEGORIAS_SUGERIDAS = [
     "Trabalho",
     "Alimentação",

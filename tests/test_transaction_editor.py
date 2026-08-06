@@ -1,7 +1,6 @@
 import pandas as pd
 
 from transaction_editor import (
-    COLUNAS_TRANSACOES,
     STORED_TRANSACTION_COLUMNS,
     add_pending_transaction,
     carregar_transacoes_manuais,
