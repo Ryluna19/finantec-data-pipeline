@@ -1,83 +1,364 @@
 # Knowledge Base — FinanTec Data Pipeline
 
 > [!NOTE]
-> Este documento preserva a organização da base usada durante a fase com
-> Gemini. As seções sobre envio de contexto e respostas com IA são históricas
-> e não representam a execução atual. Consulte a
-> [visão geral atual](project_overview.md) e a
-> [decisão de remover a integração externa](decisions/001-remove-gemini-integration.md).
+> Este documento descreve as principais fontes de dados utilizadas pelo
+> FinanTec e preserva o contexto histórico de arquivos que fizeram parte do
+> antigo assistente financeiro com Gemini.
+>
+> As seções relacionadas à IA externa são históricas e não representam a
+> execução atual.
+>
+> Consulte também:
+>
+> - [Project Overview](project_overview.md)
+> - [Contrato de Dados](data_contract.md)
+> - [ADR 001 — Remoção da integração externa com Gemini](decisions/001-remove-gemini-integration.md)
 
 ## Visão Geral
 
-A base de conhecimento do FinanTec Data Pipeline reúne os dados simulados que
-acompanham o repositório e registra como eles foram usados nas diferentes fases
-do projeto. Entre essas fontes, o perfil fictício e suas metas são usados
-ativamente somente no contexto de demonstração; as fontes da antiga integração
-externa permanecem como registro histórico.
+O FinanTec utiliza diferentes fontes de dados para atender três contextos
+principais:
 
-A base combina arquivos de transações, perfil fictício da pessoa usuária, histórico de dúvidas, conceitos financeiros e produtos financeiros informativos.
+```text
+dados pessoais
+dados de demonstração
+dados históricos/legados
+```
 
-O objetivo atual é documentar as fontes da demonstração, o pipeline e as
-decisões de cálculo. O uso dessas fontes pela antiga integração externa está
-preservado como contexto histórico.
+A fonte principal de persistência da aplicação atual é o SQLite.
 
-O projeto não utiliza dados bancários reais.
+Os arquivos versionados no repositório são utilizados principalmente para:
+
+- demonstração;
+- templates;
+- processamento pelo ETL;
+- documentação;
+- compatibilidade;
+- preservação histórica.
+
+A aplicação não utiliza dados bancários reais e não se conecta diretamente a
+instituições financeiras.
+
+---
+
+## Classificação das Fontes
+
+As fontes podem ser divididas em três grupos.
+
+### Fontes atuais
+
+São utilizadas pela aplicação ou pelo pipeline atual:
+
+- `database/finantec.db`;
+- `data/demo/`;
+- `data/raw/`;
+- `data/processed/`;
+- `data/templates/`;
+- `data/perfil_usuario.json`.
+
+### Fontes locais geradas durante o uso
+
+Podem ser criadas ou alteradas na máquina em que a aplicação é executada:
+
+- banco SQLite;
+- arquivos processados;
+- relatórios de rejeição;
+- logs;
+- arquivos associados a lotes importados;
+- dados pessoais persistidos.
+
+Esses conteúdos não devem ser enviados ao GitHub quando contiverem dados de uso
+local.
+
+### Fontes históricas
+
+Alguns arquivos permaneceram no projeto como registro da fase anterior com
+assistente financeiro:
+
+- `data/historico_atendimento.csv`;
+- `data/conceitos_financeiros.json`;
+- `data/produtos_financeiros.json`.
+
+Eles não representam funcionalidades atuais da v1.
 
 ---
 
 ## Fontes de Dados
 
-| Fonte | Formato | Finalidade |
+| Fonte | Formato | Finalidade atual |
 |---|---|---|
-| `data/demo/` | CSV | Armazena os arquivos versionados de transações financeiras simuladas. |
-| `data/raw/` | CSV | Recebe arquivos locais de compatibilidade e lotes importados pela interface. |
-| `data/processed/transacoes_processadas.csv` | CSV | Base tratada gerada pelo pipeline ETL. |
-| `data/processed/transacoes_rejeitadas.csv` | CSV | Relatório local de linhas rejeitadas e seus motivos, gerado apenas quando há dados inválidos. |
-| `database/finantec.db` | SQLite | Fonte principal local, atualizada pela interface e também pelo ETL explícito. |
-| `data/perfil_usuario.json` | JSON | Fonte do Perfil e das Metas fictícias da demonstração, compostos em memória e sem persistência nas tabelas pessoais. |
-| `data/historico_atendimento.csv` | CSV | Registro simulado preservado da fase histórica de consultas financeiras. |
-| `data/conceitos_financeiros.json` | JSON | Conteúdo educativo preservado da fase histórica de Insights. |
-| `data/produtos_financeiros.json` | JSON | Conteúdo informativo e simulado preservado da fase histórica de Insights. |
-| `data/templates/transacoes_template.csv` | CSV | Modelo de preenchimento para novas transações. |
-| `data/raw/transacoes_manuais.csv` | CSV | Arquivo legado de instalações anteriores à persistência manual direta no SQLite. |
+| `database/finantec.db` | SQLite | Fonte principal dos dados persistidos da aplicação. |
+| `data/demo/` | CSV | Transações financeiras simuladas utilizadas na demonstração. |
+| `data/raw/` | CSV | Entrada para processamento explícito pelo pipeline e compatibilidade. |
+| `data/raw/imported/` | Arquivos locais | Pode armazenar lotes relacionados à importação pela interface. |
+| `data/processed/transacoes_processadas.csv` | CSV | Resultado tratado produzido pelo ETL. |
+| `data/processed/transacoes_rejeitadas.csv` | CSV | Relatório de registros rejeitados pelo pipeline. |
+| `data/perfil_usuario.json` | JSON | Fonte fictícia utilizada na composição de Perfil e Metas da demonstração. |
+| `data/templates/transacoes_template.csv` | CSV | Modelo do contrato canônico de transações. |
+| `data/historico_atendimento.csv` | CSV | Registro histórico da antiga funcionalidade de conversa. |
+| `data/conceitos_financeiros.json` | JSON | Conteúdo educativo preservado da antiga fase de Insights. |
+| `data/produtos_financeiros.json` | JSON | Conteúdo informativo preservado da antiga fase de Insights. |
+| `data/raw/transacoes_manuais.csv` | CSV | Arquivo legado anterior à persistência direta no SQLite. |
 
-Os arquivos gerados em `data/processed/`, `database/` e `logs/` são locais e não são versionados no GitHub.
+Arquivos gerados em diretórios como:
+
+```text
+database/
+data/processed/
+data/raw/imported/
+logs/
+```
+
+são considerados dados locais de execução.
 
 ---
 
-## Pessoa Usuária Fictícia
+## SQLite como Fonte Principal
 
-A base utiliza uma pessoa fictícia chamada Marina Costa.
+Na v1 atual, o SQLite é a principal fonte de persistência.
 
-Marina é estudante universitária e estagiária. Ela recebe uma bolsa-estágio mensal, possui uma pequena reserva para imprevistos e deseja organizar melhor seus gastos e metas financeiras.
+A aplicação utiliza o banco para armazenar dados relacionados a diferentes
+entidades, incluindo:
 
-As metas principais cadastradas são:
+- contas locais;
+- transações;
+- perfil;
+- metas;
+- orçamento;
+- dados auxiliares associados a esses fluxos.
+
+O banco também permite que os principais registros sejam associados ao usuário
+correto.
+
+Fluxo conceitual:
+
+```text
+usuário autenticado
+        ↓
+ação na aplicação
+        ↓
+validação
+        ↓
+regra de negócio
+        ↓
+SQLite
+```
+
+Isso substituiu o modelo antigo em que arquivos intermediários tinham um papel
+maior no uso normal da aplicação.
+
+---
+
+## Contas e Contexto de Usuário
+
+A v1 possui contas locais.
+
+Cada sessão autenticada estabelece um contexto de usuário utilizado pelos
+principais fluxos da aplicação.
+
+Conceitualmente:
+
+```text
+conta autenticada
+        ↓
+user_id
+        ↓
+transações
+perfil
+metas
+orçamento
+dados e privacidade
+```
+
+O `user_id` não é informado em arquivos importados pela pessoa usuária.
+
+A aplicação é responsável por associar os registros ao contexto autenticado.
+
+Isso evita que um arquivo determine arbitrariamente quem é proprietário de uma
+transação.
+
+---
+
+## Dados Pessoais
+
+Os dados pessoais são aqueles criados ou importados durante o uso da aplicação.
+
+Eles podem incluir:
+
+- transações;
+- informações do perfil;
+- fontes de renda;
+- metas;
+- orçamento;
+- informações auxiliares relacionadas aos fluxos financeiros.
+
+Um usuário novo pode possuir inicialmente:
+
+```text
+zero transações
+zero metas
+zero orçamento
+nenhum perfil configurado
+```
+
+Esses estados são válidos.
+
+A aplicação não deve preencher automaticamente o contexto pessoal com dados
+fictícios da demonstração.
+
+---
+
+## Dados de Demonstração
+
+O FinanTec possui uma base simulada para permitir que o produto seja explorado
+sem exigir dados pessoais.
+
+A personagem fictícia utilizada é:
+
+```text
+Marina Costa
+```
+
+Marina é apresentada como estudante universitária e estagiária.
+
+O contexto demonstrativo contém exemplos de:
+
+- receitas;
+- despesas;
+- reserva;
+- categorias financeiras;
+- metas;
+- perfil.
+
+Entre as metas fictícias estão:
 
 - montar uma reserva para imprevistos;
 - comprar um notebook.
 
-O uso de uma pessoa fictícia permite demonstrar o fluxo técnico sem utilizar dados pessoais ou bancários reais.
-
-No contexto demonstrativo, o Perfil e as Metas de Marina são apresentados
-somente para leitura. Eles não são copiados para o perfil ou para as metas
-pessoais.
+Essas informações não representam uma pessoa real.
 
 ---
 
-## Transações Financeiras
+## Separação entre Demonstração e Dados Pessoais
 
-Os arquivos de transações representam receitas e despesas mensais.
-As transações cadastradas pela interface são validadas e gravadas diretamente
-no SQLite. O arquivo `data/raw/transacoes_manuais.csv` permanece apenas como
-compatibilidade com instalações antigas e não é criado pelo fluxo atual.
+A demonstração deve permanecer isolada do contexto pessoal.
 
-Cada arquivo bruto deve seguir o padrão definido em:
+O comportamento esperado é:
+
+```text
+Meus dados
+        ↓
+Demonstração
+        ↓
+Meus dados
+```
+
+Ao ativar a demonstração:
+
+- os dados pessoais não devem ser sobrescritos;
+- registros pessoais não devem mudar de proprietário;
+- informações fictícias não devem ser persistidas como perfil pessoal.
+
+Ao retornar para “Meus dados”, o contexto previamente armazenado continua sendo
+utilizado.
+
+---
+
+## Perfil e Metas de Demonstração
+
+O arquivo:
+
+```text
+data/perfil_usuario.json
+```
+
+é utilizado como fonte fictícia para partes da demonstração.
+
+Perfil e Metas de Marina são compostos separadamente dos registros pessoais.
+
+Conceitualmente:
+
+```text
+fonte fictícia
+        ↓
+composição em memória
+        ↓
+Perfil e Metas demonstrativos
+        ↓
+somente leitura
+```
+
+Eles não devem ser copiados automaticamente para:
+
+- perfil pessoal;
+- metas pessoais.
+
+---
+
+## Transações
+
+Todas as transações utilizadas internamente convergem para um modelo canônico.
+
+Os principais campos são:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+O contrato completo está documentado em:
 
 ```text
 docs/data_contract.md
 ```
 
-As colunas obrigatórias são:
+Diferentes origens podem chegar a esse formato por caminhos diferentes:
+
+```text
+entrada manual ─────────┐
+CSV FinanTec ───────────┤
+Excel FinanTec ─────────┤
+Excel externo ──────────┼→ normalização → validação → SQLite
+OFX ────────────────────┘
+```
+
+Por isso, uma planilha externa ou arquivo OFX não precisa possuir desde a origem
+as mesmas cinco colunas do formato canônico.
+
+A conversão ocorre antes da persistência.
+
+---
+
+## CSV do Pipeline
+
+O pipeline explícito trabalha com arquivos CSV em:
+
+```text
+data/raw/
+```
+
+O padrão esperado é:
+
+```text
+transacoes_*.csv
+```
+
+Uma convenção recomendada é:
+
+```text
+transacoes_AAAA_MM.csv
+```
+
+Exemplo:
+
+```text
+transacoes_2026_08.csv
+```
+
+Esses arquivos seguem diretamente o contrato canônico:
 
 ```text
 data,tipo,descricao,categoria,valor
@@ -91,89 +372,211 @@ data,tipo,descricao,categoria,valor
 2026-08-06,despesa,Compra no mercado,Alimentação,200.00
 ```
 
-O pipeline lê arquivos em `data/raw/` com o padrão:
+---
+
+## Importação pela Interface
+
+A interface permite importar diferentes formatos.
+
+Atualmente estão contemplados:
+
+- CSV;
+- Excel;
+- OFX;
+- Excel externo por mapeamento assistido.
+
+Os arquivos passam por etapas de preparação antes da persistência.
+
+Fluxo geral:
 
 ```text
-transacoes_*.csv
-```
-
-O padrão recomendado de nome é:
-
-```text
-transacoes_AAAA_MM.csv
+arquivo
+        ↓
+leitura
+        ↓
+mapeamento ou conversão
+        ↓
+normalização
+        ↓
+validação
+        ↓
+análise de possíveis duplicatas
+        ↓
+prévia
+        ↓
+SQLite
 ```
 
 ---
 
-## Categorias Utilizadas
+## Excel Externo
 
-As categorias principais usadas nos dados simulados são:
+Planilhas externas podem possuir:
 
-- Trabalho
-- Alimentação
-- Transporte
-- Serviços
-- Assinaturas
-- Educação
-- Lazer
-- Saúde
-- Compras
-- Reserva
+- nomes de colunas diferentes;
+- múltiplas abas;
+- linhas antes do cabeçalho;
+- coluna de valor com sinal;
+- coluna de tipo separada;
+- débito e crédito em colunas distintas.
 
-A categoria `Reserva` possui tratamento especial no projeto.
+A importação assistida permite interpretar essas estruturas sem alterar o
+modelo interno da aplicação.
 
-Ela representa dinheiro guardado e não é considerada gasto de consumo por padrão. Por isso, os cálculos financeiros separam:
+Depois da conversão, as transações continuam utilizando:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+---
+
+## OFX
+
+Arquivos OFX seguem uma estrutura própria e não são tratados como planilhas
+comuns.
+
+O fluxo é:
+
+```text
+OFX
+        ↓
+parser
+        ↓
+extração das transações
+        ↓
+normalização
+        ↓
+modelo do FinanTec
+```
+
+O resultado utiliza as mesmas regras financeiras aplicadas aos demais formatos.
+
+---
+
+## Possíveis Duplicatas
+
+Durante uma importação, a aplicação compara os registros normalizados com os
+dados já existentes.
+
+A análise considera principalmente:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+A quantidade de ocorrências também é relevante.
+
+O objetivo é impedir duplicações acidentais sem assumir que toda transação
+repetida é inválida.
+
+O comportamento padrão é:
+
+```text
+possível duplicata
+→ não importar
+```
+
+A pessoa usuária pode optar explicitamente por incluir possíveis duplicatas.
+
+---
+
+## Categorias
+
+As categorias permitem agrupar transações para análise.
+
+Entre as categorias presentes nos dados simulados estão:
+
+- Trabalho;
+- Alimentação;
+- Transporte;
+- Serviços;
+- Assinaturas;
+- Educação;
+- Lazer;
+- Saúde;
+- Compras;
+- Reserva.
+
+A aplicação pode trabalhar com outras categorias válidas.
+
+Não existe necessidade de restringir todos os registros a uma lista fixa.
+
+---
+
+## Categoria Reserva
+
+`Reserva` possui significado específico nos cálculos.
+
+Ela representa dinheiro separado para guardar.
+
+Por padrão:
+
+```text
+despesa de consumo
+≠
+reserva
+```
+
+Os indicadores distinguem:
 
 - gasto de consumo;
 - valor separado para reserva;
 - saldo disponível.
 
-Essa separação evita uma interpretação incorreta de que dinheiro guardado foi simplesmente consumido.
+Isso evita apresentar dinheiro guardado como se tivesse sido simplesmente
+consumido.
 
 ---
 
-## Uso dos Dados pelo Pipeline
+## Uso dos Dados pelo ETL
 
-O pipeline ETL utiliza os dados da seguinte forma:
+O ETL possui três etapas principais.
 
 | Etapa | Uso dos dados |
 |---|---|
-| Extract | Lê os arquivos CSV disponíveis em `data/raw/`. |
-| Transform | Valida colunas, limpa textos, converte datas e valores, separa linhas válidas e rejeitadas, e cria `ano_mes`. |
-| Load | Salva os dados tratados em `data/processed/` e em SQLite. |
+| Extract | Lê arquivos CSV compatíveis disponíveis para processamento. |
+| Transform | Valida, normaliza, converte e separa registros válidos e rejeitados. |
+| Load | Produz arquivos processados e persiste a carga correspondente no SQLite. |
 
-A aplicação usa o SQLite como fonte principal. Antes da criação da tabela
-particionada, existe somente um fallback de compatibilidade para o CSV
-processado do usuário local; arquivos brutos não são processados
-automaticamente ao abrir o aplicativo.
-
-Fluxo simplificado:
+Fluxo:
 
 ```text
-Entrada manual ou importação → validação → SQLite → dashboard
-
-CSV de demonstração → ETL explícito → CSV processado → SQLite
-
-Perfil e metas fictícios → composição em memória → interface somente leitura
+CSV
+        ↓
+Extract
+        ↓
+Transform
+        ↓
+válidos + rejeitados
+        ↓
+Load
 ```
+
+O ETL não precisa ser executado automaticamente para que a aplicação seja usada
+normalmente.
 
 ---
 
 ## Relatório de Rejeições
 
-Quando o pipeline encontra linhas inválidas nos arquivos de entrada, ele gera um relatório local:
+Quando o pipeline encontra registros inválidos, pode gerar:
 
 ```text
 data/processed/transacoes_rejeitadas.csv
 ```
 
-Esse relatório contém as linhas descartadas e uma coluna:
+O arquivo registra as linhas rejeitadas e seus motivos.
 
-```text
-motivo_rejeicao
-```
-
-Exemplos de motivos:
+Entre os exemplos estão:
 
 - data inválida ou vazia;
 - tipo vazio;
@@ -183,72 +586,244 @@ Exemplos de motivos:
 - valor inválido ou vazio;
 - valor menor ou igual a zero.
 
-Uma mesma linha pode acumular mais de um motivo.
+Uma linha pode possuir mais de um motivo.
 
-Esse relatório melhora a rastreabilidade do pipeline e ajuda a corrigir arquivos de entrada sem perder a informação de por que uma transação foi descartada.
+Exemplo:
+
+```text
+data invalida ou vazia; tipo invalido; categoria vazia
+```
+
+Isso permite investigar por que determinada entrada não passou pela validação.
 
 ---
 
-## Uso dos Dados pelo Dashboard
+## Uso dos Dados pela Aplicação
 
-O dashboard em Streamlit utiliza a base tratada para exibir:
+Os dados persistidos são utilizados pela interface para diferentes áreas.
 
-- período analisado;
-- quantidade de transações válidas;
-- rejeições disponíveis no processamento ou na importação atual;
-- receitas do período;
-- gasto de consumo;
-- valor separado para reserva;
-- saldo disponível;
-- maior categoria de consumo;
-- gráfico de gastos por categoria;
-- simulação de metas financeiras;
-- consulta e gerenciamento das transações;
-- acompanhamento de metas pessoais persistentes e metas fictícias somente
-  para leitura.
+### Visão geral
 
-Os cálculos são feitos em Python, principalmente no arquivo:
+Utiliza informações para apresentar:
+
+- receitas;
+- despesas;
+- reserva;
+- saldo;
+- gastos por categoria;
+- transações recentes;
+- diagnóstico financeiro;
+- resumo de orçamento.
+
+### Transações
+
+Utiliza a base para:
+
+- consulta;
+- filtros;
+- cadastro;
+- edição;
+- exclusão;
+- importação;
+- exportação.
+
+### Orçamento
+
+Relaciona os limites planejados às transações reais do período para calcular:
+
+- valor planejado;
+- gasto;
+- restante;
+- excedente;
+- percentual utilizado.
+
+### Metas
+
+Utiliza informações persistidas para:
+
+- acompanhamento;
+- progresso;
+- valor restante;
+- contribuição mensal;
+- simulações.
+
+### Perfil
+
+Armazena informações utilizadas no contexto financeiro pessoal, como:
+
+- nome de exibição;
+- ocupação;
+- fontes de renda;
+- renda mensal;
+- outras informações financeiras configuradas pela pessoa usuária.
+
+### Dados e privacidade
+
+Utiliza os repositórios para:
+
+- resumir os dados armazenados;
+- alternar o contexto pessoal e demonstrativo;
+- apagar os dados financeiros;
+- excluir definitivamente a conta.
+
+---
+
+## Cálculos Financeiros
+
+Os principais cálculos permanecem sob responsabilidade do código Python.
+
+A maior parte das regras analíticas está concentrada em:
 
 ```text
 src/analytics.py
 ```
 
-A interface principal fica em:
+Entre os resultados utilizados pela aplicação estão:
 
-```text
-src/app.py
-```
+- receitas;
+- despesas;
+- consumo;
+- reserva;
+- saldo;
+- gastos por categoria;
+- indicadores de orçamento;
+- cálculos associados a metas.
+
+O princípio continua sendo evitar que valores financeiros importantes dependam
+de interpretação probabilística.
 
 ---
 
-## Registro Histórico: Uso dos Dados pela IA
+## Exclusão dos Dados
 
-Todo o conteúdo desta seção descreve a integração externa descontinuada. A
-execução atual não monta nem envia esse contexto para serviços externos.
+Existem duas operações distintas.
 
-A IA generativa não calculava os valores financeiros principais.
-
-Antes de enviar uma pergunta ao modelo, a aplicação monta um contexto com:
-
-- perfil da pessoa usuária;
-- período analisado;
-- resumo financeiro calculado;
-- gastos por categoria calculados;
-- simulações de metas calculadas;
-- histórico de dúvidas;
-- conceitos financeiros disponíveis;
-- produtos financeiros informativos;
-- limitações do projeto.
-
-A IA usava esse contexto para explicar os resultados de forma mais clara e acessível.
-
-A separação principal do projeto é:
+### Reset financeiro
 
 ```text
-Python calcula → IA explica
+Apagar meus dados
 ```
 
-Essa decisão reduz o risco de respostas inconsistentes, cálculos errados ou valores inventados.
+remove os dados financeiros associados à conta, preservando:
+
+- a própria conta;
+- credenciais;
+- capacidade de autenticação;
+- dados da demonstração.
+
+### Exclusão da conta
+
+```text
+Excluir conta
+```
+
+remove a conta e os dados associados a ela.
+
+Essa separação faz parte das regras atuais de gerenciamento dos dados locais.
+
+---
+
+## Arquivos Locais e Versionamento
+
+Dados produzidos durante a execução não devem ser enviados ao repositório quando
+puderem conter informações pessoais ou específicas da máquina local.
+
+Exemplos:
+
+```text
+database/finantec.db
+data/processed/transacoes_processadas.csv
+data/processed/transacoes_rejeitadas.csv
+data/raw/imported/
+logs/etl_transacoes.log
+```
+
+O `.gitignore` deve continuar protegendo esses conteúdos.
+
+Arquivos de demonstração e templates podem permanecer versionados porque são
+intencionalmente simulados.
+
+---
+
+## Registro Histórico — Assistente e Gemini
+
+As seções seguintes registram uma fase anterior do projeto.
+
+O FinanTec já possuiu um assistente financeiro integrado ao Gemini.
+
+A integração externa não faz parte da aplicação atual.
+
+Ela foi removida preventivamente porque poderia enviar contexto financeiro para
+um serviço de terceiros.
+
+Não existe evidência de que tenha ocorrido uma violação de dados.
+
+A decisão foi motivada por:
+
+- minimização de dados;
+- privacidade;
+- redução de dependências externas;
+- baixo benefício em relação ao risco para o contexto local.
+
+---
+
+## Contexto Enviado Historicamente à IA
+
+Na arquitetura antiga, a aplicação podia montar um contexto contendo:
+
+- perfil;
+- período;
+- resumo financeiro;
+- gastos por categoria;
+- cálculos de metas;
+- histórico de dúvidas;
+- conceitos financeiros;
+- produtos financeiros informativos.
+
+A separação conceitual era:
+
+```text
+Python calcula
+        ↓
+IA explica
+```
+
+Os cálculos financeiros principais não deveriam ser delegados ao modelo.
+
+Esse fluxo não existe na execução atual.
+
+---
+
+## Histórico de Atendimento
+
+O arquivo:
+
+```text
+data/historico_atendimento.csv
+```
+
+pertence à fase histórica do assistente.
+
+Ele não representa o histórico de uma funcionalidade atual da v1.
+
+Sua permanência serve apenas como registro técnico ou compatibilidade histórica.
+
+---
+
+## Conceitos Financeiros
+
+O arquivo:
+
+```text
+data/conceitos_financeiros.json
+```
+
+contém conteúdo educativo que foi utilizado na antiga experiência de Insights.
+
+Esse conteúdo pode permanecer no repositório como material histórico.
+
+Ele não significa que existe atualmente um assistente ativo consumindo essa
+base.
 
 ---
 
@@ -260,89 +835,183 @@ O arquivo:
 data/produtos_financeiros.json
 ```
 
-contém informações educativas e simuladas sobre produtos financeiros.
+contém informações simuladas e educativas.
 
-Esses dados não representam consulta em tempo real, ranking de mercado, recomendação personalizada ou comparação atualizada entre bancos.
+Esses dados:
 
-Na integração histórica, a IA podia explicar conceitos usando esses dados, mas
-não deveria afirmar que um produto era o melhor disponível no mercado.
+- não são atualizados em tempo real;
+- não representam ranking de mercado;
+- não representam recomendação;
+- não substituem consulta a fontes financeiras atuais.
 
-Perguntas como:
-
-```text
-Qual banco oferece o melhor CDB hoje?
-```
-
-devem ser respondidas com limitação clara, porque o projeto não possui dados atualizados de taxas, bancos ou rankings.
+Durante a antiga integração, esse conteúdo servia apenas como contexto
+informativo.
 
 ---
 
-## Limitações da Base
+## Limitações das Fontes
 
-A base de conhecimento não contém:
+O FinanTec não possui automaticamente:
 
 - dados bancários reais;
-- extratos reais;
-- dados pessoais reais;
-- taxas financeiras em tempo real;
-- ranking de bancos;
-- cotação de investimentos;
-- recomendação personalizada de investimentos;
-- dados de crédito ou empréstimos;
-- integração com instituições financeiras;
-- informações externas consultadas pela IA em tempo real.
+- Open Finance;
+- sincronização com instituições financeiras;
+- extratos bancários em tempo real;
+- taxas de investimentos em tempo real;
+- ranking atualizado de bancos;
+- cotação de ativos;
+- recomendação personalizada de investimento;
+- execução de operações financeiras;
+- consulta externa automática de informações financeiras.
 
-Na fase histórica, perguntas dependentes de informações externas ou ausentes
-deveriam receber uma limitação clara. Atualmente o recurso está congelado fora
-da navegação principal.
+Arquivos importados podem naturalmente conter dados fornecidos pela própria
+pessoa usuária.
+
+Isso é diferente de a aplicação acessar uma instituição financeira por conta
+própria.
 
 ---
 
 ## Execução Relacionada aos Dados
 
-O projeto possui um arquivo `main.py` para facilitar a execução.
+O projeto utiliza `main.py` como entrada central.
 
-Para processar os dados:
+### Aplicação
 
-```bash
-python main.py etl
-```
-
-Para abrir o dashboard:
-
-```bash
+```powershell
 python main.py
 ```
 
-Para rodar os testes automatizados:
+ou:
 
-```bash
-python main.py test
+```powershell
+python main.py app
 ```
 
-Para abrir o dashboard sem executar o ETL antes:
+### ETL explícito
 
-```bash
+```powershell
+python main.py etl
+```
+
+### Aplicação sem execução automática do ETL
+
+```powershell
 python main.py dev
+```
+
+### Testes
+
+```powershell
+python main.py test
 ```
 
 ---
 
-## Evoluções Possíveis
+## Evolução das Fontes na v2
 
-A base de conhecimento pode evoluir com:
+A v2 deverá preservar a ideia de um modelo financeiro normalizado, mesmo com a
+mudança de arquitetura.
 
-- novos arquivos mensais em `data/raw/`;
-- entrada manual de transações pela interface;
-- upload de planilha-modelo;
-- mais categorias financeiras;
-- tabela de categorias padronizadas;
-- relatórios por período;
-- exportação em Excel ou PDF;
-- armazenamento em PostgreSQL;
-- automações simples de arquivos;
-- fluxo mais próximo de um controlador financeiro pessoal/local.
+Direção planejada:
 
-A direção futura mais coerente é permitir que a pessoa registre ou importe seus próprios dados em uma experiência parecida com uma planilha simples de gastos.
+```text
+React
+        ↓
+API Python
+        ↓
+regras e validação
+        ↓
+persistência
+```
 
-Essa evolução deve manter o projeto focado em uso local/pessoal, sem exigir login, múltiplos usuários ou integração bancária real neste momento.
+As fontes de entrada continuarão precisando convergir para contratos claros.
+
+Por exemplo:
+
+```text
+entrada manual
+CSV
+Excel
+OFX
+        ↓
+contrato da API / serviço
+        ↓
+modelo financeiro normalizado
+```
+
+A camada React não deverá conhecer ou decidir regras internas de persistência.
+
+---
+
+## PostgreSQL
+
+PostgreSQL é uma possibilidade futura, não uma exigência do modelo atual.
+
+SQLite continua adequado para a v1 local.
+
+Uma migração para PostgreSQL ganha justificativa quando existirem necessidades
+como:
+
+- backend publicado;
+- múltiplos usuários simultâneos;
+- maior concorrência;
+- servidor central;
+- infraestrutura de produção.
+
+A mudança do banco não deve alterar o significado básico das entidades
+financeiras.
+
+---
+
+## Princípio de Evolução dos Dados
+
+O projeto deve evitar criar um modelo diferente para cada nova origem.
+
+A direção desejada continua sendo:
+
+```text
+múltiplas fontes
+        ↓
+normalização
+        ↓
+regras compartilhadas
+        ↓
+persistência consistente
+```
+
+Da mesma forma, a evolução para uma arquitetura web não deve transferir regras
+sensíveis para o frontend.
+
+Os dados devem continuar sendo validados e associados ao usuário na camada
+responsável pelas regras e pela persistência.
+
+---
+
+## Status
+
+Na v1 atual:
+
+```text
+SQLite
+→ fonte principal
+
+arquivos
+→ demonstração, importação, ETL, templates e compatibilidade
+
+dados pessoais
+→ associados à conta local
+
+demonstração
+→ isolada dos dados pessoais
+
+antiga base de IA
+→ histórico técnico
+```
+
+O antigo assistente financeiro e o histórico de conversas não fazem parte da
+experiência atual.
+
+A próxima evolução relevante relacionada aos dados não é adicionar novas fontes
+aleatoriamente, mas revisar segurança, isolamento e persistência durante o
+hardening e, posteriormente, preservar esses contratos na arquitetura da v2.

@@ -1,369 +1,868 @@
 # Validation — FinanTec Data Pipeline
 
 > [!NOTE]
-> Este documento combina validações ainda relevantes do pipeline com o
-> registro histórico dos testes manuais da antiga integração com Gemini.
-> Atualmente não existem chamadas externas nem configuração de chave de API.
-> Consulte a
-> [decisão arquitetural](decisions/001-remove-gemini-integration.md).
+> Este documento descreve a estratégia de validação da versão atual do FinanTec
+> e preserva, ao final, um registro resumido da antiga integração com Gemini.
+> A aplicação atual não realiza chamadas para serviços externos de IA.
+>
+> Consulte também:
+> [ADR 001 — Remoção da integração externa com Gemini](decisions/001-remove-gemini-integration.md).
 
 ## Visão Geral
 
-Este documento descreve como o FinanTec Data Pipeline é validado.
+A validação do FinanTec combina testes automatizados e verificações manuais dos
+principais fluxos da aplicação.
 
-A validação atual considera quatro camadas principais:
+A versão 1 é uma aplicação local com:
 
-1. cálculos financeiros;
+- contas;
+- transações;
+- importação e exportação;
+- indicadores;
+- orçamento;
+- metas;
+- perfil;
+- dados de demonstração;
+- gerenciamento e exclusão dos próprios dados.
+
+A estratégia atual considera cinco áreas principais:
+
+1. regras e cálculos financeiros;
 2. validação, importação e ETL;
-3. persistência e isolamento em SQLite;
-4. composição dos principais fluxos da interface.
+3. persistência e integridade no SQLite;
+4. autenticação, contexto e isolamento por usuário;
+5. composição e comportamento dos principais fluxos da interface.
 
-O objetivo é garantir que os dados sejam processados corretamente, os
-indicadores sejam calculados em Python e as operações locais preservem as
-regras de negócio.
+O objetivo não é testar cada detalhe interno da implementação.
 
-As seções sobre Gemini permanecem neste documento como registro histórico da
-fase anterior.
+Os testes priorizam comportamentos cujo erro pode causar:
+
+- cálculo incorreto;
+- perda de dados;
+- duplicação;
+- mistura entre usuários;
+- mistura entre demonstração e dados pessoais;
+- persistência incorreta;
+- exclusão indevida;
+- quebra dos fluxos principais.
 
 ---
 
 ## Estratégia de Validação
 
-O projeto combina:
+O projeto utiliza principalmente:
 
 - testes automatizados com `pytest`;
-- scripts manuais de apoio;
-- documentação de limitações conhecidas.
+- bancos SQLite temporários em testes de persistência;
+- testes unitários e de integração das regras principais;
+- verificações manuais pela interface;
+- scripts manuais auxiliares;
+- documentação das limitações conhecidas.
 
-Essa abordagem foi escolhida porque nem todas as partes do projeto devem ser testadas da mesma forma.
+A divisão existe porque diferentes partes do projeto exigem tipos diferentes de
+validação.
 
-Cálculos, transformações, persistência, respostas locais e serviços de banco
-são previsíveis e testados automaticamente. A execução atual não depende de
-API externa, internet ou chave do Gemini.
+Funções determinísticas e regras de persistência são adequadas para testes
+automatizados.
+
+Comportamentos visuais e interações específicas do Streamlit também precisam de
+verificação manual, principalmente quando dependem do ciclo de rerun da
+interface.
 
 ---
 
 ## Testes Automatizados
 
-Os testes automatizados ficam na pasta:
+Os testes ficam em:
 
 ```text
 tests/
 ```
 
-Para executar usando o comando principal do projeto:
+Para executar a suíte pelo comando principal:
 
-```bash
+```powershell
 python main.py test
 ```
 
-Ou diretamente com `pytest`:
+Também é possível executar diretamente:
 
-```bash
-pytest
+```powershell
+pytest -q
 ```
 
-### Arquivos de teste
+Antes do fechamento da v1, a suíte completa deve ser executada novamente para
+confirmar que nenhuma alteração documental ou funcional recente introduziu
+regressões.
 
-| Arquivo | O que valida |
-|---|---|
-| `tests/test_analytics.py` | Cálculos financeiros, metas, acompanhamento de orçamento, formatação de moeda e filtros por período. |
-| `tests/test_etl_pipeline.py` | Validação de colunas, preparação dos dados, separação entre linhas válidas e rejeitadas, transformação e ordenação final. |
-| `tests/test_rejections.py` | Geração do relatório de transações rejeitadas e acúmulo de motivos de rejeição. |
-| `tests/test_sqlite_load.py` | Carga dos dados tratados em SQLite usando banco temporário. |
-| `tests/test_transaction_editor.py` | Valida a camada de preparação, salvamento e carregamento das transações manuais. |
-| `tests/test_transaction_*.py` | Persistência, identidade, importação de CSV, Excel e OFX, mapeamento assistido, duplicatas, sincronização e composição de transações. |
-| `tests/test_goal_*.py` | Persistência, cálculos e composição de metas. |
-| `tests/test_budget_repository.py` | Persistência, isolamento, duplicidade, validações e CRUD de limites mensais. |
-| `tests/test_budget_component.py` | Períodos disponíveis, resumos, estados e funções auxiliares da interface de orçamento. |
-| `tests/test_profile_*.py` | Perfil, fontes de renda e persistência. |
-| `tests/test_data_reset.py` | Exclusão limitada e preservação dos demais dados locais. |
-| `tests/test_financial_*.py` | Classificação e respostas determinísticas preservadas. |
+O número total de testes não é tratado neste documento como contrato fixo, pois
+pode mudar conforme testes redundantes são removidos ou novos comportamentos são
+adicionados.
 
 ---
 
-## Validação dos Cálculos Financeiros
+## Áreas Cobertas Automaticamente
 
-Os testes verificam regras importantes do projeto, como:
+### Analytics
+
+Os testes verificam regras como:
 
 - receitas totais;
 - despesas totais;
-- gasto de consumo;
-- valor separado para reserva;
+- gastos de consumo;
+- reserva;
 - saldo disponível;
-- maior categoria de consumo;
-- cálculo de metas financeiras;
-- prazo inválido em metas;
-- formatação de moeda brasileira;
-- listagem de períodos disponíveis;
-- filtragem por mês.
-- comparação entre orçamento planejado e gasto real por categoria;
-- saldo restante ou valor ultrapassado;
-- percentual utilizado de cada limite;
-- resumo das categorias planejadas;
-- identificação das categorias acima do limite.
+- categorias de gasto;
+- períodos;
+- formatação monetária;
+- cálculos utilizados por metas;
+- cálculos utilizados pelo orçamento.
 
-Uma regra importante validada é que a categoria `Reserva` não entra como gasto de consumo por padrão.
+Uma regra importante é que a categoria `Reserva` não deve ser interpretada como
+gasto de consumo por padrão.
 
-Isso evita interpretar dinheiro guardado como despesa comum.
+Também existem validações para pequenas variações de texto que não deveriam
+alterar essa classificação.
 
-Também existe teste para garantir que a categoria `Reserva` seja reconhecida mesmo com pequenas variações de texto, como espaços extras ou diferença entre maiúsculas e minúsculas.
+### ETL
 
----
-
-## Validação do ETL
-
-O pipeline ETL é validado em três partes principais.
-
-### Extract
-
-Verifica se os arquivos possuem as colunas obrigatórias:
+O pipeline é validado nas etapas de:
 
 ```text
-data,tipo,descricao,categoria,valor
+Extract
+Transform
+Load
 ```
 
-Se uma coluna obrigatória estiver ausente, o pipeline deve interromper a execução.
+Entre os comportamentos cobertos estão:
 
-Esse comportamento é esperado porque a ausência de coluna indica erro estrutural no arquivo, não apenas uma linha inválida.
+- presença das colunas obrigatórias;
+- conversão de datas;
+- normalização dos tipos;
+- tratamento de textos;
+- conversão de valores;
+- rejeição de registros inválidos;
+- criação de `ano_mes`;
+- ordenação;
+- separação entre registros válidos e rejeitados.
 
-### Transform
+### Relatório de rejeições
 
-Verifica se o pipeline:
+Quando uma linha é inválida, ela pode receber um ou mais motivos de rejeição.
 
-- converte datas corretamente;
-- padroniza a coluna `tipo`;
-- remove espaços extras;
-- converte valores para número;
-- identifica linhas inválidas;
-- remove tipos não permitidos;
-- remove valores menores ou iguais a zero;
-- separa transações válidas e rejeitadas;
-- cria a coluna `ano_mes`;
-- ordena os dados finais.
-
-### Load
-
-Verifica se os dados tratados conseguem ser salvos em uma tabela SQLite.
-
-O teste de carga usa um banco temporário criado pelo próprio `pytest`, evitando alterar o banco local do projeto.
-
-Também é validado que a tabela é substituída corretamente quando a carga é executada novamente.
-
----
-
-## Relatório de Rejeições
-
-O pipeline gera um relatório de linhas rejeitadas quando encontra dados inválidos nos arquivos de entrada.
-
-O arquivo gerado é:
+Exemplos:
 
 ```text
-data/processed/transacoes_rejeitadas.csv
+data invalida ou vazia
+tipo invalido
+descricao vazia
+valor invalido ou vazio
+valor menor ou igual a zero
 ```
 
-Esse arquivo contém as linhas descartadas e uma coluna adicional:
-
-```text
-motivo_rejeicao
-```
-
-Exemplos de motivos possíveis:
-
-- data inválida ou vazia;
-- tipo vazio;
-- tipo inválido;
-- descrição vazia;
-- categoria vazia;
-- valor inválido ou vazio;
-- valor menor ou igual a zero.
-
-Uma mesma linha pode acumular mais de um motivo de rejeição.
-
-Exemplo:
+Uma mesma linha pode acumular motivos:
 
 ```text
 data invalida ou vazia; tipo invalido; descricao vazia
 ```
 
-Esse relatório melhora a rastreabilidade do pipeline, porque permite entender por que uma linha não entrou na base final processada.
+Quando necessário, o pipeline gera:
 
-Como `data/processed/*.csv` está no `.gitignore`, esse relatório é gerado apenas localmente e não é versionado no GitHub.
+```text
+data/processed/transacoes_rejeitadas.csv
+```
+
+Esse arquivo é local e não é versionado.
+
+### Carga SQLite
+
+Os testes de carga utilizam bancos temporários para evitar modificar a base
+local usada pela aplicação.
+
+São verificados comportamentos como:
+
+- criação das estruturas necessárias;
+- persistência dos registros;
+- tipos e colunas esperados;
+- atualização ou substituição da carga quando aplicável.
+
+---
+
+## Contas e Autenticação
+
+A v1 possui contas locais e esse fluxo faz parte da validação atual.
+
+Os testes automatizados cobrem comportamentos relacionados a:
+
+- criação de conta;
+- persistência das credenciais;
+- autenticação;
+- rejeição de credenciais inválidas;
+- contexto de usuário;
+- isolamento dos registros associados ao usuário;
+- exclusão de conta.
+
+A existência desses testes não significa que a autenticação esteja certificada
+para uso público.
+
+A implementação atual atende ao contexto local da v1.
+
+Uma análise específica de segurança será realizada antes da evolução da
+arquitetura web.
+
+---
+
+## Isolamento por Usuário
+
+O isolamento é uma das áreas de maior risco da aplicação.
+
+Os principais repositórios utilizam `user_id` para separar informações
+pessoais.
+
+Os testes verificam, conforme a entidade:
+
+- leitura somente dos registros do usuário esperado;
+- atualização somente dos registros corretos;
+- exclusão somente dos registros corretos;
+- preservação dos registros pertencentes a outro usuário.
+
+Esse princípio é aplicado principalmente a:
+
+- transações;
+- perfil;
+- metas;
+- orçamento;
+- conta;
+- operações de remoção de dados.
+
+---
+
+## Dados Pessoais e Demonstração
+
+A aplicação diferencia dados pessoais e demonstração.
+
+Essa separação é validada para evitar que o contexto fictício:
+
+- substitua dados pessoais;
+- seja gravado como perfil pessoal;
+- seja confundido com transações pessoais;
+- seja removido durante um reset financeiro da conta.
+
+O fluxo esperado é:
+
+```text
+Meus dados
+    ↓
+Demonstração
+    ↓
+Meus dados
+```
+
+Ao retornar ao contexto pessoal, os dados previamente persistidos devem
+continuar disponíveis.
+
+---
+
+## Transações
+
+A validação automatizada das transações cobre áreas como:
+
+- identidade dos registros;
+- preparação;
+- persistência;
+- leitura;
+- edição;
+- exclusão;
+- sincronização;
+- validação;
+- importação;
+- duplicatas;
+- composição dos dados exibidos pela interface.
+
+A entrada manual e a importação compartilham regras de validação sempre que
+possível, reduzindo diferenças de comportamento entre os dois caminhos.
+
+---
+
+## Importação
+
+A importação é uma das áreas com maior diversidade de entradas.
+
+A aplicação atualmente suporta:
+
+- CSV;
+- Excel;
+- OFX;
+- Excel externo com mapeamento assistido.
+
+### CSV e Excel estruturados
+
+Os testes verificam:
+
+- leitura;
+- normalização;
+- validação;
+- transformação para o formato interno;
+- rejeição de linhas inválidas.
+
+### OFX
+
+São considerados cenários como:
+
+- arquivos válidos;
+- variações de estrutura;
+- conteúdo inválido;
+- problemas de parsing;
+- conversão para o modelo interno da aplicação.
+
+### Importação assistida
+
+O fluxo assistido considera:
+
+- listagem de abas;
+- seleção de aba;
+- detecção ou seleção de cabeçalho;
+- normalização dos nomes das colunas;
+- sugestão de mapeamento;
+- mapeamento manual;
+- prévia dos registros.
+
+A aplicação suporta diferentes estratégias de valor:
+
+```text
+valor único
+```
+
+ou:
+
+```text
+valor + tipo explícito
+```
+
+ou:
+
+```text
+débito + crédito
+```
+
+### Possíveis duplicatas
+
+A detecção de duplicatas utiliza uma estratégia conservadora.
+
+O comportamento padrão é:
+
+```text
+possível duplicata
+        ↓
+não importar
+```
+
+O usuário pode optar explicitamente por importar também esses registros.
+
+Esse comportamento reduz o risco de duplicação acidental.
+
+---
+
+## Perfil
+
+A validação do Perfil considera:
+
+- ausência inicial como estado válido;
+- criação no primeiro salvamento;
+- leitura;
+- atualização;
+- fontes de renda;
+- persistência;
+- associação ao usuário;
+- isolamento entre usuários;
+- compatibilidade necessária com registros antigos.
+
+O Perfil é independente das Metas.
+
+---
+
+## Metas
+
+Os testes relacionados às metas verificam:
+
+- criação;
+- leitura;
+- edição;
+- exclusão;
+- persistência;
+- isolamento;
+- progresso;
+- valor restante;
+- contribuição mensal;
+- comportamento sem metas cadastradas.
+
+O simulador deve calcular cenários sem modificar automaticamente a meta
+persistida.
+
+---
+
+## Orçamento
+
+A validação do orçamento inclui:
+
+- criação de limite;
+- edição;
+- exclusão;
+- isolamento por usuário;
+- isolamento por categoria e período;
+- recorrência;
+- divisão da recorrência a partir de um mês;
+- validações de sobreposição;
+- valor planejado;
+- gasto real;
+- valor disponível;
+- valor ultrapassado;
+- percentual utilizado;
+- composição do resumo mensal.
+
+A ausência de orçamento também é um estado válido.
+
+---
+
+## Dados e Privacidade
+
+Existem duas operações destrutivas distintas.
+
+### Apagar meus dados
+
+Essa ação deve remover os dados financeiros do usuário mantendo:
+
+- conta;
+- credenciais;
+- capacidade de autenticação;
+- dados de demonstração.
+
+Entre os dados pessoais removidos estão os registros associados às principais
+entidades financeiras do usuário.
+
+Os testes automatizados verificam que a operação:
+
+- remove os registros pessoais esperados;
+- preserva a conta;
+- preserva registros de outros usuários;
+- preserva o contexto de demonstração.
+
+### Excluir conta
+
+Essa operação possui responsabilidade diferente.
+
+```text
+Apagar meus dados
+→ mantém a conta
+
+Excluir conta
+→ remove a conta e seus dados associados
+```
+
+A exclusão definitiva deve impedir uma nova autenticação com a conta removida.
+
+---
+
+## Validação Manual Final da v1
+
+Além da suíte automatizada, os principais fluxos foram testados diretamente na
+interface antes do fechamento da v1.
+
+### Transações
+
+Foi validado o ciclo:
+
+```text
+criar
+↓
+editar
+↓
+consultar
+↓
+trocar período
+↓
+exportar
+↓
+excluir
+```
+
+O fluxo funcionou conforme esperado.
+
+### Importação
+
+Foram verificados:
+
+- importação válida;
+- identificação de possíveis duplicatas;
+- comportamento padrão de ignorar duplicatas;
+- opção explícita de importar possíveis duplicatas;
+- bloqueio de arquivo inválido;
+- importação assistida de Excel.
+
+Os fluxos funcionaram conforme esperado.
+
+### Orçamento
+
+Foi validado:
+
+- criação de limite;
+- persistência;
+- edição;
+- atualização dos valores exibidos;
+- categoria acima do limite;
+- troca de período;
+- retorno ao período;
+- exclusão.
+
+Durante a validação, o Streamlit exibiu temporariamente um card antigo após uma
+edição.
+
+A consulta direta ao SQLite confirmou que existia apenas um registro
+persistido. Após novo rerender da interface, o elemento antigo desapareceu.
+
+O caso foi classificado como um artefato temporário de renderização da interface
+e não como duplicação de dados no banco.
+
+### Metas
+
+Foi validado:
+
+- criação;
+- edição;
+- recálculo dos indicadores;
+- persistência;
+- navegação para outra área e retorno;
+- exclusão;
+- separação entre simulador e dados persistidos.
+
+### Perfil
+
+Foi validado:
+
+- edição de informações;
+- alteração de fonte de renda;
+- persistência;
+- saída da tela;
+- retorno à tela;
+- restauração dos dados utilizados no teste.
+
+### Demonstração
+
+Foi validado:
+
+```text
+Meus dados
+↓
+Demonstração
+↓
+Meus dados
+```
+
+A demonstração foi carregada corretamente.
+
+Ao retornar aos dados pessoais, o contexto original permaneceu disponível.
+
+### Exclusão dos dados financeiros
+
+Foi realizado um teste real do fluxo:
+
+```text
+Zona de risco
+↓
+confirmação APAGAR
+↓
+Apagar meus dados
+```
+
+O resultado esperado foi confirmado:
+
+- dados financeiros removidos;
+- conta preservada;
+- autenticação da mesma conta ainda possível.
+
+Durante essa etapa foi identificado um problema de interação no Streamlit.
+
+O fluxo utilizava um campo de confirmação e um botão independentes, sujeitos aos
+reruns da interface.
+
+A ação foi alterada para utilizar um formulário, agrupando confirmação e envio
+em uma única submissão.
+
+Depois da alteração, a exclusão funcionou corretamente.
+
+### Exclusão de conta
+
+Foi utilizada uma conta descartável para validar a exclusão definitiva.
+
+Depois da confirmação:
+
+- a conta foi removida;
+- os dados associados deixaram de existir;
+- a aplicação retornou ao fluxo de autenticação;
+- uma nova tentativa de login com a conta excluída foi recusada.
+
+### Responsividade
+
+A interface foi revisada manualmente em diferentes tamanhos.
+
+Foram verificados principalmente:
+
+- desktop;
+- notebook;
+- aproximadamente 1366 × 768;
+- mobile próximo de 412 × 915.
+
+Não foram identificadas quebras funcionais ou rolagem horizontal global nos
+fluxos principais.
+
+Alguns ajustes responsivos são intencionais, como redução de informações
+secundárias no cabeçalho mobile.
+
+### Temas
+
+Foram revisados:
+
+```text
+tema escuro
+tema claro
+```
+
+No tema claro foram ajustados principalmente:
+
+- contraste de textos secundários;
+- bordas;
+- hierarquia dos cards;
+- separação visual de Perfil;
+- separação visual das ações em Dados e privacidade.
+
+### Data editor
+
+O componente `st.data_editor` possui comportamento visual parcialmente
+controlado internamente pelo Streamlit.
+
+Tentativas de forçar completamente o mesmo tema da aplicação não produziram um
+resultado consistente.
+
+Como o componente permanece legível e funcional, esse comportamento foi aceito
+como limitação visual da v1.
+
+Ele não é tratado como bloqueador funcional.
 
 ---
 
 ## Scripts Manuais
 
-A pasta `manual_tests/` contém scripts de apoio para verificações manuais e debug.
+A pasta:
 
-Esses scripts não substituem os testes automatizados da pasta `tests/`, mas ajudam a inspecionar o comportamento do projeto durante o desenvolvimento.
+```text
+manual_tests/
+```
+
+contém scripts auxiliares utilizados durante o desenvolvimento.
+
+Entre os arquivos existentes estão:
 
 | Arquivo | Finalidade |
 |---|---|
-| `manual_tests/teste_dados.py` | Verifica leitura de transações e resumo financeiro geral no terminal. |
-| `manual_tests/teste_metas.py` | Verifica cálculo das metas financeiras. |
-| `manual_tests/teste_periodos.py` | Verifica períodos disponíveis e resumo por mês. |
-| `manual_tests/teste_sqlite.py` | Consulta o banco SQLite gerado pelo ETL. |
-| `manual_tests/README.md` | Documenta o objetivo dos scripts manuais. |
+| `manual_tests/teste_dados.py` | Inspeção de dados e resumo financeiro. |
+| `manual_tests/teste_metas.py` | Verificação auxiliar de cálculos de metas. |
+| `manual_tests/teste_periodos.py` | Verificação dos períodos disponíveis. |
+| `manual_tests/teste_sqlite.py` | Consulta auxiliar ao SQLite. |
+| `manual_tests/README.md` | Documentação dos scripts manuais. |
 
-Para executar os principais testes manuais:
+Exemplos de execução:
 
-```bash
+```powershell
 python manual_tests/teste_dados.py
 python manual_tests/teste_metas.py
 python manual_tests/teste_periodos.py
 python manual_tests/teste_sqlite.py
 ```
 
-Os antigos scripts `teste_contexto.py` e `teste_ia.py` foram removidos junto
-com a integração externa. Seu propósito histórico permanece registrado nas
-seções seguintes.
+Esses scripts não substituem a suíte automatizada nem a validação funcional
+pela interface.
 
 ---
 
-## Registro Histórico: Validação da IA
+## Registro Histórico — Gemini e Assistente Financeiro
 
-A IA era validada manualmente porque dependia de fatores externos:
+O FinanTec já utilizou uma integração externa com Gemini.
 
-- chave da Gemini API;
-- conexão com a internet;
+Essa fase possuía testes específicos porque dependia de fatores externos como:
+
+- chave da API;
+- internet;
 - disponibilidade do serviço;
-- variação natural das respostas do modelo;
-- limites de uso da API.
+- limites da API;
+- variação das respostas do modelo.
 
-Os testes manuais verificavam se o assistente:
+O princípio utilizado naquela implementação era manter os cálculos financeiros
+em Python.
 
-- usa os dados do período selecionado;
-- não inventa valores;
-- não recomenda investimentos personalizados;
-- reconhece ausência de dados externos;
-- explica os indicadores de forma clara;
-- respeita as limitações definidas no prompt.
+A IA recebia indicadores já calculados e deveria apenas explicá-los.
 
-Os cálculos financeiros não eram delegados à IA.
+Entre os cenários históricos estavam perguntas sobre:
 
-A aplicação calculava os valores em Python e enviava os resultados prontos no
-contexto. O papel da IA era explicar os indicadores, não recalcular ou criar
-valores novos.
+- maior categoria de gasto;
+- saldo do período;
+- contribuição mensal necessária para uma meta;
+- ausência de acesso a taxas bancárias em tempo real;
+- recusa de recomendações personalizadas de investimento.
 
----
+A integração externa foi posteriormente removida por uma decisão preventiva de
+privacidade.
 
-## Registro Histórico: Casos de Teste da IA
+O assistente financeiro, o histórico de conversas e o antigo mecanismo de
+Insights não fazem parte das funcionalidades atuais da aplicação.
 
-| ID | Pergunta | Resultado esperado |
-|---|---|---|
-| IA01 | Em qual categoria eu mais gastei neste período? | Responder usando a maior categoria calculada para o período selecionado. |
-| IA02 | Qual é meu saldo neste período? | Informar o saldo disponível calculado em Python. |
-| IA03 | Quanto preciso guardar por mês para comprar o notebook? | Usar a simulação de metas calculada pelo Python. |
-| IA04 | Quanto preciso guardar por mês para montar a reserva? | Usar valor restante e mensalidade calculados pelo Python. |
-| IA05 | Qual banco oferece o melhor CDB hoje? | Informar que não possui dados atualizados sobre bancos, taxas ou rankings. |
-| IA06 | Devo investir todo meu dinheiro em Tesouro Selic? | Recusar recomendação personalizada e oferecer explicação educativa. |
+Referências remanescentes em testes, módulos ou documentação são consideradas
+legado técnico ou registro histórico.
 
 ---
 
-## Problemas Encontrados e Ajustes
+## Problemas Históricos Relevantes
 
-Durante o desenvolvimento, alguns problemas foram identificados.
+### IA tentando recalcular valores
 
-### IA tentando calcular valores
+Em versões antigas, havia risco de a IA tentar interpretar ou recalcular
+valores financeiros.
 
-Em versões iniciais, a IA poderia tentar calcular metas diretamente a partir dos valores brutos.
+A arquitetura foi alterada para que os cálculos fossem produzidos previamente
+em Python.
 
-Ajuste aplicado:
+Esse problema deixou de ser aplicável à execução atual depois da remoção da
+integração externa.
 
-```text
-As simulações de metas passaram a ser calculadas previamente em Python e enviadas prontas no contexto.
-```
+### Formatação de moeda no antigo chat
 
-### Formatação incorreta de moeda no Streamlit
+Respostas contendo `R$` podiam ser interpretadas incorretamente pelo Markdown
+utilizado na interface do antigo assistente.
 
-Respostas contendo `R$` podiam ser interpretadas pelo Markdown do Streamlit como fórmula matemática.
+Uma etapa de tratamento foi adicionada naquela fase.
 
-Ajuste aplicado:
+O caso permanece apenas como registro histórico.
 
-```text
-A resposta da IA passou por uma etapa simples de limpeza antes da exibição.
-```
+### Histórico de conversa entre períodos
 
-### Mistura de histórico entre períodos
+Durante a fase com assistente, houve necessidade de separar conversas por
+contexto e período.
 
-Ao trocar o mês analisado no dashboard, o histórico do chat podia ser perdido ou misturado.
+O recurso de conversa não faz parte da v1 atual.
 
-Ajuste aplicado:
+### Rejeições do ETL
 
-```text
-O histórico de conversa passou a ser separado por período analisado.
-```
+Inicialmente, registros inválidos eram descartados sem explicação suficiente.
 
-### Linhas inválidas eram apenas removidas
+O pipeline passou a gerar o relatório de rejeições com os respectivos motivos.
 
-Inicialmente, linhas inválidas eram descartadas sem um relatório detalhado.
-
-Ajuste aplicado:
-
-```text
-O pipeline passou a gerar um relatório de rejeições com o motivo de cada linha descartada.
-```
-
-### Registro histórico da configuração da chave
-
-O app dependia de uma chave da Gemini API para usar o chat com IA.
-
-Ajuste aplicado:
-
-```text
-O projeto passou a usar `.env.example` como modelo e mensagens de erro mais
-claras quando o `.env` ou a `GEMINI_API_KEY` estavam ausentes. Esses arquivos e
-essa configuração foram removidos com a integração externa.
-```
+Esse comportamento continua relevante e faz parte da validação atual.
 
 ---
 
 ## Limitações da Validação Atual
 
-A validação atual ainda não cobre:
+Apesar da cobertura existente, a v1 ainda não possui:
 
-- testes end-to-end completos da interface Streamlit;
-- testes com grandes volumes de dados;
-- testes de performance;
-- autenticação com múltiplos usuários reais.
+- suíte end-to-end abrangente executada em navegador real;
+- testes extensivos com grandes volumes de dados;
+- benchmark de performance;
+- testes de carga;
+- auditoria formal de segurança;
+- pentest;
+- validação da autenticação em ambiente público;
+- testes de concorrência para múltiplos usuários simultâneos;
+- pipeline completo de CI/CD.
 
-Esses pontos podem ser adicionados em versões futuras.
+Essas ausências não impedem o fechamento da aplicação local.
+
+Elas definem limites claros para o que pode ser afirmado sobre a versão.
+
+---
+
+## Próxima Validação — Hardening
+
+Depois do fechamento da v1 será realizada uma etapa específica de segurança e
+hardening.
+
+Essa revisão deverá avaliar principalmente:
+
+- armazenamento de senhas;
+- parâmetros e algoritmo de hash;
+- autenticação;
+- sessão;
+- isolamento por usuário;
+- autorização das operações;
+- SQL;
+- integridade das operações destrutivas;
+- importação de arquivos;
+- caminhos locais;
+- dependências;
+- secrets;
+- configurações;
+- logs;
+- resíduos de dados após exclusão.
+
+Problemas encontrados serão classificados entre:
+
+```text
+corrigir na v1
+corrigir na fundação da v2
+não prioritário para o contexto atual
+```
+
+---
+
+## Critério de Aprovação da v1
+
+Para considerar a v1 fechada, os seguintes pontos devem estar atendidos:
+
+- principais fluxos funcionais validados manualmente;
+- suíte automatizada passando;
+- `git diff --check` sem erros;
+- documentação alinhada ao comportamento atual;
+- ausência de alterações não intencionais;
+- repositório limpo;
+- commit final;
+- referência de versão criada no Git.
+
+A auditoria de segurança aprofundada não é requisito para declarar a v1 local
+funcionalmente concluída.
+
+Ela é a etapa imediatamente posterior ao fechamento.
 
 ---
 
 ## Resultado Atual
 
-A versão atual possui validação automatizada para:
+A validação atual cobre os principais riscos funcionais da aplicação local:
 
-- regras financeiras principais;
-- cálculo de metas;
-- filtros por período;
-- transformação dos dados;
-- relatório de rejeições;
-- carga em SQLite;
-- editor manual de transações;
-- importação de CSV, Excel e OFX;
-- detecção de aba e cabeçalho em planilhas externas;
-- mapeamento de valor único, tipo explícito e débito/crédito separados;
-- validação, duplicatas e identidade das transações;
-- repositórios de transações, perfil, metas e conversas;
-- reset limitado das transações pessoais;
-- respostas financeiras locais preservadas;
-- composição de Transações, Metas e navegação principal.
-- persistência e CRUD de orçamentos mensais;
-- isolamento dos limites por usuário e período;
-- comparação entre planejamento e gastos reais;
-- composição da aba Orçamento;
-- resumo mensal do orçamento na Visão geral.
+- cálculos financeiros;
+- ETL;
+- rejeições;
+- SQLite;
+- contas;
+- autenticação local;
+- isolamento por usuário;
+- transações;
+- importação de CSV;
+- importação de Excel;
+- importação de OFX;
+- importação assistida;
+- duplicatas;
+- perfil;
+- metas;
+- orçamento;
+- demonstração;
+- reset dos dados financeiros;
+- preservação da conta;
+- exclusão definitiva da conta;
+- principais estados e componentes da interface.
 
-Além disso, possui testes manuais para:
+A validação manual final complementou a cobertura automatizada nos fluxos em que
+o comportamento do Streamlit e a experiência real de uso são relevantes.
 
-- leitura geral dos dados;
-- cálculo de metas;
-- consulta do banco SQLite;
-- análise por período.
+Com isso, a v1 possui evidência suficiente para ser tratada como uma aplicação
+local funcionalmente estabilizada.
 
-Essa combinação valida o FinanTec como uma aplicação financeira local com ETL
-de compatibilidade, persistência em SQLite e fluxos principais cobertos por
-testes automatizados.
+A próxima etapa não é adicionar novas funcionalidades à v1, mas concluir seu
+versionamento e iniciar a revisão de segurança planejada.

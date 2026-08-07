@@ -6,10 +6,20 @@ O FinanTec é uma aplicação local de organização financeira desenvolvida com
 Python, Streamlit, pandas e SQLite.
 
 O projeto começou como um pipeline ETL para processar transações simuladas em
-CSV. Com sua evolução, passou a permitir cadastro, edição, exclusão, importação
-e exportação diretamente pela interface. O SQLite tornou-se a principal fonte
-dos dados, enquanto o ETL foi mantido para demonstração, compatibilidade e
-processamento explícito de arquivos.
+CSV. Com sua evolução, o SQLite tornou-se a principal fonte dos dados da
+aplicação e a interface passou a concentrar os principais fluxos financeiros,
+incluindo:
+
+- contas locais;
+- transações;
+- importação e exportação;
+- orçamento;
+- metas;
+- perfil;
+- gerenciamento de dados e privacidade.
+
+O ETL foi preservado para demonstração, compatibilidade e processamento
+explícito de arquivos.
 
 O objetivo do produto é fazer o básico de um controlador financeiro pessoal
 parecer completo e confiável, valorizando:
@@ -20,6 +30,7 @@ parecer completo e confiável, valorizando:
 - testes automatizados;
 - privacidade;
 - interface funcional e responsiva;
+- evolução incremental;
 - decisões técnicas documentadas.
 
 O FinanTec não pretende ser banco digital, sistema empresarial ou plataforma de
@@ -29,41 +40,63 @@ investimentos.
 
 ## Problema e Solução
 
-Quem começa a organizar a própria renda frequentemente usa planilhas ou
+Quem começa a organizar a própria renda frequentemente utiliza planilhas ou
 anotações dispersas. Isso dificulta consolidar receitas, despesas, reservas,
-saldo e metas, além de aumentar o risco de formatos inválidos e registros
-duplicados.
+saldo, metas e limites mensais, além de aumentar o risco de formatos inválidos
+e registros duplicados.
 
 O FinanTec centraliza esses fluxos em uma aplicação local:
 
+- permite criar e autenticar contas locais;
 - registra e consulta transações;
 - importa arquivos CSV, Excel e OFX;
 - auxilia o mapeamento de planilhas Excel com estruturas externas;
 - valida os dados e sinaliza linhas rejeitadas;
-- identifica possíveis duplicatas e utiliza a opção segura de ignorá-las por padrão;
+- identifica possíveis duplicatas e utiliza a opção segura de ignorá-las por
+  padrão;
 - calcula indicadores por período;
 - acompanha metas persistentes;
-- separa dados pessoais e demonstração;
-- permite apagar somente as transações pessoais.
 - planeja limites mensais por categoria;
-- compara o valor planejado com os gastos efetivamente registrados;
+- compara valores planejados com os gastos registrados;
+- mantém um perfil financeiro;
+- separa dados pessoais e demonstração;
+- permite apagar os dados financeiros preservando a conta;
+- permite excluir definitivamente a conta e os dados associados.
 
 ---
 
 ## Público e Escopo
 
-O uso atual é pessoal e local. O projeto também serve como portfólio técnico
-para demonstrar Python, pandas, Streamlit, SQLite, modelagem de dados, testes e
-evolução incremental de arquitetura.
+O uso atual é pessoal e local.
+
+O projeto também serve como portfólio técnico para demonstrar:
+
+- Python;
+- pandas;
+- Streamlit;
+- SQLite;
+- modelagem e persistência de dados;
+- autenticação local;
+- isolamento por usuário;
+- ETL;
+- importação de arquivos;
+- testes automatizados;
+- evolução incremental de arquitetura.
 
 Não fazem parte do escopo atual:
 
-- integração bancária e Open Finance;
-- autenticação real e múltiplos usuários finais;
+- integração bancária;
+- Open Finance;
 - recomendação personalizada de investimentos;
-- infraestrutura empresarial;
-- microsserviços;
-- processamento financeiro em grande escala.
+- execução de operações financeiras;
+- infraestrutura pública de produção;
+- autenticação preparada para exposição pública;
+- processamento financeiro em grande escala;
+- microsserviços.
+
+A existência de contas locais na v1 não significa que o sistema de autenticação
+atual esteja preparado para uma aplicação web pública. Essa responsabilidade
+será reavaliada na evolução arquitetural do projeto.
 
 ---
 
@@ -71,27 +104,47 @@ Não fazem parte do escopo atual:
 
 ### Dados pessoais
 
+O fluxo principal da v1 é:
+
 ```text
-Entrada manual ou arquivo CSV/Excel
+Conta autenticada
+        ↓
+Entrada manual ou importação
         ↓
 Validação e padronização
         ↓
 Análise de possíveis duplicatas
         ↓
-Gravação direta no SQLite
+Gravação no SQLite
         ↓
-Consulta, indicadores, orçamento e metas
+Consulta e indicadores
+        ↓
+Orçamento, metas e perfil
 ```
 
-Um contexto pessoal sem perfil ou metas é válido e não recebe dados fictícios
-automaticamente. O primeiro salvamento cria o perfil, enquanto a primeira meta
-pode ser criada mesmo sem perfil configurado. Metas pessoais ausentes são
-apresentadas como uma lista vazia. Registros existentes continuam preservados
-e isolados por `user_id`.
+As transações podem ser cadastradas manualmente ou importadas a partir de
+arquivos suportados pela aplicação.
 
-### Demonstração e compatibilidade
+O SQLite é a fonte principal para os dados pessoais persistidos.
 
-As transações de demonstração seguem o fluxo persistido:
+Um contexto pessoal novo pode começar sem:
+
+- transações;
+- perfil;
+- metas;
+- orçamento.
+
+Esses estados vazios são válidos e não recebem automaticamente informações
+fictícias da demonstração.
+
+Os principais registros pessoais são associados a um `user_id`, permitindo que
+as contas locais mantenham seus dados separados.
+
+### Demonstração
+
+A demonstração utiliza dados simulados e permanece separada do contexto pessoal.
+
+As transações de demonstração seguem o fluxo:
 
 ```text
 Arquivos CSV de demonstração
@@ -102,97 +155,253 @@ Registros válidos e rejeitados
         ↓
 Carga da partição de demonstração no SQLite
         ↓
-Dashboard em modo de demonstração
+Interface em modo de demonstração
 ```
 
-O Perfil e as Metas fictícias seguem um fluxo separado:
+Perfil e Metas fictícios seguem um fluxo separado e são utilizados somente para
+apresentação:
 
 ```text
-Fonte fictícia existente
+Fonte fictícia versionada
         ↓
 Composição em memória
         ↓
-Perfil e Metas somente leitura
+Perfil e Metas de demonstração
 ```
 
-Esses dados não são gravados nas tabelas pessoais nem substituem registros
-existentes.
+A alternância para demonstração não deve sobrescrever os dados pessoais da
+conta.
+
+Ao retornar para “Meus dados”, o contexto pessoal previamente armazenado volta
+a ser utilizado.
+
+### ETL e compatibilidade
+
+O ETL não é mais um pré-requisito para o uso normal da aplicação.
+
+Ele permanece disponível para:
+
+- processar explicitamente arquivos CSV;
+- preparar a base de demonstração;
+- gerar registros válidos e rejeitados;
+- manter compatibilidade com partes históricas do projeto.
 
 ---
 
 ## Funcionalidades Atuais
 
+### Contas
+
+A v1 possui um sistema de contas locais.
+
+Entre os fluxos existentes estão:
+
+- criação de conta;
+- autenticação por usuário e senha;
+- contexto de usuário durante a sessão;
+- isolamento dos principais registros por `user_id`;
+- encerramento da sessão;
+- exclusão definitiva da conta.
+
+A autenticação atual deve ser interpretada dentro do contexto de uma aplicação
+local. Uma publicação futura exigirá nova avaliação de segurança, autorização,
+sessões e infraestrutura.
+
 ### Visão geral
 
-- receitas, despesas, reserva e saldo disponível;
+A tela principal apresenta:
+
+- receitas;
+- despesas;
+- reserva;
+- saldo disponível;
 - gastos por categoria;
 - diagnóstico financeiro simples;
 - filtros por período;
-- transações recentes.
+- transações recentes;
+- resumo do orçamento quando aplicável.
 
 ### Transações
 
-- consulta e filtros como conteúdo principal;
+A área de Transações concentra:
+
+- consulta dos registros;
+- filtros;
 - cadastro manual sob demanda;
-- importação de CSV, Excel e OFX sob demanda;
-- importação assistida de planilhas externas com prévia e mapeamento de colunas;
-- exportação limitada ao período selecionado;
-- edição e exclusão de registros persistidos;
-- confirmação antes de excluir;
-- validação e relatório expansível de rejeições.
+- edição de registros persistidos;
+- exclusão com confirmação;
+- importação;
+- exportação;
+- validação dos dados.
+
+A exportação considera o período selecionado.
+
+### Importação
+
+A aplicação suporta diferentes caminhos de importação:
+
+- CSV no formato esperado pelo FinanTec;
+- Excel no formato esperado pelo FinanTec;
+- OFX;
+- planilhas Excel externas por meio de mapeamento assistido.
+
+Na importação assistida, é possível:
+
+- selecionar a aba;
+- identificar ou selecionar o cabeçalho;
+- mapear data;
+- mapear descrição;
+- mapear categoria opcional;
+- utilizar uma coluna de valor;
+- utilizar tipo explícito;
+- utilizar colunas separadas de débito e crédito;
+- visualizar uma prévia antes da gravação;
+- identificar linhas inválidas;
+- identificar possíveis duplicatas.
+
+Quando possíveis duplicatas são encontradas, o comportamento padrão é não
+importá-las. O usuário pode optar explicitamente por incluí-las.
 
 ### Metas
 
-- visualizações separadas para metas salvas e simulador;
-- criação e edição sob demanda;
-- lista pessoal vazia como estado válido;
-- criação da primeira meta sem exigir perfil configurado;
-- progresso, valor atual, restante e contribuição mensal;
-- estado de conclusão;
-- confirmação antes da exclusão;
-- persistência pessoal isolada por usuário;
-- metas de demonstração compostas em memória e somente leitura.
+A área de Metas é dividida entre acompanhamento e simulação.
+
+Em “Minhas metas”:
+
+- ausência de metas é um estado válido;
+- novas metas podem ser criadas;
+- metas existentes podem ser editadas;
+- exclusão exige confirmação;
+- são exibidos valor atual, valor restante, progresso e contribuição mensal;
+- registros pessoais permanecem associados ao usuário.
+
+No simulador:
+
+- o usuário pode selecionar uma meta;
+- pode simular diferentes prazos ou valores mensais;
+- a simulação não altera automaticamente a meta persistida.
+
+As metas de demonstração são apresentadas somente no contexto fictício.
 
 ### Orçamento
 
-- planejamento mensal com valores fixos por categoria;
-- criação, edição e exclusão de limites;
-- ausência de orçamento como estado válido;
-- comparação entre valor planejado e gasto real do mês;
-- cálculo de valor disponível ou ultrapassado;
-- identificação de categorias dentro, próximas ou acima do limite;
-- resumo mensal exibido na Visão geral quando um mês específico possui limites;
-- persistência isolada por `user_id`;
-- indisponível no contexto de demonstração.
+O orçamento permite planejamento de gastos por categoria.
+
+Entre as funcionalidades estão:
+
+- criação de limites;
+- edição;
+- exclusão;
+- recorrência entre períodos;
+- encerramento de um limite;
+- alteração de um limite a partir de determinado período;
+- comparação entre planejado e gasto real;
+- cálculo do valor restante ou excedido;
+- identificação visual de categorias próximas ou acima do limite;
+- resumo mensal na Visão geral.
+
+A ausência de orçamento é um estado válido.
+
+Os limites pessoais são isolados por usuário.
+
+O orçamento não é editável durante o modo de demonstração.
 
 ### Perfil
 
-- ausência de perfil como estado válido no primeiro uso;
-- criação do perfil no primeiro salvamento, sem seed automático;
-- resumo antes do formulário de edição;
-- identidade local representada pelo nome de exibição;
-- único dado público preenchido no campo “Como quer ser chamado?”;
-- perfil de Marina com o mesmo subconjunto visual e somente leitura;
-- Metas mantidas como uma entidade separada do Perfil;
-- tolerância interna de campos antigos por compatibilidade.
+O perfil financeiro pode ser criado e atualizado pelo usuário.
+
+Entre as informações utilizadas estão:
+
+- nome de exibição;
+- ocupação;
+- idade;
+- fontes de renda;
+- renda mensal;
+- informações relacionadas a dívidas e cartão de crédito.
+
+A ausência de perfil é válida no primeiro uso.
+
+O perfil é uma entidade separada das Metas.
+
+Registros antigos podem continuar sendo interpretados internamente quando isso
+for necessário para compatibilidade.
+
+No modo de demonstração, o perfil fictício é apresentado somente para leitura.
 
 ### Dados e privacidade
 
+A área de Dados e privacidade permite controlar o contexto utilizado pela
+aplicação.
+
+Entre os fluxos existentes estão:
+
+- visualização do modo atual;
 - alternância entre dados pessoais e demonstração;
-- retorno aos dados pessoais mesmo quando não existem transações;
-- resumo dos dados armazenados localmente;
-- exclusão somente das transações pessoais e arquivos relacionados;
-- preservação de perfil, metas, conversas, demonstração e banco SQLite.
+- retorno aos dados pessoais;
+- resumo dos dados armazenados;
+- exclusão dos dados financeiros;
+- exclusão definitiva da conta.
 
-### Insights congelados
+A ação “Apagar meus dados” remove os dados financeiros associados ao usuário,
+incluindo registros como:
 
-O projeto preserva classificação local de intenções, respostas determinísticas
-e histórico de conversa. Esse recurso não utiliza serviço externo e foi retirado
-da navegação principal para não competir com os fluxos financeiros centrais.
+- transações pessoais;
+- perfil;
+- metas;
+- estado relacionado às metas;
+- orçamento;
+- outros dados pessoais legados ainda associados ao usuário.
 
-A integração anterior com Gemini foi removida por uma decisão preventiva de
-privacidade, documentada em
-[ADR 001](decisions/001-remove-gemini-integration.md).
+A conta e suas credenciais são preservadas.
+
+A demonstração também permanece disponível.
+
+A ação “Excluir conta” possui responsabilidade diferente:
+
+```text
+Apagar meus dados
+→ preserva a conta
+
+Excluir conta
+→ remove a conta e os dados associados
+```
+
+A exclusão definitiva exige nova confirmação da identidade antes da operação.
+
+---
+
+## Funcionalidade de IA Descontinuada
+
+O FinanTec já utilizou a API do Gemini como parte de um antigo assistente
+financeiro.
+
+Essa integração poderia enviar para um serviço externo informações como:
+
+- perguntas;
+- contexto financeiro;
+- indicadores;
+- perfil;
+- histórico da conversa.
+
+Não existe evidência de que tenha ocorrido uma violação de dados.
+
+A integração foi removida preventivamente por motivos de:
+
+- minimização de dados;
+- privacidade por concepção;
+- redução de dependências externas;
+- baixo benefício em relação ao risco para um aplicativo financeiro local.
+
+A decisão está registrada em:
+
+[ADR 001 — Remoção da integração externa com Gemini](decisions/001-remove-gemini-integration.md)
+
+O assistente financeiro, o histórico de conversas e o antigo recurso de
+Insights não fazem parte das funcionalidades atuais da v1.
+
+Código, testes ou documentação relacionados podem permanecer no repositório
+como registro técnico ou compatibilidade histórica enquanto sua remoção não
+trouxer benefício suficiente para justificar uma nova refatoração.
 
 ---
 
@@ -200,34 +409,98 @@ privacidade, documentada em
 
 ### Interface
 
+A interface da v1 utiliza:
+
 - Streamlit;
 - componentes separados por responsabilidade;
-- CSS personalizado e responsivo;
+- CSS personalizado;
+- temas claro e escuro;
+- responsividade;
 - estado de sessão para interações temporárias.
+
+A interface foi validada em:
+
+- desktop;
+- notebook;
+- dispositivos móveis.
 
 ### Regras e serviços
 
-- Python e pandas;
-- cálculos financeiros fora da interface;
-- serviços específicos para cadastro, importação e sincronização;
-- validação compartilhada entre entrada manual e arquivos.
+As regras de negócio são implementadas principalmente em Python.
+
+A arquitetura busca manter cálculos e persistência fora dos componentes
+puramente visuais sempre que possível.
+
+Existem serviços específicos para responsabilidades como:
+
+- cadastro manual;
+- importação;
+- sincronização;
+- validação;
+- identidade de transações;
+- gerenciamento de arquivos.
+
+A validação de transações é compartilhada entre diferentes caminhos de entrada
+para reduzir inconsistências.
+
+### Contexto de usuário
+
+O sistema possui um contexto explícito de usuário utilizado pelos principais
+fluxos da aplicação.
+
+Esse contexto permite que operações de leitura e escrita sejam vinculadas ao
+usuário autenticado.
+
+A v1 utiliza contas locais, mas ainda não possui a arquitetura de autenticação e
+autorização necessária para exposição pública.
 
 ### Persistência
 
-- SQLite como fonte principal;
-- repositórios para transações, perfil, metas, orçamento e conversas pessoais;
-- isolamento interno por `user_id`;
-- separação entre dados pessoais e demonstração;
-- Perfil e Metas de demonstração mantidos fora das tabelas pessoais;
-- identificadores estáveis gerados pela aplicação.
+O SQLite é a fonte principal da aplicação.
+
+Existem repositórios específicos para entidades como:
+
+- contas;
+- transações;
+- perfil;
+- metas;
+- orçamento.
+
+Os principais registros pessoais utilizam `user_id`.
+
+Transações também distinguem o modo de dados quando necessário, permitindo
+separar:
+
+```text
+user
+demo
+```
+
+Perfil e Metas fictícios são mantidos fora das tabelas pessoais quando
+apropriado.
 
 ### Qualidade
 
-- pytest;
-- bancos temporários nos testes de persistência;
-- testes de CRUD, isolamento e reset;
-- testes de importação, duplicatas e identidade;
-- testes de cálculos e composição dos principais fluxos.
+A aplicação utiliza `pytest` para validar regras e fluxos importantes.
+
+A cobertura automatizada inclui, entre outras áreas:
+
+- contas;
+- autenticação;
+- transações;
+- ETL;
+- importação;
+- duplicatas;
+- perfil;
+- metas;
+- orçamento;
+- isolamento por usuário;
+- exclusão de dados;
+- exclusão de conta;
+- cálculos financeiros;
+- funções auxiliares da interface.
+
+Testes de persistência utilizam bancos temporários quando apropriado.
 
 ---
 
@@ -235,19 +508,24 @@ privacidade, documentada em
 
 | Componente | Responsabilidade |
 |---|---|
-| `src/app.py` | Coordena navegação, período e composição das telas principais. |
+| `src/app.py` | Coordena navegação, contexto e composição das telas principais. |
+| `src/account_repository.py` | Gerencia criação, consulta e autenticação das contas locais. |
+| `src/user_context.py` | Centraliza o contexto do usuário autenticado. |
 | `src/analytics.py` | Centraliza cálculos e indicadores financeiros. |
-| `src/components/` | Reúne componentes visuais por fluxo. |
+| `src/components/` | Reúne os componentes visuais por fluxo. |
 | `src/transaction_repository.py` | Persiste e consulta transações. |
 | `src/goal_repository.py` | Persiste e consulta metas. |
-| `src/profile_repository.py` | Persiste a identidade local e mantém compatibilidade com registros antigos. |
-| `src/components/budget.py` | Compõe o planejamento mensal, acompanhamento e ações de orçamento. |
-| `src/budget_repository.py` | Persiste e consulta limites mensais por usuário, período e categoria. |
-| `src/chat_repository.py` | Preserva localmente o histórico do recurso congelado. |
-| `src/financial_intents.py` | Classificação determinística preservada. |
-| `src/financial_responses.py` | Respostas financeiras locais preservadas. |
-| `scripts/etl_transacoes.py` | ETL de demonstração e compatibilidade. |
-| `tests/` | Testes automatizados das regras e fluxos principais. |
+| `src/profile_repository.py` | Persiste as informações do perfil financeiro. |
+| `src/components/budget.py` | Compõe o planejamento mensal e suas ações. |
+| `src/budget_repository.py` | Persiste e consulta limites por usuário e período. |
+| `src/components/data_management.py` | Controla demonstração, reset financeiro e exclusão de conta. |
+| `src/data_reset.py` | Centraliza operações coordenadas de remoção de dados. |
+| `scripts/etl_transacoes.py` | Implementa o ETL utilizado para demonstração e processamento explícito. |
+| `tests/` | Contém a suíte automatizada das regras e fluxos principais. |
+
+Módulos relacionados ao antigo assistente podem continuar presentes
+temporariamente como legado técnico, mas não representam funcionalidades atuais
+da aplicação.
 
 ---
 
@@ -255,79 +533,259 @@ privacidade, documentada em
 
 ### SQLite como fonte principal
 
-O SQLite é simples, gratuito e suficiente para o uso local. As transações são
-gravadas diretamente no banco, sem depender de uma execução automática do ETL.
+O SQLite é simples, gratuito e adequado ao contexto local da v1.
+
+As operações normais da aplicação gravam diretamente no banco, sem exigir uma
+execução automática do ETL.
+
+A escolha também reduz infraestrutura durante a fase em que o foco é validar o
+produto e suas regras.
 
 ### ETL com responsabilidade limitada
 
-O ETL continua válido para dados de demonstração, compatibilidade com arquivos
-antigos e processamento explícito. Ele não é mais pré-requisito para o uso
-normal da aplicação.
+O ETL continua válido, mas deixou de ser o centro de toda interação com os
+dados.
+
+Sua responsabilidade atual é principalmente:
+
+- demonstração;
+- compatibilidade;
+- processamento explícito;
+- validação de arquivos do pipeline.
+
+### Autenticação local na v1
+
+A v1 passou a possuir contas locais e deixou de depender de um usuário fixo como
+experiência principal.
+
+O sistema atual fornece contexto e isolamento suficientes para o cenário local
+do projeto.
+
+Isso não significa que a autenticação esteja pronta para exposição pública.
+
+Uma arquitetura web deverá reavaliar:
+
+- gerenciamento de sessão;
+- autenticação da API;
+- autorização;
+- proteção contra tentativas abusivas;
+- ciclo de vida das credenciais;
+- armazenamento e transporte de segredos;
+- políticas de segurança.
 
 ### Privacidade e remoção do Gemini
 
-A integração externa poderia enviar perguntas, histórico recente e contexto
-financeiro para processamento por terceiros. Não houve violação comprovada,
-mas o risco potencial não era proporcional ao benefício de uma API gratuita em
-um aplicativo pessoal e local.
+A integração externa de IA foi removida porque o benefício não justificava o
+envio potencial de contexto financeiro para um serviço de terceiros.
 
-Por isso, a integração foi removida preventivamente. As consultas suportadas
-passaram a depender apenas de regras locais e o recurso foi posteriormente
-congelado fora da navegação principal.
+Essa decisão reduziu a superfície de exposição de dados e manteve a aplicação
+coerente com sua proposta local.
 
-### Isolamento antes da autenticação
+### Dados pessoais e demonstração
 
-As principais entidades já usam `user_id`, embora o projeto possua apenas um
-usuário local fixo e não ofereça autenticação real.
+Dados pessoais e demonstração são tratados como contextos distintos.
 
-### Compatibilidade sem exposição na interface
+A demonstração existe para apresentar o produto sem exigir dados reais e não
+deve sobrescrever os registros pessoais do usuário.
 
-Campos e módulos antigos podem permanecer internamente quando sua remoção
-imediata trouxer risco de migração. Eles não precisam continuar visíveis para a
-pessoa usuária.
+### Compatibilidade sem exposição desnecessária
+
+Campos, arquivos ou módulos antigos podem permanecer internamente quando sua
+remoção imediata trouxer risco de regressão sem benefício proporcional.
+
+Compatibilidade interna não deve obrigar a manutenção de funcionalidades
+obsoletas na interface.
 
 ---
 
 ## Limitações Atuais
 
-- não possui autenticação real;
+A v1:
+
+- é uma aplicação local;
 - não possui deploy público;
 - não integra com bancos;
+- não utiliza Open Finance;
 - não executa operações financeiras;
-- não possui exclusão coordenada de todos os dados locais;
-- não possui testes end-to-end completos no navegador;
-- mantém partes históricas do ETL e do antigo recurso de IA por compatibilidade.
+- não possui autenticação preparada para ambiente público de produção;
+- não possui recuperação remota de senha;
+- não possui infraestrutura de produção;
+- não possui monitoramento operacional;
+- não possui pipeline completo de CI/CD;
+- não possui testes end-to-end abrangentes em navegador;
+- utiliza SQLite, adequado ao contexto local, mas não escolhido como banco de
+  produção multiusuário;
+- mantém alguns elementos históricos quando sua remoção não justifica o risco de
+  regressão.
+
+Essas limitações são compatíveis com o objetivo da v1 e não precisam ser
+resolvidas antes do seu fechamento.
 
 ---
 
 ## Direção Futura
 
-A evolução deve continuar incremental:
+A evolução do FinanTec deve continuar incremental.
+
+A v1 será preservada como um marco funcional antes das mudanças arquiteturais
+mais profundas.
+
+O caminho planejado é:
 
 ```text
-fluxos locais estáveis
+FinanTec v1 local
         ↓
-manutenção do isolamento entre dados pessoais e demonstração
+Fechamento e versionamento
         ↓
-limpeza segura de compatibilidades antigas
+Revisão de segurança e hardening
         ↓
-deploy e mudanças estruturais somente se ainda fizerem sentido
+Fundação da v2
+        ↓
+Frontend React + API Python
+        ↓
+Autenticação e autorização para arquitetura web
+        ↓
+Migração gradual das funcionalidades
+        ↓
+Infraestrutura e deploy quando justificados
 ```
 
-PostgreSQL, autenticação e multiusuário não são consequências obrigatórias. O
-SQLite pode permanecer como escolha legítima enquanto o produto continuar
-pessoal e local.
+### Hardening
+
+Antes da evolução arquitetural, será feita uma revisão específica da v1.
+
+Entre os pontos a verificar estão:
+
+- autenticação;
+- armazenamento de credenciais;
+- isolamento entre usuários;
+- consultas SQLite;
+- importação de arquivos;
+- manipulação de caminhos e arquivos locais;
+- dependências;
+- segredos;
+- configurações;
+- logs;
+- exclusão de dados;
+- exclusão de conta.
+
+O objetivo não é transformar a v1 em um sistema público de produção.
+
+Problemas relevantes encontrados serão corrigidos. Melhorias que dependam de uma
+nova arquitetura poderão ser incorporadas diretamente à v2.
+
+### Versão 2
+
+A direção planejada para a v2 é separar frontend e backend:
+
+```text
+React
+        ↓ HTTP
+API Python
+        ↓
+Serviços e regras de negócio
+        ↓
+Persistência
+```
+
+A migração deve reaproveitar gradualmente as regras de negócio já validadas.
+
+Não é objetivo descartar toda a v1 e iniciar uma reescrita completa de uma única
+vez.
+
+Entre as responsabilidades iniciais da v2 estarão:
+
+- definir contratos da API;
+- separar regras de negócio da camada Streamlit;
+- implementar autenticação e autorização adequadas à nova arquitetura;
+- introduzir testes de backend e frontend;
+- automatizar verificações de qualidade;
+- incluir verificações de segurança no processo de desenvolvimento;
+- estruturar CI desde as etapas iniciais.
+
+### PostgreSQL
+
+PostgreSQL não é necessário para fechar a v1.
+
+O SQLite continua sendo uma escolha adequada enquanto o produto permanecer
+local.
+
+Uma migração passa a fazer mais sentido quando surgirem necessidades como:
+
+- múltiplos usuários simultâneos;
+- concorrência;
+- servidor central;
+- deploy público;
+- infraestrutura de produção.
+
+Nesse momento, migrations também passam a fazer parte da arquitetura de banco.
+
+### DevOps e deploy
+
+DevOps não será tratado apenas como uma etapa final de publicação.
+
+A intenção é introduzir práticas gradualmente durante a v2, começando por:
+
+- testes automatizados;
+- lint;
+- análise estática;
+- verificação de dependências;
+- verificações de segurança;
+- CI.
+
+Posteriormente, quando houver uma aplicação preparada para publicação, podem
+entrar:
+
+- ambiente de staging;
+- deploy;
+- gerenciamento de configurações;
+- logs;
+- monitoramento;
+- backups.
 
 ---
 
 ## Status Atual
 
-O FinanTec possui os principais fluxos financeiros estabilizados, navegação
-focada em Visão geral, Transações, Orçamento e Metas, persistência local em SQLite e suíte
-automatizada cobrindo as regras de maior risco.
+A versão 1 local está funcionalmente concluída e passa pelo fechamento
+documental e de estabilização.
 
-A primeira revisão global da experiência foi concluída em celular, notebook e
-widescreen. O contexto de usuário é propagado para Perfil e Metas, o primeiro
-uso pessoal não recebe seeds automáticos e os equivalentes fictícios permanecem
-isolados no modo de demonstração. Exclusão coordenada, autenticação e expansão
-de arquitetura continuam como decisões futuras em aberto.
+Os principais fluxos atuais são:
+
+```text
+Conta
+Visão geral
+Transações
+Orçamento
+Metas
+Perfil
+Dados e privacidade
+```
+
+Foram validados manualmente fluxos importantes como:
+
+- criação, edição e exclusão de transações;
+- importação de dados;
+- tratamento de possíveis duplicatas;
+- orçamento;
+- metas;
+- perfil;
+- alternância entre dados pessoais e demonstração;
+- exclusão dos dados financeiros;
+- preservação da conta após o reset;
+- exclusão definitiva da conta;
+- bloqueio de autenticação após exclusão da conta.
+
+A experiência também passou por revisão em:
+
+- desktop;
+- notebook;
+- mobile;
+- tema escuro;
+- tema claro.
+
+O antigo assistente financeiro não faz parte da v1 atual.
+
+Após o fechamento documental, testes finais e versionamento da v1, a próxima
+etapa planejada é uma revisão de segurança e hardening antes do início da
+transição arquitetural para a v2.

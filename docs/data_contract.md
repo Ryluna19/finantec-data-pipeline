@@ -1,20 +1,130 @@
-# Contrato de Dados — Transações
+# Contrato de Dados — Transações e Importação
 
-Este documento descreve o formato esperado dos arquivos CSV e Excel usados pelo pipeline ETL e pela interface de importação do FinanTec Data Pipeline.
+## Visão Geral
 
-Os arquivos CSV brutos adicionados manualmente devem ser colocados na pasta:
+Este documento descreve o contrato de dados utilizado pelo FinanTec para
+representar transações financeiras e explica como diferentes formatos de
+entrada são convertidos para esse modelo.
+
+A aplicação possui um formato interno canônico:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+Nem todo arquivo externo precisa começar exatamente com essas cinco colunas.
+
+Existem dois tipos principais de entrada:
+
+```text
+Formato FinanTec
+→ já segue o contrato canônico
+
+Formato externo
+→ passa por conversão ou mapeamento
+→ torna-se o contrato canônico
+```
+
+Atualmente, a aplicação trabalha com:
+
+- CSV no formato do FinanTec;
+- Excel no formato do FinanTec;
+- planilhas Excel externas por importação assistida;
+- OFX;
+- entrada manual pela interface;
+- arquivos CSV processados explicitamente pelo pipeline ETL.
+
+Independentemente da origem, uma transação precisa chegar ao modelo interno
+válido antes de ser persistida.
+
+---
+
+## Modelo Canônico de Transação
+
+O formato normalizado utilizado pelo projeto possui cinco campos financeiros
+principais:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+| Campo | Tipo esperado | Obrigatório | Exemplo | Finalidade |
+|---|---|---:|---|---|
+| `data` | Data válida | Sim | `2026-08-05` | Data da transação. |
+| `tipo` | Texto normalizado | Sim | `receita` | Classifica entrada ou saída. |
+| `descricao` | Texto | Sim | `Compra no mercado` | Identifica o evento financeiro. |
+| `categoria` | Texto | Sim | `Alimentação` | Agrupa transações para análise. |
+| `valor` | Número positivo | Sim | `200.00` | Valor absoluto da transação. |
+
+Depois da persistência, a aplicação pode associar outras informações técnicas ao
+registro, como:
+
+- identificador estável;
+- usuário proprietário;
+- modo de dados;
+- origem;
+- período;
+- informações usadas internamente para sincronização ou importação.
+
+Esses campos técnicos não fazem parte do contrato que a pessoa usuária precisa
+preencher em um arquivo.
+
+---
+
+## Origem do Tipo da Transação
+
+Internamente, o campo `tipo` possui apenas dois valores:
+
+```text
+receita
+despesa
+```
+
+O valor persistido permanece positivo.
+
+A direção financeira é representada pelo campo `tipo`, não pelo sinal armazenado
+em `valor`.
+
+Exemplo normalizado:
+
+```text
+tipo: despesa
+valor: 200.00
+```
+
+em vez de:
+
+```text
+tipo: despesa
+valor: -200.00
+```
+
+Arquivos externos podem representar essa informação de outras maneiras.
+
+A camada de importação é responsável por converter essas representações para o
+modelo canônico.
+
+---
+
+## CSV do FinanTec
+
+### Arquivos utilizados pelo ETL
+
+Arquivos CSV adicionados diretamente para processamento pelo pipeline ficam em:
 
 ```text
 data/raw/
 ```
 
-Os lotes enviados pela interface são armazenados automaticamente em:
-
-```text
-data/raw/imported/
-```
-
-O nome recomendado para arquivos CSV mensais é:
+O nome recomendado para arquivos mensais é:
 
 ```text
 transacoes_AAAA_MM.csv
@@ -26,86 +136,29 @@ Exemplo:
 transacoes_2026_08.csv
 ```
 
-O pipeline lê recursivamente arquivos que seguem o padrão:
+O pipeline procura arquivos que seguem o padrão:
 
 ```text
 transacoes_*.csv
 ```
 
-Portanto, o padrão `AAAA_MM` é uma convenção recomendada para organização. O requisito técnico principal é o prefixo `transacoes_`.
+O trecho `AAAA_MM` é uma convenção para organização.
 
----
+O requisito técnico relevante para o pipeline é o prefixo:
 
-## Colunas Obrigatórias
+```text
+transacoes_
+```
 
-Todos os arquivos de transações devem conter as seguintes colunas:
+### Estrutura obrigatória
+
+O CSV no formato FinanTec deve possuir:
 
 ```text
 data,tipo,descricao,categoria,valor
 ```
 
-| Coluna | Tipo esperado | Obrigatória | Exemplo | Descrição |
-|---|---|---|---|---|
-| `data` | Data válida | Sim | `2026-08-05` | Data da transação. |
-| `tipo` | Texto | Sim | `receita` ou `despesa` | Indica se a transação é entrada ou saída. |
-| `descricao` | Texto | Sim | `Compra no mercado` | Descrição curta da transação. |
-| `categoria` | Texto | Sim | `Alimentação` | Categoria usada nas análises. |
-| `valor` | Número decimal positivo | Sim | `200.00` | Valor da transação. |
-
-Se uma coluna obrigatória estiver ausente, a validação interrompe o processamento do arquivo.
-
-Esse comportamento é intencional, porque a ausência de uma coluna indica um erro estrutural.
-
----
-
-## Nomes Internos e Rótulos Visuais
-
-Internamente, o FinanTec utiliza os nomes:
-
-```text
-data
-tipo
-descricao
-categoria
-valor
-```
-
-No modelo Excel, os cabeçalhos são apresentados visualmente como:
-
-```text
-DATA | TIPO | DESCRIÇÃO | CATEGORIA | VALOR
-```
-
-Durante a importação pela interface, os cabeçalhos são normalizados.
-
-Por isso, variações como estas podem ser reconhecidas:
-
-```text
-DATA
-Data
-data
-
-DESCRIÇÃO
-Descrição
-descricao
-```
-
-A normalização remove diferenças de:
-
-- letras maiúsculas e minúsculas;
-- acentuação;
-- espaços no início e no final;
-- espaços internos usados em nomes de colunas.
-
-Para arquivos CSV colocados diretamente em `data/raw/`, recomenda-se manter os nomes internos em letras minúsculas exatamente como definidos no contrato.
-
----
-
-## Formato do CSV
-
-O projeto espera arquivos CSV simples, com o cabeçalho na primeira linha.
-
-Exemplo válido:
+Exemplo:
 
 ```csv
 data,tipo,descricao,categoria,valor
@@ -115,44 +168,57 @@ data,tipo,descricao,categoria,valor
 2026-08-04,despesa,Transferência para reserva,Reserva,300.00
 ```
 
-Recomendações:
+Quando um arquivo declarado como formato FinanTec não possui uma das colunas
+obrigatórias, existe um erro estrutural.
 
-- usar codificação UTF-8;
-- usar ponto como separador decimal;
-- manter o cabeçalho com os nomes internos esperados;
+Nesse caso, o processamento não deve assumir silenciosamente o significado de
+outras colunas.
+
+---
+
+## Recomendações para CSV
+
+Para arquivos criados manualmente:
+
+- utilizar UTF-8;
+- manter o cabeçalho na primeira linha;
+- utilizar os nomes internos esperados;
+- preferir ponto como separador decimal;
+- não incluir `R$` diretamente no valor;
 - evitar linhas completamente vazias;
-- evitar valores monetários com `R$`;
-- evitar vírgula como separador decimal.
+- manter o valor como número positivo;
+- informar `receita` ou `despesa` explicitamente.
 
-Exemplo recomendado:
+Valor recomendado:
 
 ```text
 200.50
 ```
 
-Evite:
+Evitar no formato canônico:
 
 ```text
 R$ 200,50
 ```
 
+Arquivos externos que utilizam outras convenções podem precisar do fluxo
+assistido de importação em vez do pipeline direto.
+
 ---
 
-## Importação por Excel
+## Normalização dos Cabeçalhos
 
-O FinanTec aceita arquivos Excel no formato:
-
-```text
-.xlsx
-```
-
-O arquivo deve possuir uma aba chamada:
+Internamente, os campos são:
 
 ```text
-Transacoes
+data
+tipo
+descricao
+categoria
+valor
 ```
 
-A aba deve conter as cinco colunas obrigatórias:
+No Excel oficial, eles são apresentados visualmente como:
 
 ```text
 DATA
@@ -162,40 +228,298 @@ CATEGORIA
 VALOR
 ```
 
-O modelo Excel disponibilizado pelo FinanTec inclui:
+Durante os fluxos de importação que oferecem normalização, diferenças simples de
+escrita podem ser tratadas.
+
+Exemplos:
+
+```text
+DATA
+Data
+data
+```
+
+e:
+
+```text
+DESCRIÇÃO
+Descrição
+descricao
+```
+
+A normalização pode remover diferenças de:
+
+- letras maiúsculas e minúsculas;
+- acentuação;
+- espaços no início ou no final;
+- variações simples nos nomes das colunas.
+
+Essa tolerância não elimina a necessidade de confirmar o significado dos campos
+em arquivos externos.
+
+---
+
+## Excel no Formato FinanTec
+
+O modelo oficial utiliza:
+
+```text
+.xlsx
+```
+
+A aba de transações é:
+
+```text
+Transacoes
+```
+
+Ela possui:
+
+```text
+DATA
+TIPO
+DESCRIÇÃO
+CATEGORIA
+VALOR
+```
+
+O modelo gerado pelo FinanTec contém recursos visuais para facilitar o
+preenchimento, como:
 
 - cabeçalhos formatados;
 - filtros;
 - primeira linha congelada;
-- linhas de grade;
-- largura ajustada para cada coluna;
-- alinhamento conforme o tipo de informação;
+- largura ajustada;
+- alinhamento por tipo de campo;
 - validação de data;
-- lista suspensa para o tipo;
-- validação numérica para o valor;
-- aba separada com instruções.
+- lista de valores para `TIPO`;
+- validação numérica de `VALOR`;
+- aba separada de instruções.
 
-As colunas são alinhadas da seguinte forma:
+O arquivo também contém:
 
-| Coluna | Alinhamento |
-|---|---|
-| `DATA` | Centralizado |
-| `TIPO` | Centralizado |
-| `DESCRIÇÃO` | Esquerda |
-| `CATEGORIA` | Esquerda |
-| `VALOR` | Direita |
+```text
+Instrucoes
+```
 
-O alinhamento à direita no valor facilita a comparação vertical de quantias.
+Essa aba não representa transações.
 
 ---
 
-## Coluna `data`
+## Importação Assistida de Excel
 
-A coluna `data` representa a data da transação.
+Planilhas externas não precisam possuir exatamente a estrutura do modelo
+oficial.
 
-### Em arquivos CSV
+O objetivo da importação assistida é transformar uma planilha existente no
+contrato interno do FinanTec.
 
-O formato recomendado é:
+O fluxo permite analisar o arquivo antes da persistência.
+
+Entre as etapas estão:
+
+```text
+arquivo Excel
+        ↓
+seleção da aba
+        ↓
+identificação ou escolha do cabeçalho
+        ↓
+normalização dos nomes
+        ↓
+sugestão de mapeamento
+        ↓
+confirmação do mapeamento
+        ↓
+conversão para o formato FinanTec
+        ↓
+validação
+        ↓
+análise de duplicatas
+        ↓
+prévia
+        ↓
+persistência
+```
+
+### Seleção de aba
+
+Um arquivo externo pode possuir múltiplas abas.
+
+A pessoa usuária escolhe qual delas contém as transações.
+
+O importador não deve assumir que a aba se chama `Transacoes` quando o fluxo
+assistido está sendo utilizado.
+
+### Cabeçalho
+
+Planilhas externas também podem conter:
+
+- títulos antes da tabela;
+- linhas de descrição;
+- espaços vazios;
+- cabeçalho fora da primeira linha.
+
+O fluxo assistido permite trabalhar com a linha considerada como cabeçalho antes
+de interpretar as transações.
+
+### Mapeamento de campos
+
+As colunas da planilha são associadas aos campos internos necessários.
+
+Por exemplo:
+
+```text
+Data da compra
+→ data
+
+Histórico
+→ descricao
+
+Grupo
+→ categoria
+```
+
+O objetivo final continua sendo produzir:
+
+```text
+data
+tipo
+descricao
+categoria
+valor
+```
+
+---
+
+## Estratégias de Valor na Importação Assistida
+
+Planilhas externas representam receitas e despesas de formas diferentes.
+
+Por isso, o FinanTec suporta mais de uma estratégia.
+
+### Valor e tipo explícito
+
+Quando existem duas colunas como:
+
+```text
+Valor
+Tipo
+```
+
+elas podem ser mapeadas separadamente.
+
+Exemplo de origem:
+
+```text
+Valor: 250,00
+Tipo: Despesa
+```
+
+Resultado normalizado:
+
+```text
+tipo: despesa
+valor: 250.00
+```
+
+---
+
+### Valor com sinal
+
+Algumas planilhas utilizam o próprio sinal do número para representar a direção
+da transação.
+
+Exemplo conceitual:
+
+```text
+1500.00
+-220.50
+```
+
+Nesse modo, a importação interpreta o sinal para determinar a direção financeira
+e normaliza o resultado para o contrato interno.
+
+Depois da conversão, `valor` continua sendo armazenado como número positivo e
+`tipo` representa a direção.
+
+---
+
+### Débito e crédito separados
+
+Outra estrutura comum utiliza duas colunas:
+
+```text
+Débito
+Crédito
+```
+
+A importação assistida pode tratar esse formato explicitamente.
+
+A interface oferece a opção:
+
+```text
+Usar colunas separadas de débito e crédito
+```
+
+Depois da conversão, cada registro volta ao modelo:
+
+```text
+tipo
+valor
+```
+
+O formato com débito e crédito separados existe apenas como representação de
+entrada.
+
+Ele não altera o contrato interno da aplicação.
+
+---
+
+## Importação OFX
+
+O FinanTec também aceita arquivos OFX.
+
+OFX não utiliza o mesmo formato tabular de CSV ou Excel.
+
+Por isso, esse arquivo passa por uma etapa própria de leitura e conversão:
+
+```text
+arquivo OFX
+        ↓
+parser OFX
+        ↓
+extração das transações suportadas
+        ↓
+normalização
+        ↓
+modelo interno do FinanTec
+        ↓
+validação
+        ↓
+análise de duplicatas
+```
+
+A implementação trata variações válidas de arquivos OFX e rejeita conteúdo que
+não possa ser interpretado com segurança.
+
+A pessoa usuária não precisa editar manualmente um OFX para transformá-lo em
+CSV.
+
+Depois da conversão, as transações seguem as mesmas regras internas utilizadas
+pelos demais formatos.
+
+---
+
+## Campo `data`
+
+`data` representa a data da transação.
+
+### Formato interno
+
+O formato lógico utilizado pelo projeto é uma data válida.
+
+Em representações textuais, o padrão recomendado é:
 
 ```text
 AAAA-MM-DD
@@ -207,11 +531,19 @@ Exemplo:
 2026-08-05
 ```
 
-Esse padrão evita ambiguidades durante a leitura do arquivo.
+### CSV
 
-### Em arquivos Excel
+Prefira:
 
-A data é exibida no padrão brasileiro:
+```text
+2026-08-05
+```
+
+Isso reduz ambiguidades.
+
+### Excel
+
+No modelo oficial, a data é apresentada no padrão brasileiro:
 
 ```text
 DD/MM/AAAA
@@ -223,25 +555,17 @@ Exemplo:
 05/08/2026
 ```
 
-O Excel armazena a informação como um valor real de data, e não apenas como texto.
+A célula deve representar uma data válida, e não apenas um texto visualmente
+parecido com uma data.
 
-O modelo possui uma validação que aceita datas entre:
+O modelo possui validação de datas em um intervalo adequado ao preenchimento.
 
-```text
-01/01/2000
-```
-
-e:
-
-```text
-31/12/2100
-```
-
-A validação do Excel ajuda a evitar erros de preenchimento, mas a validação realizada pelo FinanTec continua sendo a proteção definitiva durante a importação.
+A validação do arquivo auxilia a pessoa usuária, mas a aplicação continua sendo
+responsável por validar o valor no momento da importação.
 
 Valores vazios ou inválidos são rejeitados.
 
-Exemplos inválidos para um CSV:
+Exemplos inválidos:
 
 ```text
 agosto
@@ -250,36 +574,46 @@ data-invalida
 
 ---
 
-## Coluna `tipo`
+## Campo `tipo`
 
-A coluna `tipo` aceita apenas dois valores:
+No modelo interno, os valores permitidos são:
 
 ```text
 receita
 despesa
 ```
 
-No modelo Excel, esses valores aparecem em uma lista suspensa.
+O processo de normalização trata diferenças simples de capitalização e espaços.
 
-O pipeline padroniza letras maiúsculas e minúsculas e remove espaços extras.
-
-Exemplos aceitos:
+Exemplos equivalentes:
 
 ```text
 Receita
  receita
-DESPESA
-despesa
+RECEITA
 ```
 
-Todos são normalizados para:
+Resultado:
 
 ```text
 receita
+```
+
+Exemplos equivalentes para despesa:
+
+```text
+Despesa
+ DESPESA
 despesa
 ```
 
-Exemplos inválidos:
+Resultado:
+
+```text
+despesa
+```
+
+Um arquivo no formato canônico não deve utilizar valores arbitrários como:
 
 ```text
 entrada
@@ -288,13 +622,16 @@ gasto
 outro
 ```
 
+Arquivos externos que usam outra representação devem passar pelo mecanismo
+adequado de mapeamento ou conversão.
+
 ---
 
-## Coluna `descricao`
+## Campo `descricao`
 
-A coluna `descricao` deve conter um texto curto que identifique a transação.
+A descrição identifica o evento financeiro.
 
-Exemplos válidos:
+Exemplos:
 
 ```text
 Bolsa-estágio
@@ -306,9 +643,11 @@ Transferência para reserva
 
 O campo aceita texto livre.
 
-Descrições vazias são rejeitadas.
+Uma descrição vazia é inválida.
 
-A descrição deve registrar o que aconteceu, enquanto a categoria deve representar o agrupamento da transação.
+A descrição deve indicar o que ocorreu.
+
+A categoria representa o agrupamento.
 
 Exemplo:
 
@@ -319,13 +658,17 @@ Categoria: Alimentação
 
 ---
 
-## Coluna `categoria`
+## Campo `categoria`
 
-A coluna `categoria` indica o agrupamento usado nas análises e nos gráficos.
+A categoria é utilizada para:
 
-As categorias podem ser expandidas livremente.
+- agrupamento;
+- indicadores;
+- gráficos;
+- orçamento;
+- análises por categoria.
 
-Os dados simulados do projeto utilizam principalmente:
+Exemplos utilizados pela demonstração e pela aplicação:
 
 - Trabalho
 - Alimentação
@@ -338,9 +681,18 @@ Os dados simulados do projeto utilizam principalmente:
 - Compras
 - Reserva
 
-A categoria `Reserva` possui tratamento especial no projeto.
+A aplicação não exige que todas as transações usem apenas essas categorias.
 
-Ela representa dinheiro guardado e não entra como gasto de consumo por padrão.
+Categorias novas podem ser utilizadas desde que o valor final seja válido.
+
+Uma categoria vazia não atende ao contrato canônico.
+
+### Categoria Reserva
+
+`Reserva` possui tratamento específico nos cálculos financeiros.
+
+Ela representa dinheiro separado para guardar e não entra como gasto de consumo
+por padrão.
 
 Exemplo:
 
@@ -348,17 +700,16 @@ Exemplo:
 2026-08-04,despesa,Transferência para reserva,Reserva,300.00
 ```
 
-Categorias vazias são rejeitadas.
-
-O FinanTec não bloqueia categorias novas, desde que o campo esteja preenchido.
-
-A restrição a uma lista fixa de categorias poderá ser adicionada futuramente quando existir gerenciamento de categorias pela própria interface.
-
 ---
 
-## Coluna `valor`
+## Campo `valor`
 
-A coluna `valor` deve conter um número positivo.
+No modelo interno, `valor` deve ser:
+
+- numérico;
+- maior que zero;
+- armazenado sem símbolo monetário;
+- independente do campo `tipo`.
 
 Exemplos válidos:
 
@@ -369,7 +720,7 @@ Exemplos válidos:
 1600.00
 ```
 
-Exemplos inválidos:
+No formato canônico, exemplos inválidos incluem:
 
 ```text
 0
@@ -378,47 +729,43 @@ abc
 R$ 50,00
 ```
 
-Valores menores ou iguais a zero são rejeitados.
+O sinal negativo pode aparecer em determinados formatos externos somente como
+informação utilizada durante a conversão.
 
-No modelo Excel:
+Depois da normalização, o valor interno é positivo.
+
+No modelo Excel oficial:
 
 - a coluna possui validação numérica;
-- somente valores maiores que zero são aceitos;
-- a célula utiliza formatação monetária em reais;
+- somente valores maiores que zero são esperados;
+- a célula pode ser exibida com formatação monetária brasileira;
 - não é necessário digitar `R$`.
 
-O valor deve ser informado apenas como número.
-
-Exemplo:
-
-```text
-200.50
-```
-
-O Excel poderá apresentar visualmente:
+Uma célula pode mostrar:
 
 ```text
 R$ 200,50
 ```
 
-A exibição formatada não altera o valor numérico armazenado.
+enquanto o valor armazenado continua sendo numérico.
 
 ---
 
-## Regras de Validação
+## Regras de Validação do Modelo Canônico
 
-O pipeline rejeita linhas quando:
+Uma transação final é inválida quando, entre outras situações:
 
-- a data está vazia ou inválida;
+- a data está vazia;
+- a data não pode ser interpretada;
 - o tipo está vazio;
-- o tipo não é `receita` nem `despesa`;
+- o tipo final não é `receita` nem `despesa`;
 - a descrição está vazia;
 - a categoria está vazia;
 - o valor está vazio;
 - o valor não é numérico;
-- o valor é menor ou igual a zero.
+- o valor final é menor ou igual a zero.
 
-Uma mesma linha pode possuir mais de um problema.
+Uma linha pode possuir múltiplos problemas.
 
 Exemplo:
 
@@ -427,47 +774,85 @@ data,tipo,descricao,categoria,valor
 data-invalida,outro,,,-20
 ```
 
-Essa linha pode gerar múltiplos motivos de rejeição.
+Essa linha pode produzir mais de um motivo de rejeição.
 
-As validações existentes no Excel ajudam durante o preenchimento, mas não substituem as validações do pipeline.
+As validações existentes em um arquivo Excel são apenas uma ajuda de
+preenchimento.
 
-A validação do FinanTec também protege contra dados inválidos inseridos por:
+A aplicação continua validando os dados recebidos para se proteger contra:
 
 - cópia e colagem;
-- editores que ignoram as regras do Excel;
-- arquivos CSV;
-- alterações manuais no arquivo;
-- ferramentas externas.
+- arquivos alterados manualmente;
+- programas que ignoram as validações do Excel;
+- arquivos malformados;
+- entrada de ferramentas externas.
+
+---
+
+## Normalização Antes da Persistência
+
+Antes de persistir uma transação importada, a aplicação procura transformar a
+entrada no mesmo formato utilizado pelas demais origens.
+
+Conceitualmente:
+
+```text
+origem
+        ↓
+leitura
+        ↓
+mapeamento ou conversão
+        ↓
+normalização
+        ↓
+validação
+        ↓
+modelo canônico
+        ↓
+persistência
+```
+
+Isso reduz a necessidade de regras diferentes para cada tela ou formato de
+arquivo.
+
+A origem pode mudar.
+
+O contrato final da transação permanece consistente.
 
 ---
 
 ## Prévia da Importação
 
-Antes de salvar um lote enviado pela interface, o FinanTec:
+Antes da gravação de um lote enviado pela interface, o FinanTec apresenta uma
+etapa de revisão.
 
-1. identifica o tipo do arquivo;
-2. lê a aba ou o conteúdo informado;
-3. normaliza os cabeçalhos;
-4. verifica as colunas obrigatórias;
-5. prepara e valida as transações;
-6. identifica linhas que já existem;
-7. mostra uma prévia no dashboard;
-8. informa quantas linhas podem ser importadas.
+Dependendo do formato, o fluxo pode:
 
-Linhas inválidas não devem entrar no lote importado.
+1. identificar o tipo de arquivo;
+2. ler o conteúdo;
+3. selecionar uma aba;
+4. definir o cabeçalho;
+5. normalizar nomes de colunas;
+6. aplicar o mapeamento;
+7. converter os registros;
+8. validar as transações;
+9. identificar possíveis duplicatas;
+10. apresentar a prévia;
+11. informar quais registros podem ser importados.
 
-A interface também informa:
+Linhas inválidas não devem ser persistidas como transações válidas.
 
-- quantidade total de linhas válidas;
-- possíveis correspondências com a base atual;
-- quantidade de linhas novas;
-- estratégia selecionada para a importação.
+A prévia também ajuda a verificar se o mapeamento selecionado representa
+corretamente os dados antes da confirmação.
 
 ---
 
 ## Possíveis Duplicatas
 
-A comparação de possíveis duplicatas considera os cinco campos:
+A análise de possíveis duplicatas compara a representação normalizada da
+transação.
+
+Os principais campos considerados são:
 
 ```text
 data
@@ -477,26 +862,44 @@ categoria
 valor
 ```
 
-O FinanTec compara também a quantidade de ocorrências.
+A quantidade de ocorrências também é considerada.
 
 Exemplo:
 
-- existe uma transação igual na base;
-- o arquivo possui duas ocorrências iguais;
-- uma ocorrência é considerada existente;
-- a outra pode ser considerada nova.
-
-Isso permite manter transações realmente repetidas quando elas representam ocorrências distintas.
-
-Por padrão, o sistema recomenda:
-
 ```text
-Ignorar linhas que já existem
+Banco:
+1 × Compra no mercado — R$ 200,00
+
+Arquivo:
+2 × Compra no mercado — R$ 200,00
 ```
 
-Também pode existir a opção de incluir todas as linhas, inclusive as correspondências encontradas.
+Nesse cenário, uma ocorrência pode corresponder ao registro existente e a outra
+a uma nova ocorrência legítima.
 
-Uma linha alterada é considerada uma transação diferente.
+O objetivo não é eliminar automaticamente todas as repetições.
+
+É evitar duplicações acidentais sem impedir transações realmente repetidas.
+
+### Comportamento padrão
+
+Quando a aplicação encontra possíveis duplicatas, o padrão seguro é:
+
+```text
+não importar as possíveis duplicatas
+```
+
+Na interface, a pessoa usuária pode ativar explicitamente:
+
+```text
+Importar também as possíveis duplicatas
+```
+
+Essa escolha altera somente aquele fluxo de confirmação.
+
+### Alteração dos valores
+
+Uma transação com conteúdo diferente não é considerada idêntica.
 
 Exemplo:
 
@@ -510,74 +913,73 @@ e:
 Compra no mercado — R$ 250,00
 ```
 
-não são consideradas iguais.
+representam registros diferentes.
 
-Essa comparação não representa uma edição da transação anterior. As
-transações persistidas já recebem identificadores estáveis, e a edição ou
-exclusão individual usa esses identificadores no SQLite.
+A análise de duplicatas de importação também não substitui o mecanismo de edição.
+
+Depois da persistência, registros individuais possuem identificadores estáveis
+utilizados pelas operações de edição e exclusão.
 
 ---
 
-## Identificação dos Lotes Importados
+## Identificação de Lotes
 
-Cada lote importado recebe um fingerprint gerado a partir do conteúdo normalizado das transações.
+Lotes importados podem receber um fingerprint baseado no conteúdo normalizado.
 
-O nome original do arquivo não é usado como identificação principal.
+O nome original do arquivo não é a identidade principal do lote.
 
-Consequências:
+Consequências esperadas:
 
 ```text
-Mesmo nome + conteúdo diferente
-→ pode gerar um novo lote
+mesmo nome + conteúdo diferente
+→ conteúdos diferentes
 ```
 
 ```text
-Nome diferente + mesmo conteúdo
-→ representa o mesmo lote
+nome diferente + mesmo conteúdo
+→ conteúdo equivalente
 ```
 
-```text
-Mesmas linhas em ordem diferente
-→ representa o mesmo lote
-```
+A identificação baseada no conteúdo evita depender somente do nome escolhido
+pela pessoa usuária.
 
-O fingerprint considera:
+Quando a implementação considera o conjunto normalizado das transações, mudanças
+irrelevantes de nome de arquivo não criam uma identidade financeira nova por si
+só.
 
-```text
-data
-tipo
-descricao
-categoria
-valor
-```
+---
 
-A ordem das linhas não altera a identificação do lote.
+## Arquivos Importados Localmente
 
-Os lotes enviados pela interface são armazenados em:
+Lotes processados pela interface podem utilizar a pasta local:
 
 ```text
 data/raw/imported/
 ```
 
-Os arquivos gerados nessa pasta são locais e não devem ser enviados ao GitHub.
+Essa pasta faz parte do fluxo local da aplicação.
+
+Arquivos nela gerados não devem ser enviados ao repositório.
+
+O Git deve continuar ignorando dados pessoais e arquivos derivados da execução.
 
 ---
 
-## Relatório de Rejeições
+## Relatório de Rejeições do ETL
 
-Quando existem linhas inválidas durante o ETL, o pipeline gera:
+Quando o pipeline explícito encontra linhas inválidas, pode gerar:
 
 ```text
 data/processed/transacoes_rejeitadas.csv
 ```
 
-Esse arquivo contém as linhas descartadas e uma coluna adicional:
+O arquivo contém os registros descartados e:
 
 ```text
 motivo_rejeicao
 ```
 
-Exemplos de motivos:
+Exemplos:
 
 ```text
 data invalida ou vazia
@@ -589,7 +991,7 @@ valor invalido ou vazio
 valor menor ou igual a zero
 ```
 
-Quando uma linha possui mais de um problema, os motivos são acumulados.
+Múltiplos problemas podem ser combinados.
 
 Exemplo:
 
@@ -597,79 +999,70 @@ Exemplo:
 data invalida ou vazia; tipo invalido; categoria vazia
 ```
 
-Esse relatório é gerado apenas localmente e não deve ser versionado no GitHub.
+O relatório é local e não deve ser versionado.
 
 ---
 
-## Arquivos Gerados pelo Pipeline
+## Arquivos Gerados Localmente
 
-Ao executar o ETL, o projeto pode gerar:
+O pipeline ou a utilização da aplicação podem produzir arquivos como:
 
 ```text
 data/processed/transacoes_processadas.csv
 data/processed/transacoes_rejeitadas.csv
 database/finantec.db
 logs/etl_transacoes.log
-```
-
-A importação pela interface também pode gerar lotes em:
-
-```text
 data/raw/imported/
 ```
 
-Esses arquivos são locais e não devem ser enviados ao GitHub.
+Esses conteúdos são derivados da execução local e não representam arquivos que
+devem ser enviados ao GitHub com dados pessoais.
 
-Arquivos `.gitkeep` podem permanecer versionados para preservar a estrutura das pastas vazias.
+Arquivos `.gitkeep` podem permanecer versionados para preservar diretórios
+necessários.
 
 ---
 
-## Arquivo Modelo CSV
+## Modelo CSV
 
-O modelo CSV do projeto está disponível em:
+O modelo CSV está disponível em:
 
 ```text
 data/templates/transacoes_template.csv
 ```
 
-Ele pode ser copiado para `data/raw/` e renomeado seguindo o padrão recomendado:
+Ele utiliza o contrato canônico:
 
 ```text
-transacoes_AAAA_MM.csv
+data,tipo,descricao,categoria,valor
 ```
 
-Depois disso, basta preencher as transações mantendo as mesmas colunas.
+Para uso direto com o ETL, ele pode ser copiado para:
+
+```text
+data/raw/
+```
+
+e receber um nome como:
+
+```text
+transacoes_2026_08.csv
+```
 
 ---
 
-## Arquivo Modelo Excel
+## Modelo Excel
 
-O modelo Excel é gerado pelo próprio FinanTec e pode ser baixado pela interface.
+O modelo Excel é gerado pelo FinanTec e pode ser obtido pela interface.
 
-Ele contém as abas:
+Ele possui:
 
 ```text
 Transacoes
 Instrucoes
 ```
 
-A aba `Transacoes` é usada para o preenchimento e posterior importação.
-
-A aba `Instrucoes` apresenta:
-
-- nome de cada campo;
-- orientação de preenchimento;
-- exemplo de valor.
-
-O arquivo modelo não contém transações reais.
-
----
-
-## Exportação para Excel
-
-O FinanTec permite exportar as transações do período selecionado para um arquivo `.xlsx`.
-
-O arquivo exportado contém apenas as colunas destinadas ao usuário:
+A aba `Transacoes` utiliza:
 
 ```text
 DATA
@@ -679,55 +1072,187 @@ CATEGORIA
 VALOR
 ```
 
-Colunas técnicas não são exportadas.
+A aba `Instrucoes` explica o preenchimento.
 
-Exemplos de colunas internas removidas:
+O modelo não contém transações reais.
+
+---
+
+## Exportação para Excel
+
+A aplicação permite exportar as transações do período selecionado.
+
+O arquivo `.xlsx` apresenta apenas informações destinadas à pessoa usuária:
 
 ```text
+DATA
+TIPO
+DESCRIÇÃO
+CATEGORIA
+VALOR
+```
+
+Informações técnicas internas não devem aparecer na exportação comum.
+
+Entre exemplos de dados técnicos estão:
+
+```text
+identificadores internos
+user_id
+data_mode
 arquivo_origem
 ano_mes
 motivo_rejeicao
 ```
 
-A exportação possui:
+A exportação pode aplicar recursos visuais como:
 
 - cabeçalho formatado;
-- títulos em letras maiúsculas;
 - filtros;
 - primeira linha congelada;
-- formatação brasileira de data;
+- data em formato brasileiro;
 - formatação monetária;
-- alinhamento adequado para cada tipo de dado;
-- tabela com linhas alternadas.
+- alinhamento por tipo de campo;
+- tabela formatada.
 
-O arquivo exportado pode ser importado novamente pelo FinanTec.
+O arquivo exportado pode ser utilizado novamente como entrada compatível.
 
-As regras de prevenção de duplicatas continuam sendo aplicadas normalmente.
+Nesse caso, as regras de validação e análise de possíveis duplicatas continuam
+sendo aplicadas.
 
 ---
 
-## Exemplo de Fluxo com CSV
+## Persistência e Usuário
+
+O contrato de arquivo não exige que a pessoa usuária forneça:
+
+```text
+user_id
+```
+
+A associação entre transação e conta é responsabilidade da aplicação.
+
+Durante a persistência de dados pessoais:
+
+```text
+usuário autenticado
+        ↓
+importação ou cadastro
+        ↓
+validação
+        ↓
+associação ao contexto atual
+        ↓
+SQLite
+```
+
+Um arquivo não deve decidir arbitrariamente qual usuário será proprietário da
+transação.
+
+Essa informação vem do contexto autenticado da aplicação.
+
+---
+
+## Dados Pessoais e Demonstração
+
+Transações pessoais e demonstração devem permanecer em contextos distintos.
+
+O conteúdo de um arquivo importado pela pessoa usuária pertence ao contexto
+pessoal da conta ativa.
+
+A alternância para demonstração não deve:
+
+- transformar os registros pessoais em demonstração;
+- sobrescrever os registros pessoais;
+- mudar o proprietário dos registros.
+
+Da mesma forma, dados fictícios utilizados para demonstrar o produto não devem
+ser tratados como importações pessoais comuns.
+
+---
+
+## Exemplos de Fluxo
+
+### CSV pelo ETL
 
 ```text
 1. Copiar data/templates/transacoes_template.csv
 2. Renomear para data/raw/transacoes_2026_08.csv
-3. Preencher as transações do mês
+3. Preencher as transações
 4. Executar python main.py etl
-5. Verificar se houve rejeições
-6. Abrir o dashboard com python main.py
+5. Verificar possíveis rejeições
+6. Abrir a aplicação
+```
+
+### Excel oficial pela interface
+
+```text
+1. Abrir o FinanTec
+2. Obter o modelo Excel
+3. Preencher a aba Transacoes
+4. Salvar como .xlsx
+5. Enviar pela interface
+6. Conferir a prévia
+7. Conferir possíveis duplicatas
+8. Confirmar
+9. Verificar as transações persistidas
+```
+
+### Excel externo
+
+```text
+1. Abrir o FinanTec
+2. Selecionar o arquivo Excel externo
+3. Escolher a aba
+4. Confirmar ou selecionar o cabeçalho
+5. Conferir o mapeamento sugerido
+6. Ajustar o mapeamento quando necessário
+7. Escolher a estratégia de valor adequada
+8. Conferir a prévia
+9. Conferir possíveis duplicatas
+10. Confirmar a importação
+```
+
+### OFX
+
+```text
+1. Obter o arquivo OFX
+2. Enviar o arquivo pela interface
+3. Aguardar a leitura e conversão
+4. Conferir a prévia
+5. Conferir possíveis duplicatas
+6. Confirmar a importação
 ```
 
 ---
 
-## Exemplo de Fluxo com Excel
+## Invariantes do Contrato
+
+Independentemente da origem, uma transação válida persistida deve preservar os
+seguintes princípios:
 
 ```text
-1. Abrir o FinanTec com python main.py
-2. Baixar o modelo Excel pela interface
-3. Preencher a aba Transacoes
-4. Salvar o arquivo no formato .xlsx
-5. Enviar o arquivo pela interface
-6. Conferir a prévia e as possíveis duplicatas
-7. Confirmar a importação
-8. Verificar os dados atualizados no dashboard
+data válida
+tipo conhecido
+descrição preenchida
+categoria preenchida
+valor positivo
+proprietário definido pela aplicação
 ```
+
+Arquivos externos podem possuir estruturas diferentes.
+
+A diferença deve ser resolvida antes da persistência.
+
+O princípio central é:
+
+```text
+múltiplas entradas
+        ↓
+um modelo normalizado
+        ↓
+uma regra de persistência
+```
+
+Essa abordagem permite ampliar os formatos de importação sem criar um modelo
+financeiro diferente para cada origem.
