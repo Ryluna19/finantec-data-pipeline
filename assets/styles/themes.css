@@ -1266,6 +1266,31 @@ button:disabled {
         var(--shadow-soft) !important;
 }
 
+/* Cards principais de Perfil e Dados no tema claro. */
+
+:root:has(.finantec-theme-light)
+div.stVerticalBlock.st-key-profile-summary-card,
+:root:has(.finantec-theme-light)
+div.stVerticalBlock.st-key-user-data-action-card,
+:root:has(.finantec-theme-light)
+div.stVerticalBlock.st-key-demo-data-action-card {
+    background:
+        #fffdf9 !important;
+
+    border:
+        1px solid
+        var(--border-strong) !important;
+
+    border-radius:
+        var(--radius) !important;
+
+    box-shadow:
+        var(--shadow-soft) !important;
+
+    box-sizing:
+        border-box;
+}
+
 /* Simulador de metas em uma única superfície no tema claro. */
 
 :root:has(.finantec-theme-light)
