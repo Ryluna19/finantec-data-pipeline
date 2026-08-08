@@ -488,7 +488,6 @@ def _render_demo_action() -> None:
 
                 st.rerun()
 
-
 def _render_reset_action() -> None:
     """Exibe a exclusão completa dos dados financeiros."""
     with st.container(
@@ -505,74 +504,90 @@ def _render_reset_action() -> None:
                 "demonstração serão preservados."
             )
 
-            confirmation = st.text_input(
-                "Digite APAGAR para confirmar",
-                key="reset_data_confirmation",
-                placeholder="APAGAR",
-                help=(
-                    "A exclusão só será liberada quando "
-                    "o texto APAGAR for confirmado."
-                ),
-            )
+            with st.form(
+                "delete-user-financial-data-form",
+                border=False,
+            ):
+                confirmation = st.text_input(
+                    "Digite APAGAR para confirmar",
+                    key="reset_data_confirmation",
+                    placeholder="APAGAR",
+                    help=(
+                        "Digite APAGAR e confirme a ação "
+                        "para excluir seus dados financeiros."
+                    ),
+                )
+
+                submitted = st.form_submit_button(
+                    "Apagar meus dados",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if not submitted:
+                return
 
             confirmed = (
                 confirmation.strip().upper()
                 == RESET_CONFIRMATION_TEXT
             )
 
-            if st.button(
-                "Apagar meus dados",
-                key="delete-user-financial-data",
-                type="primary",
-                disabled=not confirmed,
-                use_container_width=True,
-            ):
-                try:
-                    result = delete_user_financial_data(
-                        user_id=get_current_user_id(),
+            if not confirmed:
+                st.error(
+                    "Digite APAGAR corretamente "
+                    "para confirmar a exclusão."
+                )
+                return
+
+            try:
+                result = delete_user_financial_data(
+                    database_path=ARQUIVO_BANCO,
+                    user_id=get_current_user_id(),
+                )
+
+                _clear_manual_session_state()
+
+                st.session_state[
+                    DATA_MODE_KEY
+                ] = "empty"
+
+                st.session_state[
+                    APP_SECTION_KEY
+                ] = MAIN_SECTION
+
+                removed_rows = sum(
+                    int(value)
+                    for key, value in result.items()
+                    if key.endswith(
+                        "_rows_removed"
                     )
+                )
 
-                    _clear_manual_session_state()
+                _set_feedback(
+                    "success",
+                    (
+                        "Seus dados financeiros foram apagados. "
+                        f"Registros removidos: {removed_rows}. "
+                        "Sua conta e senha foram preservadas."
+                    ),
+                )
 
-                    st.session_state[
-                        DATA_MODE_KEY
-                    ] = "empty"
+                _refresh_application_data()
+                st.rerun()
 
-                    st.session_state[
-                        APP_SECTION_KEY
-                    ] = MAIN_SECTION
+            except (
+                ValueError,
+                RuntimeError,
+            ) as error:
+                _set_feedback(
+                    "error",
+                    (
+                        "Não foi possível apagar "
+                        f"seus dados: {error}"
+                    ),
+                )
 
-                    removed_rows = sum(
-                        int(value)
-                        for key, value in result.items()
-                        if key.endswith(
-                            "_rows_removed"
-                        )
-                    )
-
-                    _set_feedback(
-                        "success",
-                        (
-                            "Seus dados financeiros foram apagados. "
-                            f"Registros removidos: {removed_rows}. "
-                            "Sua conta e senha foram preservadas."
-                        ),
-                    )
-
-                    _refresh_application_data()
-                    st.rerun()
-
-                except Exception as error:
-                    _set_feedback(
-                        "error",
-                        (
-                            "Não foi possível apagar "
-                            f"seus dados: {error}"
-                        ),
-                    )
-
-                    st.rerun()
-
+                st.rerun()
 
 def _render_account_deletion_action() -> None:
     """Exibe a exclusão definitiva da conta autenticada."""
