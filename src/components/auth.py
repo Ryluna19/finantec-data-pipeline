@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hmac
+import os
+
 from html import escape
 from typing import Any
 
@@ -30,9 +33,30 @@ from components.appearance import (
     render_appearance_toolbar,
 )
 
-
 AUTH_FEEDBACK_KEY = "finantec_auth_feedback"
 
+REGISTRATION_CODE_ENV = "FINANTEC_REGISTRATION_CODE"
+
+def is_registration_code_valid(
+    registration_code: str,
+) -> bool:
+    """Valida o código necessário para criar novas contas."""
+    expected_code = os.environ.get(
+        REGISTRATION_CODE_ENV,
+        "",
+    ).strip()
+
+    provided_code = str(
+        registration_code or ""
+    ).strip()
+
+    if not expected_code or not provided_code:
+        return False
+
+    return hmac.compare_digest(
+        provided_code,
+        expected_code,
+    )
 
 def choose_registration_user_id(
     accounts_exist: bool,
@@ -266,6 +290,18 @@ def _render_registration_form(
         "finantec-registration-form",
         border=False,
     ):
+        registration_code = st.text_input(
+            "Código de acesso",
+            type="password",
+            max_chars=128,
+            autocomplete="off",
+            placeholder="Digite o código de acesso",
+            help=(
+                "O código é fornecido às pessoas "
+                "convidadas para testar o FinanTec."
+            ),
+        )
+        
         username = st.text_input(
             "Nome de usuário",
             max_chars=50,
@@ -304,6 +340,14 @@ def _render_registration_form(
         )
 
     if not submitted:
+        return
+    
+    if not is_registration_code_valid(
+        registration_code
+    ):
+        st.error(
+            "Código de acesso inválido."
+        )
         return
 
     if password != password_confirmation:
