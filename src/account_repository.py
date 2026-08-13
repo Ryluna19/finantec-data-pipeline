@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from datetime import datetime, timedelta, timezone
+
 
 ACCOUNT_TABLE_NAME = "user_accounts"
 
@@ -26,12 +28,23 @@ SCRYPT_R = 8
 
 SCRYPT_P = 5
 
+LOGIN_ATTEMPT_TABLE_NAME = "login_attempts"
+
+LOGIN_MAX_FAILED_ATTEMPTS = 5
+
+LOGIN_FAILURE_RESET_MINUTES = 15
+
+LOGIN_LOCKOUT_MINUTES = 15
 
 class DuplicateUserAccountError(
     ValueError
 ):
     """Indica conflito com uma conta já existente."""
 
+class LoginTemporarilyLockedError(
+    RuntimeError
+):
+    """Indica bloqueio temporário após falhas de autenticação."""
 
 def _connect(
     database_path: Path,
@@ -81,6 +94,218 @@ def _ensure_account_table(
         """
     )
 
+def _utc_now() -> datetime:
+    """Retorna o horário UTC atual."""
+    return datetime.now(
+        timezone.utc
+    )
+
+
+def _parse_utc_datetime(
+    value: object,
+) -> datetime | None:
+    """Converte um timestamp persistido para UTC."""
+    if not isinstance(
+        value,
+        str,
+    ):
+        return None
+
+    try:
+        parsed_value = datetime.fromisoformat(
+            value
+        )
+
+    except ValueError:
+        return None
+
+    if parsed_value.tzinfo is None:
+        parsed_value = parsed_value.replace(
+            tzinfo=timezone.utc
+        )
+
+    return parsed_value.astimezone(
+        timezone.utc
+    )
+
+
+def _ensure_login_attempt_table(
+    connection: sqlite3.Connection,
+) -> None:
+    """Cria a tabela de controle de falhas de login."""
+    connection.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS {LOGIN_ATTEMPT_TABLE_NAME} (
+            user_id TEXT PRIMARY KEY,
+            failed_attempts INTEGER NOT NULL,
+            last_failed_at TEXT NOT NULL,
+            locked_until TEXT,
+
+            CHECK (
+                failed_attempts >= 0
+            )
+        )
+        """
+    )
+
+
+def _clear_login_attempts(
+    connection: sqlite3.Connection,
+    user_id: str,
+) -> None:
+    """Remove o histórico recente de falhas da conta."""
+    connection.execute(
+        f"""
+        DELETE FROM {LOGIN_ATTEMPT_TABLE_NAME}
+        WHERE user_id = ?
+        """,
+        (
+            user_id,
+        ),
+    )
+
+
+def _is_login_temporarily_locked(
+    connection: sqlite3.Connection,
+    user_id: str,
+    now: datetime,
+) -> bool:
+    """Verifica se a conta está temporariamente bloqueada."""
+    row = connection.execute(
+        f"""
+        SELECT locked_until
+        FROM {LOGIN_ATTEMPT_TABLE_NAME}
+        WHERE user_id = ?
+        """,
+        (
+            user_id,
+        ),
+    ).fetchone()
+
+    if row is None:
+        return False
+
+    locked_until = _parse_utc_datetime(
+        row[
+            "locked_until"
+        ]
+    )
+
+    if locked_until is None:
+        return False
+
+    if locked_until <= now:
+        _clear_login_attempts(
+            connection,
+            user_id,
+        )
+        return False
+
+    return True
+
+
+def _record_failed_login_attempt(
+    connection: sqlite3.Connection,
+    user_id: str,
+    now: datetime,
+) -> bool:
+    """Registra uma falha e informa se iniciou bloqueio."""
+    row = connection.execute(
+        f"""
+        SELECT
+            failed_attempts,
+            last_failed_at,
+            locked_until
+        FROM {LOGIN_ATTEMPT_TABLE_NAME}
+        WHERE user_id = ?
+        """,
+        (
+            user_id,
+        ),
+    ).fetchone()
+
+    now_text = now.isoformat()
+
+    if row is None:
+        connection.execute(
+            f"""
+            INSERT INTO {LOGIN_ATTEMPT_TABLE_NAME} (
+                user_id,
+                failed_attempts,
+                last_failed_at,
+                locked_until
+            )
+            VALUES (?, ?, ?, NULL)
+            """,
+            (
+                user_id,
+                1,
+                now_text,
+            ),
+        )
+
+        return False
+
+    last_failed_at = _parse_utc_datetime(
+        row[
+            "last_failed_at"
+        ]
+    )
+
+    reset_threshold = (
+        now
+        - timedelta(
+            minutes=LOGIN_FAILURE_RESET_MINUTES
+        )
+    )
+
+    if (
+        last_failed_at is None
+        or last_failed_at < reset_threshold
+    ):
+        failed_attempts = 1
+
+    else:
+        failed_attempts = (
+            int(
+                row[
+                    "failed_attempts"
+                ]
+            )
+            + 1
+        )
+
+    locked_until = None
+
+    if (
+        failed_attempts
+        >= LOGIN_MAX_FAILED_ATTEMPTS
+    ):
+        locked_until = (
+            now
+            + timedelta(
+                minutes=LOGIN_LOCKOUT_MINUTES
+            )
+        ).isoformat()
+
+    connection.execute(
+        f"""
+        UPDATE {LOGIN_ATTEMPT_TABLE_NAME}
+        SET
+            failed_attempts = ?,
+            last_failed_at = ?,
+            locked_until = ?
+        WHERE user_id = ?
+        """,
+        (
+            failed_attempts,
+            now_text,
+            locked_until,
+            user_id,
+        ),
+    )
+
+    return locked_until is not None
 
 def _normalize_user_id(
     user_id: object,
@@ -642,11 +867,17 @@ def authenticate_user_account(
     except ValueError:
         return None
 
+    authentication_failed = False
+    lockout_started = False
+
     try:
         with _connect(
             database_path
         ) as connection:
             _ensure_account_table(
+                connection
+            )
+            _ensure_login_attempt_table(
                 connection
             )
 
@@ -669,6 +900,24 @@ def authenticate_user_account(
             if row is None:
                 return None
 
+            user_id = str(
+                row[
+                    "user_id"
+                ]
+            )
+
+            now = _utc_now()
+
+            if _is_login_temporarily_locked(
+                connection,
+                user_id,
+                now,
+            ):
+                raise LoginTemporarilyLockedError(
+                    "Muitas tentativas de login. "
+                    "Tente novamente em alguns minutos."
+                )
+
             stored_password_hash = str(
                 row[
                     "password_hash"
@@ -679,56 +928,75 @@ def authenticate_user_account(
                 password,
                 stored_password_hash,
             ):
-                return None
-
-            if password_hash_needs_rehash(
-                stored_password_hash
-            ):
-                updated_password_hash = (
-                    hash_password(
-                        password
+                lockout_started = (
+                    _record_failed_login_attempt(
+                        connection,
+                        user_id,
+                        now,
                     )
                 )
 
-                connection.execute(
-                    f"""
-                    UPDATE {ACCOUNT_TABLE_NAME}
-                    SET
-                        password_hash = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE user_id = ?
-                    """,
-                    (
-                        updated_password_hash,
-                        row[
-                            "user_id"
-                        ],
-                    ),
+                authentication_failed = True
+
+            else:
+                _clear_login_attempts(
+                    connection,
+                    user_id,
                 )
 
-                row = connection.execute(
-                    f"""
-                    SELECT
-                        user_id,
-                        username,
-                        password_hash,
-                        created_at,
-                        updated_at
-                    FROM {ACCOUNT_TABLE_NAME}
-                    WHERE user_id = ?
-                    """,
-                    (
-                        row[
-                            "user_id"
-                        ],
-                    ),
-                ).fetchone()
+                if password_hash_needs_rehash(
+                    stored_password_hash
+                ):
+                    updated_password_hash = (
+                        hash_password(
+                            password
+                        )
+                    )
+
+                    connection.execute(
+                        f"""
+                        UPDATE {ACCOUNT_TABLE_NAME}
+                        SET
+                            password_hash = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE user_id = ?
+                        """,
+                        (
+                            updated_password_hash,
+                            user_id,
+                        ),
+                    )
+
+                    row = connection.execute(
+                        f"""
+                        SELECT
+                            user_id,
+                            username,
+                            password_hash,
+                            created_at,
+                            updated_at
+                        FROM {ACCOUNT_TABLE_NAME}
+                        WHERE user_id = ?
+                        """,
+                        (
+                            user_id,
+                        ),
+                    ).fetchone()
 
     except sqlite3.Error as error:
         raise RuntimeError(
             "Não foi possível autenticar "
             "a conta do usuário."
         ) from error
+
+    if lockout_started:
+        raise LoginTemporarilyLockedError(
+            "Muitas tentativas de login. "
+            "Tente novamente em alguns minutos."
+        )
+
+    if authentication_failed:
+        return None
 
     if row is None:
         raise RuntimeError(

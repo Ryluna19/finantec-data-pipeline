@@ -6,10 +6,12 @@ import sqlite3
 
 import pytest
 import src.account_repository as account_repository
-
 from src.account_repository import (
     ACCOUNT_TABLE_NAME,
+    LOGIN_ATTEMPT_TABLE_NAME,
+    LOGIN_MAX_FAILED_ATTEMPTS,
     DuplicateUserAccountError,
+    LoginTemporarilyLockedError,
     authenticate_user_account,
     create_user_account,
     get_user_account_by_id,
@@ -428,6 +430,172 @@ def test_authenticate_account(
         )
         is None
     )
+
+def test_failed_logins_are_persisted(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    account = create_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-segura-123",
+    )
+
+    authenticate_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-incorreta",
+    )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        row = connection.execute(
+            f"""
+            SELECT failed_attempts
+            FROM {LOGIN_ATTEMPT_TABLE_NAME}
+            WHERE user_id = ?
+            """,
+            (
+                account[
+                    "user_id"
+                ],
+            ),
+        ).fetchone()
+
+    assert row is not None
+
+    assert row[
+        0
+    ] == 1
+
+
+def test_successful_login_clears_failed_attempts(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    account = create_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-segura-123",
+    )
+
+    authenticate_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-incorreta",
+    )
+
+    authenticated_account = (
+        authenticate_user_account(
+            database_path=database_path,
+            username="ryan",
+            password="senha-segura-123",
+        )
+    )
+
+    assert authenticated_account == account
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        row = connection.execute(
+            f"""
+            SELECT 1
+            FROM {LOGIN_ATTEMPT_TABLE_NAME}
+            WHERE user_id = ?
+            """,
+            (
+                account[
+                    "user_id"
+                ],
+            ),
+        ).fetchone()
+
+    assert row is None
+
+
+def test_login_is_locked_after_maximum_failed_attempts(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    create_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-segura-123",
+    )
+
+    for _ in range(
+        LOGIN_MAX_FAILED_ATTEMPTS - 1
+    ):
+        assert (
+            authenticate_user_account(
+                database_path=database_path,
+                username="ryan",
+                password="senha-incorreta",
+            )
+            is None
+        )
+
+    with pytest.raises(
+        LoginTemporarilyLockedError,
+        match="Muitas tentativas",
+    ):
+        authenticate_user_account(
+            database_path=database_path,
+            username="ryan",
+            password="senha-incorreta",
+        )
+
+
+def test_correct_password_is_rejected_during_lockout(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    create_user_account(
+        database_path=database_path,
+        username="ryan",
+        password="senha-segura-123",
+    )
+
+    for _ in range(
+        LOGIN_MAX_FAILED_ATTEMPTS
+    ):
+        try:
+            authenticate_user_account(
+                database_path=database_path,
+                username="ryan",
+                password="senha-incorreta",
+            )
+
+        except LoginTemporarilyLockedError:
+            pass
+
+    with pytest.raises(
+        LoginTemporarilyLockedError,
+        match="Muitas tentativas",
+    ):
+        authenticate_user_account(
+            database_path=database_path,
+            username="ryan",
+            password="senha-segura-123",
+        )
 
 
 def test_duplicate_username_is_case_insensitive(
