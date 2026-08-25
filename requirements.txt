@@ -1,6 +1,6 @@
-﻿streamlit
-pandas
-altair
-openpyxl
+﻿streamlit==1.59.1
+pandas==3.0.3
+altair==6.2.2
+openpyxl==3.1.5
 ofxparse2==0.2.2
-pytest
+pytest==9.1.1
