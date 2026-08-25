@@ -563,7 +563,7 @@ def render_data_validation(
     ):
         st.dataframe(
             rejections,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=calculate_table_height(
                 len(rejections),

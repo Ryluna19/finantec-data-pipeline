@@ -346,7 +346,7 @@ def render_expenses_by_category(
 
         st.altair_chart(
             apply_chart_theme(chart),
-            use_container_width=True,
+            width="stretch",
         )
 
         if summary["maior_categoria"]:
@@ -426,7 +426,7 @@ def render_monthly_evolution(
 
         st.altair_chart(
             apply_chart_theme(chart),
-            use_container_width=True,
+            width="stretch",
         )
 
         st.markdown(

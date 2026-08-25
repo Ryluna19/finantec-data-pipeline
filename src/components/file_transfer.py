@@ -1174,7 +1174,7 @@ def render_transaction_downloads(
                 ),
                 mime=EXCEL_MIME_TYPE,
                 key="download-excel-template",
-                use_container_width=True,
+                width="stretch",
             )
 
             st.caption(
@@ -1200,7 +1200,7 @@ def render_transaction_downloads(
                     ),
                     mime=EXCEL_MIME_TYPE,
                     key="export-current-period",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
                 st.caption(
@@ -1413,7 +1413,7 @@ def render_import_confirmation(
             ),
             type="primary",
             disabled=True,
-            use_container_width=False,
+            width="content",
         )
 
         return False
@@ -1430,7 +1430,7 @@ def render_import_confirmation(
             f"{widget_version}"
         ),
         type="primary",
-        use_container_width=False,
+        width="content",
     )
 
     if not import_confirmed:

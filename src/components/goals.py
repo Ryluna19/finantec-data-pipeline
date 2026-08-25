@@ -434,7 +434,7 @@ def _render_goal_view_selector(
                     == GOAL_VIEW_MANAGEMENT
                     else "secondary"
                 ),
-                use_container_width=True,
+                width="stretch",
                 on_click=_set_goal_view,
                 args=(
                     GOAL_VIEW_MANAGEMENT,
@@ -451,7 +451,7 @@ def _render_goal_view_selector(
                     == GOAL_VIEW_SIMULATOR
                     else "secondary"
                 ),
-                use_container_width=True,
+                width="stretch",
                 on_click=_set_goal_view,
                 args=(
                     GOAL_VIEW_SIMULATOR,
@@ -698,13 +698,13 @@ def _render_goal_form_content(
                 submitted = st.form_submit_button(
                     ("Salvar alterações" if is_editing else "Criar meta"),
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             with cancel_column:
                 cancelled = st.form_submit_button(
                     "Cancelar",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
     if cancelled:
@@ -1095,7 +1095,7 @@ def _render_goal_management_cards(
                         if st.button(
                             "Editar",
                             key=("edit-financial-goal-" f"{goal_id}"),
-                            use_container_width=True,
+                            width="stretch",
                         ):
                             _open_goal_form(goal_id)
 
@@ -1105,7 +1105,7 @@ def _render_goal_management_cards(
                         if st.button(
                             "Excluir",
                             key=("delete-financial-goal-" f"{goal_id}"),
-                            use_container_width=True,
+                            width="stretch",
                         ):
                             st.session_state[GOAL_DELETE_ID_KEY] = goal_id
 
@@ -1198,7 +1198,7 @@ def _render_goal_delete_dialog(
                     "financial-goal-dialog"
                 ),
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             ):
                 _delete_goal(
                     goal_id,
@@ -1212,7 +1212,7 @@ def _render_goal_delete_dialog(
                     "cancel-delete-"
                     "financial-goal-dialog"
                 ),
-                use_container_width=True,
+                width="stretch",
             ):
                 _close_goal_delete_dialog()
                 st.rerun()
@@ -1271,7 +1271,7 @@ def _render_goal_management_view(
                 "Nova meta",
                 key="open-new-financial-goal",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             ):
                 _open_goal_form()
                 st.rerun()

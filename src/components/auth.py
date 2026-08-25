@@ -236,7 +236,7 @@ def _render_login_form() -> None:
         submitted = st.form_submit_button(
             "Entrar no FinanTec",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
     if not submitted:
@@ -336,7 +336,7 @@ def _render_registration_form(
         submitted = st.form_submit_button(
             "Criar minha conta",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
     if not submitted:
@@ -590,7 +590,7 @@ def render_account_sidebar(
                     icon=":material/logout:",
                     type="secondary",
                     help="Encerrar a sessão atual",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             if logout_requested:

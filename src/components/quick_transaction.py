@@ -167,7 +167,7 @@ def render_quick_transaction_form() -> QuickTransactionResult:
                 cancelled = st.form_submit_button(
                     "Cancelar",
                     key="quick-transaction-cancel",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
         with save_column:
@@ -175,7 +175,7 @@ def render_quick_transaction_form() -> QuickTransactionResult:
                     "Salvar transação",
                     key="quick-transaction-save",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
     if cancelled:

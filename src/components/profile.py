@@ -619,7 +619,7 @@ def render_user_profile(
             key="profile-income-sources",
             num_rows="dynamic",
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "Tipo": (
                     st.column_config.TextColumn(
@@ -712,14 +712,14 @@ def render_user_profile(
                 submitted = st.form_submit_button(
                     "Salvar alterações",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             with cancel_column:
                 cancelled = st.form_submit_button(
                     "Cancelar",
                     type="secondary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
     if cancelled:

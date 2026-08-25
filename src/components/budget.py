@@ -1214,7 +1214,7 @@ def _render_budget_form(
                     f"{widget_key_suffix}"
                 ),
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             )
 
         with cancel_column:
@@ -1224,7 +1224,7 @@ def _render_budget_form(
                     "cancel-monthly-budget-"
                     f"{widget_key_suffix}"
                 ),
-                use_container_width=True,
+                width="stretch",
             )
 
     if cancelled:
@@ -1486,7 +1486,7 @@ def _render_budget_removal_dialog_content(
                     "cancel-monthly-budget-"
                     "dialog"
                 ),
-                use_container_width=True,
+                width="stretch",
             ):
                 _close_budget_removal_dialog()
                 st.rerun()
@@ -1500,7 +1500,7 @@ def _render_budget_removal_dialog_content(
                     "confirm-monthly-budget-"
                     "dialog"
                 ),
-                use_container_width=True,
+                width="stretch",
             ):
                 _remove_budget_from_period(
                     budget=budget,
@@ -1748,7 +1748,7 @@ def _render_budget_cards(
                             "edit-monthly-budget-"
                             f"{budget_id}"
                         ),
-                        use_container_width=True,
+                        width="stretch",
                         help=(
                             "Cria uma nova vigência sem modificar "
                             "os meses anteriores."
@@ -1775,7 +1775,7 @@ def _render_budget_cards(
                                 "delete-monthly-budget-"
                                 f"{budget_id}"
                             ),
-                            use_container_width=True,
+                            width="stretch",
                         ):
                             st.session_state[
                                 BUDGET_DELETE_ID_KEY
@@ -1889,7 +1889,7 @@ def render_monthly_budget(
                 "Novo limite",
                 key="open-new-monthly-budget-v6",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             ):
                 _open_budget_form()
 

@@ -899,7 +899,7 @@ def render_pending_transactions(
                             "edit_manual_"
                             f"{index}"
                         ),
-                        use_container_width=True,
+                        width="stretch",
                     ):
                         _start_manual_edit(
                             index
@@ -912,7 +912,7 @@ def render_pending_transactions(
                             "delete_manual_"
                             f"{index}"
                         ),
-                        use_container_width=True,
+                        width="stretch",
                     ):
                         _remove_manual_draft_item(
                             transactions=transactions,
@@ -987,7 +987,7 @@ def exibir_editor_transacoes_manuais() -> bool:
         ):
             st.dataframe(
                 rejected_transactions,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -1026,7 +1026,7 @@ def exibir_editor_transacoes_manuais() -> bool:
                 key="manual-save-database",
                 type="primary",
                 disabled=actions_disabled,
-                use_container_width=True,
+                width="stretch",
                 on_click=(
                     _save_manual_database_callback
                 ),
@@ -1037,7 +1037,7 @@ def exibir_editor_transacoes_manuais() -> bool:
                 "Limpar rascunho",
                 key="manual-clear-all",
                 disabled=not has_transactions,
-                use_container_width=True,
+                width="stretch",
                 on_click=(
                     _clear_manual_transactions_callback
                 ),

@@ -191,7 +191,7 @@ def render_chat(
             "Limpar conversa",
             key=("clear-finantec-chat-" f"{user_id}-" f"{data_mode}-" f"{period}"),
             disabled=(len(messages) <= 1),
-            use_container_width=True,
+            width="stretch",
         ):
             _clear_current_conversation(
                 messages=messages,

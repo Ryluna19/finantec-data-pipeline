@@ -499,7 +499,7 @@ def _render_transaction_action_bar() -> str | None:
                 "Nova transação",
                 key="open-new-transaction",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
                 on_click=(
                     _toggle_transaction_action
                 ),
@@ -513,7 +513,7 @@ def _render_transaction_action_bar() -> str | None:
                 "Importar",
                 key="open-transaction-import",
                 type="secondary",
-                use_container_width=True,
+                width="stretch",
                 on_click=(
                     _toggle_transaction_action
                 ),
@@ -527,7 +527,7 @@ def _render_transaction_action_bar() -> str | None:
                 "Exportar",
                 key="open-transaction-export",
                 type="secondary",
-                use_container_width=True,
+                width="stretch",
                 on_click=(
                     _toggle_transaction_action
                 ),

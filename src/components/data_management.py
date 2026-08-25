@@ -521,7 +521,7 @@ def _render_reset_action() -> None:
                 submitted = st.form_submit_button(
                     "Apagar meus dados",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             if not submitted:
@@ -628,7 +628,7 @@ def _render_account_deletion_action() -> None:
                 submitted = st.form_submit_button(
                     "Excluir minha conta",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             if not submitted:
