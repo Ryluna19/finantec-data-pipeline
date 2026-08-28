@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import math
 import re
-import sqlite3
 import unicodedata
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    DatabaseIntegrityError,
+    DatabaseRow,
+    connect_database,
+)
 
 
 BUDGET_TABLE_NAME = "monthly_budgets"
@@ -32,31 +39,15 @@ class DuplicateMonthlyBudgetError(
 
 def _connect(
     database_path: Path,
-) -> sqlite3.Connection:
-    """Abre uma conexão SQLite."""
-    database_path = Path(
+) -> DatabaseConnection:
+    """Abre uma conexão com o banco de dados."""
+    return connect_database(
         database_path
     )
 
-    database_path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    connection = sqlite3.connect(
-        database_path,
-        timeout=5.0,
-    )
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
-
 
 def _ensure_budget_table(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Cria e atualiza a estrutura dos orçamentos."""
     connection.executescript(
@@ -409,7 +400,7 @@ def normalize_monthly_budget(
 
 
 def _row_to_budget(
-    row: sqlite3.Row,
+    row: DatabaseRow,
 ) -> dict[str, Any]:
     """Converte uma linha do banco para a aplicação."""
     end_period = row[
@@ -439,7 +430,7 @@ def _row_to_budget(
     }
 
 def _has_overlapping_budget(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     *,
     user_id: str,
     category_key: str,
@@ -527,7 +518,7 @@ def list_monthly_budget_periods(
                 ),
             ).fetchall()
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "os períodos dos orçamentos mensais."
@@ -591,7 +582,7 @@ def list_monthly_budgets(
                 ),
             ).fetchall()
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "os orçamentos mensais."
@@ -657,7 +648,7 @@ def list_active_monthly_budgets(
                 ),
             ).fetchall()
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "os orçamentos vigentes."
@@ -716,7 +707,7 @@ def get_monthly_budget(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "o orçamento mensal."
@@ -815,7 +806,7 @@ def create_monthly_budget(
                     ),
                 )
 
-            except sqlite3.IntegrityError as error:
+            except DatabaseIntegrityError as error:
                 raise DuplicateMonthlyBudgetError(
                     "Já existe um orçamento para "
                     "essa categoria no período."
@@ -824,7 +815,7 @@ def create_monthly_budget(
     except DuplicateMonthlyBudgetError:
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível criar "
             "o orçamento mensal."
@@ -979,7 +970,7 @@ def update_monthly_budget(
                     ),
                 )
 
-            except sqlite3.IntegrityError as error:
+            except DatabaseIntegrityError as error:
                 raise DuplicateMonthlyBudgetError(
                     "Já existe um orçamento para "
                     "essa categoria no período."
@@ -997,7 +988,7 @@ def update_monthly_budget(
     ):
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível atualizar "
             "o orçamento mensal."
@@ -1223,7 +1214,7 @@ def split_monthly_budget_from_period(
                     ),
                 )
 
-            except sqlite3.IntegrityError as error:
+            except DatabaseIntegrityError as error:
                 raise DuplicateMonthlyBudgetError(
                     "Não foi possível criar a nova vigência "
                     "porque ela entra em conflito com "
@@ -1269,7 +1260,7 @@ def split_monthly_budget_from_period(
     ):
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível alterar o orçamento "
             "a partir do período informado."
@@ -1317,7 +1308,7 @@ def delete_monthly_budget(
                 ),
             )
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível excluir "
             "o orçamento mensal."
