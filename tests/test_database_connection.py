@@ -5,6 +5,9 @@ from __future__ import annotations
 import pytest
 
 from src.database_connection import (
+    DATABASE_BACKEND_ENV,
+    TURSO_AUTH_TOKEN_ENV,
+    TURSO_DATABASE_URL_ENV,
     DatabaseError,
     DatabaseIntegrityError,
     connect_database,
@@ -318,3 +321,79 @@ def test_generic_database_error_is_translated(
                 FROM table_that_does_not_exist
                 """
             )
+
+def test_invalid_database_backend_is_rejected(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        DATABASE_BACKEND_ENV,
+        "invalid",
+    )
+
+    with pytest.raises(
+        DatabaseError,
+        match="não suportado",
+    ):
+        connect_database(
+            tmp_path
+            / "database.db"
+        )
+
+
+def test_turso_requires_database_url(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        DATABASE_BACKEND_ENV,
+        "turso",
+    )
+
+    monkeypatch.delenv(
+        TURSO_DATABASE_URL_ENV,
+        raising=False,
+    )
+
+    monkeypatch.setenv(
+        TURSO_AUTH_TOKEN_ENV,
+        "test-token",
+    )
+
+    with pytest.raises(
+        DatabaseError,
+        match="URL",
+    ):
+        connect_database(
+            tmp_path
+            / "database.db"
+        )
+
+
+def test_turso_requires_auth_token(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        DATABASE_BACKEND_ENV,
+        "turso",
+    )
+
+    monkeypatch.setenv(
+        TURSO_DATABASE_URL_ENV,
+        "libsql://example.turso.io",
+    )
+
+    monkeypatch.delenv(
+        TURSO_AUTH_TOKEN_ENV,
+        raising=False,
+    )
+
+    with pytest.raises(
+        DatabaseError,
+        match="token",
+    ):
+        connect_database(
+            tmp_path
+            / "database.db"
+        )

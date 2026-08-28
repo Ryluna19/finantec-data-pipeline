@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, NoReturn
+
+
+DATABASE_BACKEND_ENV = "FINANTEC_DATABASE_BACKEND"
+TURSO_DATABASE_URL_ENV = "TURSO_DATABASE_URL"
+TURSO_AUTH_TOKEN_ENV = "TURSO_AUTH_TOKEN"
+
+SQLITE_BACKEND = "sqlite"
+TURSO_BACKEND = "turso"
 
 
 class DatabaseError(RuntimeError):
@@ -13,6 +22,47 @@ class DatabaseError(RuntimeError):
 
 class DatabaseIntegrityError(DatabaseError):
     """Indica violação de integridade no banco."""
+
+
+def _is_integrity_error(
+    error: Exception,
+) -> bool:
+    """Identifica erros de constraint nos drivers suportados."""
+    if isinstance(
+        error,
+        sqlite3.IntegrityError,
+    ):
+        return True
+
+    return (
+        'code: "SQLITE_CONSTRAINT"'
+        in str(
+            error
+        )
+    )
+
+
+def _raise_database_error(
+    error: Exception,
+    *,
+    message: str,
+    integrity_message: str | None = None,
+) -> NoReturn:
+    """Traduz erros dos drivers para exceções da aplicação."""
+    if _is_integrity_error(
+        error
+    ):
+        raise DatabaseIntegrityError(
+            integrity_message
+            or (
+                "A operação violou uma "
+                "restrição de integridade."
+            )
+        ) from error
+
+    raise DatabaseError(
+        message
+    ) from error
 
 
 class DatabaseRow:
@@ -89,7 +139,7 @@ class DatabaseCursor:
 
     def __init__(
         self,
-        cursor: sqlite3.Cursor,
+        cursor: Any,
     ) -> None:
         self._cursor = cursor
 
@@ -124,7 +174,7 @@ class DatabaseCursor:
 
     def _convert_row(
         self,
-        row: tuple[Any, ...] | None,
+        row: Any,
     ) -> DatabaseRow | None:
         if row is None:
             return None
@@ -144,11 +194,14 @@ class DatabaseCursor:
                 self._cursor.fetchone()
             )
 
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível ler "
-                "o resultado da consulta."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível ler "
+                    "o resultado da consulta."
+                ),
+            )
 
     def fetchall(
         self,
@@ -170,11 +223,14 @@ class DatabaseCursor:
                 )
             ]
 
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível ler "
-                "os resultados da consulta."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível ler "
+                    "os resultados da consulta."
+                ),
+            )
 
     def __iter__(
         self,
@@ -192,19 +248,22 @@ class DatabaseCursor:
                     ),
                 )
 
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível percorrer "
-                "os resultados da consulta."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível percorrer "
+                    "os resultados da consulta."
+                ),
+            )
 
 
 class DatabaseConnection:
-    """Adapta uma conexão SQLite para a aplicação."""
+    """Adapta uma conexão para a interface comum da aplicação."""
 
     def __init__(
         self,
-        connection: sqlite3.Connection,
+        connection: Any,
     ) -> None:
         self._connection = connection
 
@@ -221,17 +280,14 @@ class DatabaseConnection:
                 )
             )
 
-        except sqlite3.IntegrityError as error:
-            raise DatabaseIntegrityError(
-                "A operação violou uma "
-                "restrição de integridade."
-            ) from error
-
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível executar "
-                "a operação no banco."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível executar "
+                    "a operação no banco."
+                ),
+            )
 
         return DatabaseCursor(
             cursor
@@ -250,17 +306,14 @@ class DatabaseConnection:
                 )
             )
 
-        except sqlite3.IntegrityError as error:
-            raise DatabaseIntegrityError(
-                "A operação violou uma "
-                "restrição de integridade."
-            ) from error
-
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível executar "
-                "as operações no banco."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível executar "
+                    "as operações no banco."
+                ),
+            )
 
         return DatabaseCursor(
             cursor
@@ -277,17 +330,14 @@ class DatabaseConnection:
                 )
             )
 
-        except sqlite3.IntegrityError as error:
-            raise DatabaseIntegrityError(
-                "O script violou uma "
-                "restrição de integridade."
-            ) from error
-
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível executar "
-                "o script no banco."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível executar "
+                    "o script no banco."
+                ),
+            )
 
         return DatabaseCursor(
             cursor
@@ -299,11 +349,14 @@ class DatabaseConnection:
         try:
             self._connection.commit()
 
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível confirmar "
-                "a transação no banco."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível confirmar "
+                    "a transação no banco."
+                ),
+            )
 
     def rollback(
         self,
@@ -311,11 +364,14 @@ class DatabaseConnection:
         try:
             self._connection.rollback()
 
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível desfazer "
-                "a transação no banco."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível desfazer "
+                    "a transação no banco."
+                ),
+            )
 
     def close(
         self,
@@ -323,11 +379,14 @@ class DatabaseConnection:
         try:
             self._connection.close()
 
-        except sqlite3.Error as error:
-            raise DatabaseError(
-                "Não foi possível fechar "
-                "a conexão com o banco."
-            ) from error
+        except Exception as error:
+            _raise_database_error(
+                error,
+                message=(
+                    "Não foi possível fechar "
+                    "a conexão com o banco."
+                ),
+            )
 
     def __enter__(
         self,
@@ -347,7 +406,26 @@ class DatabaseConnection:
             self.rollback()
 
 
-def connect_database(
+def _get_database_backend() -> str:
+    """Obtém o backend de persistência configurado."""
+    backend = os.environ.get(
+        DATABASE_BACKEND_ENV,
+        SQLITE_BACKEND,
+    ).strip().lower()
+
+    if backend not in {
+        SQLITE_BACKEND,
+        TURSO_BACKEND,
+    }:
+        raise DatabaseError(
+            "Backend de banco de dados "
+            "não suportado."
+        )
+
+    return backend
+
+
+def _connect_sqlite(
     database_path: Path,
 ) -> DatabaseConnection:
     """Abre uma conexão com o SQLite local."""
@@ -366,12 +444,80 @@ def connect_database(
             timeout=5.0,
         )
 
-    except sqlite3.Error as error:
+    except Exception as error:
+        _raise_database_error(
+            error,
+            message=(
+                "Não foi possível conectar "
+                "ao banco de dados local."
+            ),
+        )
+
+    return DatabaseConnection(
+        connection
+    )
+
+
+def _connect_turso() -> DatabaseConnection:
+    """Abre uma conexão com o banco remoto Turso."""
+    database_url = os.environ.get(
+        TURSO_DATABASE_URL_ENV,
+        "",
+    ).strip()
+
+    auth_token = os.environ.get(
+        TURSO_AUTH_TOKEN_ENV,
+        "",
+    ).strip()
+
+    if not database_url:
+        raise DatabaseError(
+            "A URL do banco Turso "
+            "não está configurada."
+        )
+
+    if not auth_token:
+        raise DatabaseError(
+            "O token de autenticação do Turso "
+            "não está configurado."
+        )
+
+    try:
+        import libsql
+
+    except ImportError as error:
+        raise DatabaseError(
+            "O driver libsql não está instalado."
+        ) from error
+
+    try:
+        connection = libsql.connect(
+            database=database_url,
+            auth_token=auth_token,
+        )
+
+    except Exception as error:
         raise DatabaseError(
             "Não foi possível conectar "
-            "ao banco de dados."
+            "ao banco Turso."
         ) from error
 
     return DatabaseConnection(
         connection
+    )
+
+
+def connect_database(
+    database_path: Path,
+) -> DatabaseConnection:
+    """Abre a conexão usando o backend configurado."""
+    backend = (
+        _get_database_backend()
+    )
+
+    if backend == TURSO_BACKEND:
+        return _connect_turso()
+
+    return _connect_sqlite(
+        database_path
     )
