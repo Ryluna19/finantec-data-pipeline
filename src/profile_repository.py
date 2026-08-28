@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from pathlib import Path
 from typing import Any
+
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    connect_database,
+)
 
 
 PROFILE_TABLE_NAME = "user_profiles"
@@ -13,31 +18,15 @@ PROFILE_TABLE_NAME = "user_profiles"
 
 def _connect(
     database_path: Path,
-) -> sqlite3.Connection:
-    """Abre uma conexão SQLite."""
-    database_path = Path(
+) -> DatabaseConnection:
+    """Abre uma conexão com o banco de dados."""
+    return connect_database(
         database_path
     )
 
-    database_path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    connection = sqlite3.connect(
-        database_path,
-        timeout=5.0,
-    )
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
-
 
 def _ensure_profile_table(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Cria a tabela de perfis quando necessário."""
     connection.execute(
@@ -523,7 +512,7 @@ def load_user_profile(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "o perfil do usuário."
@@ -627,7 +616,7 @@ def save_user_profile(
                 ),
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível salvar "
             "o perfil do usuário."
@@ -691,7 +680,7 @@ def delete_user_profile(
                 ),
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível excluir "
             "o perfil do usuário."
