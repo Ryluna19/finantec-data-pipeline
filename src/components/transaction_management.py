@@ -420,6 +420,11 @@ def _update_persisted_transaction(
         )
 
     except PartialTransactionSyncError as error:
+        logging.exception(
+            "Falha parcial ao sincronizar "
+            "uma transação atualizada."
+        )
+
         _set_management_feedback(
             "error",
             str(
@@ -439,16 +444,21 @@ def _update_persisted_transaction(
     except (
         OSError,
         RuntimeError,
-    ) as error:
+    ):
+        logging.exception(
+            "Falha ao atualizar "
+            "uma transação persistida."
+        )
+
         _set_management_feedback(
             "error",
             (
                 "Não foi possível atualizar "
-                f"a transação: {error}"
+                "a transação."
             ),
         )
 
-    except Exception as error:
+    except Exception:
         logging.exception(
             "Falha inesperada ao atualizar "
             "uma transação persistida."
@@ -458,7 +468,7 @@ def _update_persisted_transaction(
             "error",
             (
                 "Ocorreu uma falha inesperada "
-                f"durante a atualização: {error}"
+                "durante a atualização."
             ),
         )
 
@@ -521,6 +531,11 @@ def _delete_persisted_transaction(
         )
 
     except PartialTransactionSyncError as error:
+        logging.exception(
+            "Falha parcial ao sincronizar "
+            "a exclusão de uma transação."
+        )
+
         _set_management_feedback(
             "error",
             str(
@@ -528,11 +543,7 @@ def _delete_persisted_transaction(
             ),
         )
 
-    except (
-        ValueError,
-        OSError,
-        RuntimeError,
-    ) as error:
+    except ValueError as error:
         _set_management_feedback(
             "error",
             (
@@ -541,7 +552,21 @@ def _delete_persisted_transaction(
             ),
         )
 
-    except Exception as error:
+    except (
+        OSError,
+        RuntimeError,
+    ):
+        logging.exception(
+            "Falha ao excluir "
+            "uma transação persistida."
+        )
+
+        _set_management_feedback(
+            "error",
+            "Não foi possível excluir a transação.",
+        )
+
+    except Exception:
         logging.exception(
             "Falha inesperada ao excluir "
             "uma transação persistida."
@@ -551,7 +576,7 @@ def _delete_persisted_transaction(
             "error",
             (
                 "Ocorreu uma falha inesperada "
-                f"durante a exclusão: {error}"
+                "durante a exclusão."
             ),
         )
 

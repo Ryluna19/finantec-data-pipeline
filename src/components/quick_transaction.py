@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from typing import Literal
 
@@ -211,10 +212,14 @@ def render_quick_transaction_form() -> QuickTransactionResult:
         )
         return None
 
-    except Exception as error:
+    except Exception:
+        logging.exception(
+            "Falha inesperada ao salvar "
+            "uma transação rápida."
+        )
+
         st.error(
-            "Não foi possível salvar a transação: "
-            f"{error}"
+            "Não foi possível salvar a transação."
         )
         return None
 

@@ -254,8 +254,7 @@ def update_persisted_transaction(
             raise PartialTransactionSyncError(
                 "O arquivo de origem foi atualizado, "
                 "mas o SQLite não pôde ser sincronizado. "
-                f"Fonte alterada: {source_file.name}. "
-                f"Detalhes: {error}"
+                f"Fonte alterada: {source_file.name}."
             ) from error
 
         raise
@@ -337,8 +336,7 @@ def delete_persisted_transaction(
             raise PartialTransactionSyncError(
                 "A transação foi removida do arquivo, "
                 "mas não pôde ser excluída do SQLite. "
-                f"Fonte alterada: {source_file.name}. "
-                f"Detalhes: {error}"
+                f"Fonte alterada: {source_file.name}."
             ) from error
 
         raise

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import streamlit as st
 
 from scripts.etl_transacoes import (
@@ -477,12 +478,17 @@ def _render_demo_action() -> None:
                 _refresh_application_data()
                 st.rerun()
 
-            except Exception as error:
+            except Exception:
+                logging.exception(
+                    "Falha inesperada ao carregar "
+                    "os dados de demonstração."
+                )
+
                 _set_feedback(
                     "error",
                     (
                         "Não foi possível carregar "
-                        f"a demonstração: {error}"
+                        "a demonstração."
                     ),
                 )
 
@@ -575,15 +581,28 @@ def _render_reset_action() -> None:
                 _refresh_application_data()
                 st.rerun()
 
-            except (
-                ValueError,
-                RuntimeError,
-            ) as error:
+            except ValueError as error:
                 _set_feedback(
                     "error",
                     (
                         "Não foi possível apagar "
                         f"seus dados: {error}"
+                    ),
+                )
+
+                st.rerun()
+
+            except RuntimeError:
+                logging.exception(
+                    "Falha ao apagar os dados "
+                    "financeiros do usuário."
+                )
+
+                _set_feedback(
+                    "error",
+                    (
+                        "Não foi possível apagar "
+                        "seus dados."
                     ),
                 )
 

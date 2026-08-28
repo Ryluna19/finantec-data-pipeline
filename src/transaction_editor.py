@@ -7,6 +7,7 @@ centralizados em módulos especializados.
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -208,14 +209,19 @@ def _save_manual_database_callback() -> None:
             )
         )
 
-    except Exception as error:
+    except Exception:
+        logging.exception(
+            "Falha inesperada ao salvar "
+            "transações manuais."
+        )
+
         st.session_state[
             "resultado_etl"
         ] = {
             "sucesso": False,
             "mensagem": (
                 "Não foi possível salvar "
-                f"as transações: {error}"
+                "as transações."
             ),
         }
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -1473,14 +1474,19 @@ def render_import_confirmation(
 
         return True
 
-    except Exception as error:
+    except Exception:
+        logging.exception(
+            "Falha inesperada ao importar "
+            "transações para o banco."
+        )
+
         st.session_state[
             "file_import_result"
         ] = {
             "success": False,
             "message": (
                 "Não foi possível concluir "
-                f"a importação: {error}"
+                "a importação."
             ),
         }
 
@@ -1508,14 +1514,30 @@ def render_uploaded_file_preview(
                 uploaded_file.name
             ),
         )
-    except (
-        ValueError,
-        OSError,
-        pd.errors.EmptyDataError,
-    ) as error:
+    except ValueError as error:
         st.error(
             "Não foi possível ler o arquivo: "
             f"{error}"
+        )
+
+        return False
+
+    except pd.errors.EmptyDataError:
+        st.error(
+            "Não foi possível ler o arquivo porque "
+            "ele está vazio."
+        )
+
+        return False
+
+    except OSError:
+        logging.exception(
+            "Falha ao acessar o arquivo enviado "
+            "para importação."
+        )
+
+        st.error(
+            "Não foi possível acessar o arquivo enviado."
         )
 
         return False
