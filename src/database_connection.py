@@ -424,6 +424,12 @@ def _get_database_backend() -> str:
 
     return backend
 
+def database_uses_local_file() -> bool:
+    """Indica se o backend atual depende de arquivo local."""
+    return (
+        _get_database_backend()
+        == SQLITE_BACKEND
+    )
 
 def _connect_sqlite(
     database_path: Path,
@@ -497,6 +503,7 @@ def _connect_turso() -> DatabaseConnection:
         )
 
     except Exception as error:
+        
         raise DatabaseError(
             "Não foi possível conectar "
             "ao banco Turso."

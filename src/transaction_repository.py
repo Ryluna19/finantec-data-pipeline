@@ -1,13 +1,20 @@
-"""Persistência SQLite das transações do FinanTec."""
+"""Persistência das transações do FinanTec."""
 
 from __future__ import annotations
 
 import re
-import sqlite3
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Mapping
 
 import pandas as pd
+
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    connect_database,
+    database_uses_local_file,
+)
 
 from src.transaction_identity import (
     TRANSACTION_ID_COLUMN,
@@ -64,6 +71,15 @@ class DuplicateTransactionIdError(
     ValueError
 ):
     """Indica uma tentativa de persistir IDs duplicados."""
+
+
+def _connect(
+    database_path: Path,
+) -> DatabaseConnection:
+    """Abre uma conexão com o banco de dados."""
+    return connect_database(
+        database_path
+    )
 
 
 def _normalize_identifier(
@@ -141,34 +157,19 @@ def _normalize_transaction_id(
 
     return normalized_transaction_id
 
-
-def _connect(
+def _local_database_is_missing(
     database_path: Path,
-) -> sqlite3.Connection:
-    """Abre uma conexão SQLite."""
-    database_path = Path(
-        database_path
+) -> bool:
+    """Verifica ausência do arquivo apenas no backend local."""
+    return (
+        database_uses_local_file()
+        and not Path(
+            database_path
+        ).exists()
     )
-
-    database_path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    connection = sqlite3.connect(
-        database_path,
-        timeout=5.0,
-    )
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
-
 
 def _table_exists(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
 ) -> bool:
     """Verifica se uma tabela existe."""
@@ -190,7 +191,7 @@ def _table_exists(
 
 
 def _get_table_columns(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
 ) -> set[str]:
     """Retorna as colunas existentes na tabela."""
@@ -210,8 +211,233 @@ def _get_table_columns(
     }
 
 
+def _quote_identifier(
+    identifier: str,
+) -> str:
+    """Escapa um identificador para uso seguro no SQL."""
+    return (
+        '"'
+        + str(identifier).replace(
+            '"',
+            '""',
+        )
+        + '"'
+    )
+
+
+def _get_database_column_type(
+    series: pd.Series,
+) -> str:
+    """Mapeia o tipo pandas para um tipo compatível com SQLite."""
+    dtype = series.dtype
+
+    if (
+        pd.api.types.is_bool_dtype(
+            dtype
+        )
+        or pd.api.types.is_integer_dtype(
+            dtype
+        )
+    ):
+        return "INTEGER"
+
+    if pd.api.types.is_float_dtype(
+        dtype
+    ):
+        return "REAL"
+
+    if pd.api.types.is_datetime64_any_dtype(
+        dtype
+    ):
+        return "TIMESTAMP"
+
+    return "TEXT"
+
+
+def _normalize_database_value(
+    value: object,
+) -> object:
+    """Converte valores pandas/numpy para tipos aceitos pelo banco."""
+    if value is None:
+        return None
+
+    try:
+        is_missing = pd.isna(
+            value
+        )
+
+        if isinstance(
+            is_missing,
+            bool,
+        ) and is_missing:
+            return None
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        pass
+
+    if isinstance(
+        value,
+        pd.Timestamp,
+    ):
+        return value.isoformat(
+            sep=" "
+        )
+
+    if isinstance(
+        value,
+        (
+            datetime,
+            date,
+        ),
+    ):
+        return value.isoformat()
+
+    item_method = getattr(
+        value,
+        "item",
+        None,
+    )
+
+    if callable(
+        item_method
+    ):
+        try:
+            scalar_value = item_method()
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            scalar_value = value
+
+        if scalar_value is not value:
+            return _normalize_database_value(
+                scalar_value
+            )
+
+    return value
+
+
+def _create_transaction_table(
+    connection: DatabaseConnection,
+    table_name: str,
+    transactions: pd.DataFrame,
+) -> None:
+    """Cria a tabela a partir da estrutura do DataFrame."""
+    columns = [
+        str(column)
+        for column in transactions.columns
+    ]
+
+    if not columns:
+        raise RuntimeError(
+            "Não foi possível criar a tabela "
+            "de transações sem colunas."
+        )
+
+    column_definitions = [
+        (
+            f"{_quote_identifier(column)} "
+            f"{_get_database_column_type(transactions[column])}"
+        )
+        for column in columns
+    ]
+
+    connection.execute(
+        f"""
+        CREATE TABLE {table_name} (
+            {", ".join(column_definitions)}
+        )
+        """
+    )
+
+
+def _insert_dataframe_rows(
+    connection: DatabaseConnection,
+    table_name: str,
+    transactions: pd.DataFrame,
+) -> None:
+    """Persiste as linhas de um DataFrame usando o adapter do banco."""
+    if transactions.empty:
+        return
+
+    columns = [
+        str(column)
+        for column in transactions.columns
+    ]
+
+    quoted_columns = ", ".join(
+        _quote_identifier(
+            column
+        )
+        for column in columns
+    )
+
+    placeholders = ", ".join(
+        "?"
+        for _ in columns
+    )
+
+    rows = [
+        tuple(
+            _normalize_database_value(
+                value
+            )
+            for value in row
+        )
+        for row in transactions.itertuples(
+            index=False,
+            name=None,
+        )
+    ]
+
+    connection.executemany(
+        f"""
+        INSERT INTO {table_name} (
+            {quoted_columns}
+        )
+        VALUES (
+            {placeholders}
+        )
+        """,
+        rows,
+    )
+
+
+def _cursor_to_dataframe(
+    cursor: Any,
+) -> pd.DataFrame:
+    """Converte o resultado do adapter em DataFrame."""
+    description = (
+        cursor.description
+        or ()
+    )
+
+    columns = [
+        str(
+            column[
+                0
+            ]
+        )
+        for column in description
+    ]
+
+    rows = cursor.fetchall()
+
+    return pd.DataFrame(
+        [
+            tuple(row)
+            for row in rows
+        ],
+        columns=columns,
+    )
+
+
 def _ensure_transaction_context_columns(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
 ) -> None:
     """Migra tabelas antigas para o contexto multiusuário."""
@@ -344,7 +570,7 @@ def _validate_transaction_ids(
 
 
 def _ensure_table_accepts_columns(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
     columns: list[str],
 ) -> None:
@@ -374,7 +600,7 @@ def _ensure_table_accepts_columns(
 
 
 def _find_existing_transaction_ids(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
     user_id: str,
     data_mode: str,
@@ -471,11 +697,16 @@ def replace_transactions(
                 connection,
                 normalized_table_name,
             ):
-                prepared_transactions.to_sql(
-                    normalized_table_name,
-                    connection,
-                    if_exists="replace",
-                    index=False,
+                _create_transaction_table(
+                    connection=connection,
+                    table_name=normalized_table_name,
+                    transactions=prepared_transactions,
+                )
+
+                _insert_dataframe_rows(
+                    connection=connection,
+                    table_name=normalized_table_name,
+                    transactions=prepared_transactions,
                 )
 
                 _ensure_transaction_context_columns(
@@ -516,14 +747,13 @@ def replace_transactions(
             if prepared_transactions.empty:
                 return
 
-            prepared_transactions.to_sql(
-                normalized_table_name,
-                connection,
-                if_exists="append",
-                index=False,
+            _insert_dataframe_rows(
+                connection=connection,
+                table_name=normalized_table_name,
+                transactions=prepared_transactions,
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível salvar "
             "as transações no SQLite."
@@ -582,12 +812,17 @@ def insert_transactions(
                 connection,
                 normalized_table_name,
             ):
-                prepared_transactions.to_sql(
-                    normalized_table_name,
-                    connection,
-                    if_exists="replace",
-                    index=False,
+                _create_transaction_table(
+                    connection=connection,
+                    table_name=normalized_table_name,
+                    transactions=prepared_transactions,
                 )
+
+                _insert_dataframe_rows(
+                connection=connection,
+                table_name=normalized_table_name,
+                transactions=prepared_transactions,
+            )
 
                 _ensure_transaction_context_columns(
                     connection,
@@ -636,17 +871,16 @@ def insert_transactions(
                     f"{duplicate_id} neste contexto."
                 )
 
-            prepared_transactions.to_sql(
-                normalized_table_name,
-                connection,
-                if_exists="append",
-                index=False,
+            _insert_dataframe_rows(
+                connection=connection,
+                table_name=normalized_table_name,
+                transactions=prepared_transactions,
             )
 
     except DuplicateTransactionIdError:
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível inserir "
             "as transações no SQLite."
@@ -680,14 +914,11 @@ def load_transactions(
         user_id=user_id,
         data_mode=data_mode,
     )
-
-    database_path = Path(
+    
+    if _local_database_is_missing(
         database_path
-    )
-
-    if not database_path.exists():
+    ):
         return pd.DataFrame()
-
     try:
         with _connect(
             database_path
@@ -703,24 +934,25 @@ def load_transactions(
                 normalized_table_name,
             )
 
-            query = f"""
+            cursor = connection.execute(
+                f"""
                 SELECT *
                 FROM {normalized_table_name}
                 WHERE
                     {USER_ID_COLUMN} = ?
                     AND {DATA_MODE_COLUMN} = ?
-            """
-
-            return pd.read_sql_query(
-                query,
-                connection,
-                params=(
+                """,
+                (
                     normalized_user_id,
                     normalized_data_mode,
                 ),
             )
 
-    except sqlite3.Error as error:
+            return _cursor_to_dataframe(
+                cursor
+            )
+
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "as transações do SQLite."
@@ -756,13 +988,10 @@ def load_transaction(
         data_mode=data_mode,
     )
 
-    database_path = Path(
+    if _local_database_is_missing(
         database_path
-    )
-
-    if not database_path.exists():
+    ):
         return None
-
     try:
         with _connect(
             database_path
@@ -806,7 +1035,7 @@ def load_transaction(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "a transação do SQLite."
@@ -939,7 +1168,7 @@ def update_transaction(
     except TransactionNotFoundError:
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível atualizar "
             "a transação no SQLite."
@@ -992,12 +1221,9 @@ def delete_transaction(
         user_id=user_id,
         data_mode=data_mode,
     )
-
-    database_path = Path(
+    if _local_database_is_missing(
         database_path
-    )
-
-    if not database_path.exists():
+    ):
         return False
 
     try:
@@ -1045,7 +1271,7 @@ def delete_transaction(
                 cursor.rowcount > 0
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível excluir "
             "a transação do SQLite."
@@ -1086,12 +1312,10 @@ def delete_transactions(
             user_id=normalized_user_id,
             data_mode=data_mode,
         )
-
-    database_path = Path(
+        
+    if _local_database_is_missing(
         database_path
-    )
-
-    if not database_path.exists():
+    ):
         return 0
 
     try:
@@ -1138,7 +1362,7 @@ def delete_transactions(
                 cursor.rowcount
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível remover "
             "as transações do usuário."
