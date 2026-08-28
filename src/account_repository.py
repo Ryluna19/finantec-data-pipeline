@@ -6,12 +6,18 @@ import base64
 import hashlib
 import hmac
 import secrets
-import sqlite3
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from datetime import datetime, timedelta, timezone
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    DatabaseIntegrityError,
+    DatabaseRow,
+    connect_database,
+)
 
 
 ACCOUNT_TABLE_NAME = "user_accounts"
@@ -48,31 +54,15 @@ class LoginTemporarilyLockedError(
 
 def _connect(
     database_path: Path,
-) -> sqlite3.Connection:
-    """Abre uma conexão SQLite."""
-    database_path = Path(
+) -> DatabaseConnection:
+    """Abre uma conexão com o banco de dados."""
+    return connect_database(
         database_path
     )
 
-    database_path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    connection = sqlite3.connect(
-        database_path,
-        timeout=5.0,
-    )
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
-
 
 def _ensure_account_table(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Cria a tabela de contas quando necessário."""
     connection.execute(
@@ -130,7 +120,7 @@ def _parse_utc_datetime(
 
 
 def _ensure_login_attempt_table(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Cria a tabela de controle de falhas de login."""
     connection.execute(
@@ -150,7 +140,7 @@ def _ensure_login_attempt_table(
 
 
 def _clear_login_attempts(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     user_id: str,
 ) -> None:
     """Remove o histórico recente de falhas da conta."""
@@ -166,7 +156,7 @@ def _clear_login_attempts(
 
 
 def _is_login_temporarily_locked(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     user_id: str,
     now: datetime,
 ) -> bool:
@@ -205,7 +195,7 @@ def _is_login_temporarily_locked(
 
 
 def _record_failed_login_attempt(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     user_id: str,
     now: datetime,
 ) -> bool:
@@ -633,7 +623,7 @@ def password_hash_needs_rehash(
     )
 
 def _row_to_account(
-    row: sqlite3.Row,
+    row: DatabaseRow,
 ) -> dict[str, Any]:
     """Converte uma linha SQLite em conta pública."""
     return {
@@ -730,13 +720,13 @@ def create_user_account(
                 ),
             ).fetchone()
 
-    except sqlite3.IntegrityError as error:
+    except DatabaseIntegrityError as error:
         raise DuplicateUserAccountError(
             "Já existe uma conta com esse "
             "nome de usuário ou identificador."
         ) from error
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível criar "
             "a conta do usuário."
@@ -788,7 +778,7 @@ def get_user_account_by_username(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "a conta do usuário."
@@ -836,7 +826,7 @@ def get_user_account_by_id(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "a conta do usuário."
@@ -983,7 +973,7 @@ def authenticate_user_account(
                         ),
                     ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível autenticar "
             "a conta do usuário."
@@ -1028,7 +1018,7 @@ def has_user_accounts(
                 """
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível verificar "
             "as contas cadastradas."
