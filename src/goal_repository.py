@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import calendar
 import math
-import sqlite3
 import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    DatabaseIntegrityError,
+    DatabaseRow,
+    connect_database,
+)
 
 
 GOAL_TABLE_NAME = "financial_goals"
@@ -38,32 +45,16 @@ class DuplicateFinancialGoalError(
 
 def _connect(
     database_path: Path,
-) -> sqlite3.Connection:
-    """Abre uma conexão SQLite."""
-    database_path = Path(
+) -> DatabaseConnection:
+    """Abre uma conexão com o banco de dados."""
+    return connect_database(
         database_path
     )
-
-    database_path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    connection = sqlite3.connect(
-        database_path,
-        timeout=5.0,
-    )
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
 
 
 
 def _get_goal_table_columns(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> set[str]:
     """Obtém as colunas existentes na tabela de metas."""
     rows = connection.execute(
@@ -79,7 +70,7 @@ def _get_goal_table_columns(
 
 
 def _ensure_deadline_date_column(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Adiciona e preenche a data limite em bancos antigos."""
     columns = _get_goal_table_columns(
@@ -125,7 +116,7 @@ def _ensure_deadline_date_column(
     )
 
 def _ensure_goal_tables(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Cria as estruturas necessárias para as metas."""
     connection.executescript(
@@ -564,7 +555,7 @@ def _normalize_deadline(
 
 
 def _resolve_stored_deadline(
-    row: sqlite3.Row,
+    row: DatabaseRow,
 ) -> date:
     """Obtém a data limite de uma linha já persistida."""
     deadline_value = (
@@ -727,7 +718,7 @@ def normalize_financial_goal(
 
 
 def _row_to_goal(
-    row: sqlite3.Row,
+    row: DatabaseRow,
 ) -> dict[str, Any]:
     """Converte uma linha do banco para o formato da aplicação."""
     deadline_date = (
@@ -766,7 +757,7 @@ def _row_to_goal(
     }
 
 def _get_next_sort_order(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     user_id: str,
 ) -> int:
     """Obtém a próxima posição da lista de metas."""
@@ -843,7 +834,7 @@ def list_financial_goals(
                 ),
             ).fetchall()
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "as metas financeiras."
@@ -906,7 +897,7 @@ def get_financial_goal(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "a meta financeira."
@@ -1009,7 +1000,7 @@ def create_financial_goal(
                     ),
                 )
 
-            except sqlite3.IntegrityError as error:
+            except DatabaseIntegrityError as error:
                 raise DuplicateFinancialGoalError(
                     "Já existe uma meta "
                     "com esse nome."
@@ -1018,7 +1009,7 @@ def create_financial_goal(
     except DuplicateFinancialGoalError:
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível criar "
             "a meta financeira."
@@ -1120,7 +1111,7 @@ def update_financial_goal(
                     ),
                 )
 
-            except sqlite3.IntegrityError as error:
+            except DatabaseIntegrityError as error:
                 raise DuplicateFinancialGoalError(
                     "Já existe uma meta "
                     "com esse nome."
@@ -1137,7 +1128,7 @@ def update_financial_goal(
     ):
         raise
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível atualizar "
             "a meta financeira."
@@ -1197,7 +1188,7 @@ def delete_financial_goal(
                 ),
             )
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível excluir "
             "a meta financeira."
@@ -1359,13 +1350,13 @@ def seed_financial_goals_if_needed(
                 ),
             )
 
-    except sqlite3.IntegrityError as error:
+    except DatabaseIntegrityError as error:
         raise DuplicateFinancialGoalError(
             "Não foi possível importar as metas "
             "iniciais por causa de nomes duplicados."
         ) from error
 
-    except sqlite3.Error as error:
+    except DatabaseIntegrityError as error:
         raise RuntimeError(
             "Não foi possível importar "
             "as metas financeiras iniciais."
