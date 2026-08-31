@@ -455,7 +455,8 @@ def carregar_transacoes(
         )
 
     elif (
-        user_id == LOCAL_USER_ID
+        database_uses_local_file()
+        and user_id == LOCAL_USER_ID
         and normalized_data_mode == "user"
     ):
         # Compatibilidade com instalações antigas,
