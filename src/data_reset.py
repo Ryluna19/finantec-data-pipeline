@@ -3,30 +3,39 @@
 from __future__ import annotations
 
 import logging
-import sqlite3
 from pathlib import Path
 
-from src.transaction_repository import (
-    delete_transactions,
-    load_transactions,
+from src.account_repository import (
+    ACCOUNT_TABLE_NAME,
+    LOGIN_ATTEMPT_TABLE_NAME,
 )
-from src.user_context import (
-    LOCAL_USER_ID,
+from src.budget_repository import (
+    BUDGET_TABLE_NAME,
 )
-
-from src.budget_repository import BUDGET_TABLE_NAME
-from src.chat_repository import CHAT_TABLE_NAME
+from src.chat_repository import (
+    CHAT_TABLE_NAME,
+)
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    connect_database,
+    database_uses_local_file,
+)
 from src.goal_repository import (
     GOAL_SEED_TABLE_NAME,
     GOAL_TABLE_NAME,
 )
-from src.account_repository import ACCOUNT_TABLE_NAME
-from src.profile_repository import PROFILE_TABLE_NAME
+from src.profile_repository import (
+    PROFILE_TABLE_NAME,
+)
 from src.transaction_repository import (
     DATA_MODE_COLUMN,
     USER_ID_COLUMN,
     delete_transactions,
     load_transactions,
+)
+from src.user_context import (
+    LOCAL_USER_ID,
 )
 
 
@@ -99,8 +108,19 @@ def _normalize_user_id(
 
     return normalized_user_id
 
+def _database_is_available(
+    database_path: Path,
+) -> bool:
+    """Indica se o backend configurado pode ser consultado."""
+    if not database_uses_local_file():
+        return True
+
+    return Path(
+        database_path
+    ).exists()
+
 def _table_exists(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
 ) -> bool:
     """Verifica se uma tabela existe no banco."""
@@ -118,7 +138,7 @@ def _table_exists(
 
 
 def _get_table_columns(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
 ) -> set[str]:
     """Retorna as colunas de uma tabela existente."""
@@ -133,7 +153,7 @@ def _get_table_columns(
 
 
 def _delete_user_rows(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
     table_name: str,
     user_id: str,
     *,
@@ -211,7 +231,9 @@ def count_user_transaction_rows(
         database_path
     )
 
-    if not database_path.exists():
+    if not _database_is_available(
+        database_path
+    ):
         return 0
 
     transactions = load_transactions(
@@ -273,7 +295,9 @@ def summarize_user_transaction_data(
             )
         ),
         "database_exists": (
-            database_path.exists()
+            _database_is_available(
+                database_path
+            )
         ),
         "log_exists": (
             Path(
@@ -371,7 +395,9 @@ def reset_user_transaction_data(
             transaction_rows_removed
         ),
         "database_preserved": (
-            database_path.exists()
+            _database_is_available(
+                database_path
+            )
         ),
         "log_removed": (
             log_removed
@@ -398,16 +424,18 @@ def delete_user_financial_data(
         "goal_seed_rows_removed": 0,
         "budget_rows_removed": 0,
         "chat_rows_removed": 0,
-        "database_preserved": database_path.exists(),
+        "database_preserved": _database_is_available(
+            database_path
+        ),
     }
 
-    if not database_path.exists():
+    if not _database_is_available(
+        database_path
+    ):
         return result
-
     try:
-        with sqlite3.connect(
-            database_path,
-            timeout=5.0,
+        with connect_database(
+            database_path
         ) as connection:
             result["transaction_rows_removed"] = _delete_user_rows(
                 connection,
@@ -447,7 +475,7 @@ def delete_user_financial_data(
                 data_mode=USER_DATA_MODE,
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível apagar os dados financeiros do usuário."
         ) from error
@@ -470,16 +498,18 @@ def delete_user_account_and_data(
         "budget_rows_removed": 0,
         "chat_rows_removed": 0,
         "account_rows_removed": 0,
-        "database_preserved": database_path.exists(),
+        "database_preserved": _database_is_available(
+            database_path
+        ),
     }
 
-    if not database_path.exists():
+    if not _database_is_available(
+        database_path
+    ):
         return result
-
     try:
-        with sqlite3.connect(
-            database_path,
-            timeout=5.0,
+        with connect_database(
+            database_path
         ) as connection:
             result["transaction_rows_removed"] = _delete_user_rows(
                 connection,
@@ -516,6 +546,11 @@ def delete_user_account_and_data(
                 CHAT_TABLE_NAME,
                 normalized_user_id,
             )
+            _delete_user_rows(
+                connection,
+                LOGIN_ATTEMPT_TABLE_NAME,
+                normalized_user_id,
+            )
 
             result["account_rows_removed"] = _delete_user_rows(
                 connection,
@@ -523,7 +558,7 @@ def delete_user_account_and_data(
                 normalized_user_id,
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível excluir a conta e seus dados."
         ) from error

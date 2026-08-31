@@ -11,11 +11,16 @@ ainda não existe, utiliza o CSV processado ou retorna uma estrutura vazia.
 from __future__ import annotations
 
 import json
-import sqlite3
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 import pandas as pd
+
+from src.database_connection import (
+    DatabaseError,
+    connect_database,
+    database_uses_local_file,
+)
 
 from src.goal_repository import (
     list_financial_goals,
@@ -275,12 +280,17 @@ def sqlite_table_exists(
     database_path: Path,
     table_name: str,
 ) -> bool:
-    """Verifica se uma tabela existe no banco SQLite."""
-    if not database_path.exists():
+    """Verifica se uma tabela existe no backend configurado."""
+    if (
+        database_uses_local_file()
+        and not Path(
+            database_path
+        ).exists()
+    ):
         return False
 
     try:
-        with sqlite3.connect(
+        with connect_database(
             database_path
         ) as connection:
             row = connection.execute(
@@ -297,10 +307,10 @@ def sqlite_table_exists(
                 ),
             ).fetchone()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível verificar "
-            "a estrutura do banco local."
+            "a estrutura do banco de dados."
         ) from error
 
     return row is not None

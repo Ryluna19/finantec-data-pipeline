@@ -549,11 +549,37 @@ def create_complete_user_database(
                 username TEXT NOT NULL
             );
 
+            CREATE TABLE login_attempts (
+                user_id TEXT PRIMARY KEY,
+                failed_attempts INTEGER NOT NULL,
+                last_failed_at TEXT NOT NULL,
+                locked_until TEXT
+            );
             INSERT INTO user_accounts
                 (user_id, username)
             VALUES
                 ('local-user', 'ryan'),
                 ('other-user', 'outro');
+                
+            INSERT INTO login_attempts (
+                user_id,
+                failed_attempts,
+                last_failed_at,
+                locked_until
+            )
+            VALUES
+                (
+                    'local-user',
+                    5,
+                    '2026-08-28T12:00:00+00:00',
+                    '2026-08-28T12:15:00+00:00'
+                ),
+                (
+                    'other-user',
+                    2,
+                    '2026-08-28T12:00:00+00:00',
+                    NULL
+                );
 
             CREATE TABLE transacoes_processadas (
                 transaction_id TEXT,
@@ -647,8 +673,17 @@ def test_delete_user_financial_data_preserves_account_and_other_contexts(
 
     assert count_rows(
         database_path,
-        "user_accounts",
-    ) == 2
+        "login_attempts",
+        "WHERE user_id = ?",
+        (LOCAL_USER_ID,),
+    ) == 1
+
+    assert count_rows(
+        database_path,
+        "login_attempts",
+        "WHERE user_id = ?",
+        ("other-user",),
+    ) == 1
 
     assert count_rows(
         database_path,
@@ -754,6 +789,7 @@ def test_delete_user_account_and_all_associated_data(
         "financial_goal_seed_state",
         "monthly_budgets",
         "chat_messages",
+        "login_attempts",
     ):
         assert count_rows(
             database_path,
