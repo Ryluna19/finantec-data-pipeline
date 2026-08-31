@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 
+from src.database_connection import (
+    DatabaseConnection,
+    DatabaseError,
+    connect_database,
+)
 from src.user_context import (
     LOCAL_USER_ID,
 )
@@ -27,31 +31,15 @@ VALID_RESPONSE_SOURCES = {
 
 def _connect(
     database_path: Path,
-) -> sqlite3.Connection:
-    """Abre uma conexão SQLite para o histórico."""
-    database_path = Path(
+) -> DatabaseConnection:
+    """Abre uma conexão com o banco de dados."""
+    return connect_database(
         database_path
     )
 
-    database_path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    connection = sqlite3.connect(
-        database_path,
-        timeout=5.0,
-    )
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
-
 
 def _get_chat_table_columns(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> set[str]:
     """Retorna as colunas existentes na tabela do chat."""
     rows = connection.execute(
@@ -71,7 +59,7 @@ def _get_chat_table_columns(
 
 
 def _migrate_legacy_chat_table(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Associa mensagens antigas ao usuário local."""
     columns = _get_chat_table_columns(
@@ -101,7 +89,7 @@ def _migrate_legacy_chat_table(
 
 
 def _ensure_chat_table(
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ) -> None:
     """Cria ou atualiza a estrutura do histórico."""
     connection.execute(
@@ -312,7 +300,7 @@ def load_chat_messages(
                 ),
             ).fetchall()
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível carregar "
             "o histórico da conversa."
@@ -415,7 +403,7 @@ def save_chat_exchange(
                 ],
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível salvar "
             "o histórico da conversa."
@@ -466,7 +454,7 @@ def clear_chat_messages(
                 cursor.rowcount
             )
 
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Não foi possível limpar "
             "o histórico da conversa."
