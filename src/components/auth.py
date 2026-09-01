@@ -1,4 +1,4 @@
-"""Interface de autenticação local do FinanTec."""
+"""Interface de autenticação do FinanTec."""
 
 from __future__ import annotations
 
@@ -105,7 +105,7 @@ def _render_auth_brand_panel() -> None:
 
             <div class="finantec-auth-brand-copy">
                 <span class="finantec-auth-eyebrow">
-                    Organização financeira local
+                    Organização financeira pessoal
                 </span>
 
                 <h1>
@@ -140,10 +140,10 @@ def _render_auth_brand_panel() -> None:
                     </span>
 
                     <div>
-                        <strong>Uso local</strong>
+                      <strong>Dados persistentes</strong>
                         <p>
-                            Seus dados permanecem armazenados
-                            no banco local do FinanTec.
+                            Suas informações permanecem
+                            vinculadas à sua conta.
                         </p>
                     </div>
                 </div>
@@ -164,7 +164,7 @@ def _render_auth_brand_panel() -> None:
             </div>
 
             <p class="finantec-auth-local-note">
-                Projeto educativo de uso local e privado.
+                Projeto pessoal publicado para demonstração e testes.
             </p>
         </section>
         """
@@ -186,8 +186,8 @@ def _render_auth_form_heading(
         "Entre na sua conta ou crie um novo espaço financeiro."
         if accounts_exist
         else (
-            "Crie a primeira conta para associar os dados "
-            "já existentes neste dispositivo."
+            "Crie a primeira conta para iniciar "
+                "seu espaço financeiro."
         )
     )
 
@@ -277,8 +277,8 @@ def _render_registration_form(
 
     if not accounts_exist:
         st.info(
-            "Esta conta será associada aos dados pessoais "
-            "já existentes neste dispositivo."
+            "Esta será a primeira conta "
+                "do ambiente atual."
         )
     else:
         st.caption(
