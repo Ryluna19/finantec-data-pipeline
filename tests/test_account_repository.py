@@ -275,6 +275,59 @@ def test_same_password_generates_different_hashes():
         second_hash,
     )
 
+def test_existing_account_table_receives_expiration_column(
+    tmp_path,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        connection.execute(
+            f"""
+            CREATE TABLE {ACCOUNT_TABLE_NAME} (
+                user_id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                username_key TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
+    assert not (
+        account_repository.has_user_accounts(
+            database_path
+        )
+    )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        account_columns = {
+            str(
+                row[
+                    1
+                ]
+            )
+            for row in connection.execute(
+                f"""
+                PRAGMA table_info(
+                    {ACCOUNT_TABLE_NAME}
+                )
+                """
+            ).fetchall()
+        }
+
+    assert "expires_at" in account_columns
+
+
 
 def test_create_and_load_account(
     tmp_path,

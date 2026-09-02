@@ -64,7 +64,7 @@ def _connect(
 def _ensure_account_table(
     connection: DatabaseConnection,
 ) -> None:
-    """Cria a tabela de contas quando necessário."""
+    """Cria e atualiza a estrutura da tabela de contas."""
     connection.execute(
         f"""
         CREATE TABLE IF NOT EXISTS {ACCOUNT_TABLE_NAME} (
@@ -76,6 +76,7 @@ def _ensure_account_table(
                 DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL
                 DEFAULT CURRENT_TIMESTAMP,
+            expires_at TEXT,
 
             CHECK (
                 length(username) BETWEEN 3 AND 50
@@ -83,6 +84,29 @@ def _ensure_account_table(
         )
         """
     )
+
+    account_columns = {
+        str(
+            row[
+                1
+            ]
+        )
+        for row in connection.execute(
+            f"""
+            PRAGMA table_info(
+                {ACCOUNT_TABLE_NAME}
+            )
+            """
+        ).fetchall()
+    }
+
+    if "expires_at" not in account_columns:
+        connection.execute(
+            f"""
+            ALTER TABLE {ACCOUNT_TABLE_NAME}
+            ADD COLUMN expires_at TEXT
+            """
+        )
 
 def _utc_now() -> datetime:
     """Retorna o horário UTC atual."""
