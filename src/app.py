@@ -30,7 +30,6 @@ from components.navigation import (
     render_user_navigation,
 )
 from components.data_management import (
-    DATA_MODE_KEY,
     render_data_management,
 )
 from components.file_transfer import (
@@ -91,6 +90,7 @@ from components.profile import (
 )
 
 from src.user_context import (
+    DATA_MODE_KEY,
     get_current_user_id,
 )
 
@@ -488,7 +488,10 @@ def render_transaction_export_dialog(
     )
 
 
-def _render_transaction_action_bar() -> str | None:
+def _render_transaction_action_bar(
+    *,
+    read_only: bool = False,
+) -> str | None:
     """Exibe as ações com hierarquia visual clara."""
     with st.container(
         key="transactions-action-bar",
@@ -508,6 +511,7 @@ def _render_transaction_action_bar() -> str | None:
                 key="open-new-transaction",
                 type="primary",
                 width="stretch",
+                disabled=read_only,
                 on_click=(
                     _toggle_transaction_action
                 ),
@@ -522,6 +526,7 @@ def _render_transaction_action_bar() -> str | None:
                 key="open-transaction-import",
                 type="secondary",
                 width="stretch",
+                disabled=read_only,
                 on_click=(
                     _toggle_transaction_action
                 ),
@@ -551,9 +556,21 @@ def _render_transaction_action_panel(
     active_action: str | None,
     period_transactions: pd.DataFrame,
     all_transactions: pd.DataFrame,
+    *,
+    read_only: bool = False,
 ) -> None:
     """Exibe somente o fluxo secundário solicitado."""
     if active_action is None:
+        return
+
+    if (
+        read_only
+        and active_action
+        in {
+            TRANSACTION_ACTION_NEW,
+            TRANSACTION_ACTION_IMPORT,
+        }
+    ):
         return
 
     if (
@@ -580,6 +597,7 @@ def _render_transaction_action_panel(
 def render_transactions_tab(
     all_transactions: pd.DataFrame,
     rejections: pd.DataFrame,
+    data_mode: str = "user",
 ) -> None:
     """Compõe consulta e ações com período próprio."""
     st.markdown(
@@ -631,7 +649,11 @@ def render_transactions_tab(
         )
 
     active_action = (
-        _render_transaction_action_bar()
+        _render_transaction_action_bar(
+            read_only=(
+                data_mode == "demo"
+            ),
+        )
     )
 
     with st.container(
@@ -663,8 +685,27 @@ def render_transactions_tab(
         all_transactions=(
             all_transactions
         ),
+        read_only=(
+            data_mode == "demo"
+        ),
     )
 
+def resolve_data_mode(
+    requested_mode: object,
+) -> str:
+    """Normaliza o modo de dados solicitado."""
+    normalized_mode = str(
+        requested_mode
+    )
+
+    if normalized_mode not in {
+        "user",
+        "demo",
+        "empty",
+    }:
+        return "user"
+
+    return normalized_mode
 
 def main() -> None:
     """Executa a interface principal."""
@@ -685,20 +726,18 @@ def main() -> None:
         get_current_user_id()
     )
 
-    data_mode = (
+    requested_data_mode = (
         st.session_state.get(
             DATA_MODE_KEY,
             "user",
         )
     )
 
-    if data_mode not in {
-        "user",
-        "demo",
-        "empty",
-    }:
-        data_mode = "user"
+    data_mode = resolve_data_mode(
+        requested_data_mode
+    )
 
+    if data_mode != requested_data_mode:
         st.session_state[
             DATA_MODE_KEY
         ] = data_mode
@@ -770,6 +809,7 @@ def main() -> None:
         render_transactions_tab(
             all_transactions=transactions,
             rejections=rejections,
+            data_mode=data_mode,
         )
 
     with budget_tab:

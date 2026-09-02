@@ -34,6 +34,10 @@ class FakeStreamlit:
         self.clicked_label = clicked_label
         self.session_state: dict = {}
         self.button_labels: list[str] = []
+        self.button_disabled: dict[
+            str,
+            bool,
+        ] = {}
         self.rerun_requested = False
 
     def subheader(
@@ -84,6 +88,16 @@ class FakeStreamlit:
         self.button_labels.append(
             str(
                 label
+            )
+        )
+        self.button_disabled[
+            str(
+                label
+            )
+        ] = bool(
+            kwargs.get(
+                "disabled",
+                False,
             )
         )
 
@@ -393,6 +407,70 @@ def test_transactions_tab_renders_only_active_action(
     ]
 
     assert events[-1] == expected_event
+
+@pytest.mark.parametrize(
+    ("active_action", "expected_event"),
+    [
+        (
+            app_module.TRANSACTION_ACTION_NEW,
+            None,
+        ),
+        (
+            app_module.TRANSACTION_ACTION_IMPORT,
+            None,
+        ),
+        (
+            app_module.TRANSACTION_ACTION_EXPORT,
+            "export",
+        ),
+    ],
+)
+def test_demo_mode_blocks_transaction_write_actions(
+    monkeypatch,
+    active_action,
+    expected_event,
+) -> None:
+    (
+        fake_streamlit,
+        events,
+        _,
+    ) = configure_composition(
+        monkeypatch
+    )
+
+    fake_streamlit.session_state[
+        app_module.TRANSACTION_ACTION_KEY
+    ] = active_action
+
+    app_module.render_transactions_tab(
+        all_transactions=build_transactions(),
+        rejections=pd.DataFrame(),
+        data_mode="demo",
+    )
+
+    assert fake_streamlit.button_disabled == {
+        "Nova transação": True,
+        "Importar": True,
+        "Exportar": False,
+    }
+
+    action_events = [
+        event
+        for event in events
+        if event in {
+            "new",
+            "import",
+            "export",
+        }
+    ]
+
+    if expected_event is None:
+        assert action_events == []
+    else:
+        assert action_events == [
+            expected_event
+        ]
+
 
 
 def test_pending_feedback_restores_matching_action(

@@ -20,6 +20,7 @@ from src.transaction_editor import (
     MANUAL_FORM_VERSION_KEY,
 )
 from src.user_context import (
+    DATA_MODE_KEY,
     get_current_account,
     get_current_user_id,
 )
@@ -51,17 +52,11 @@ DATA_MANAGEMENT_FEEDBACK_KEY = (
     "data_management_feedback"
 )
 
-DATA_MODE_KEY = (
-    "finantec_data_mode"
-)
-
 RESET_CONFIRMATION_TEXT = "APAGAR"
-
 
 ACCOUNT_DELETION_CONFIRMATION_TEXT = (
     "EXCLUIR CONTA"
 )
-
 
 def build_data_mode_html(
     data_mode: str,

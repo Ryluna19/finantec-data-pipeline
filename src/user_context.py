@@ -7,13 +7,15 @@ from typing import Any
 
 import streamlit as st
 
-
 LOCAL_USER_ID = "local-user"
+
+DATA_MODE_KEY = (
+    "finantec_data_mode"
+)
 
 AUTHENTICATED_ACCOUNT_KEY = (
     "finantec_authenticated_account"
 )
-
 
 def _resolve_session_state(
     session_state: MutableMapping[
@@ -27,7 +29,6 @@ def _resolve_session_state(
         return session_state
 
     return st.session_state
-
 
 def get_current_account(
     session_state: MutableMapping[
@@ -144,7 +145,6 @@ def clear_current_account(
         AUTHENTICATED_ACCOUNT_KEY,
         None,
     )
-
 
 def get_current_user_id(
     session_state: MutableMapping[

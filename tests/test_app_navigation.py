@@ -51,6 +51,25 @@ def test_main_navigation_contains_only_primary_financial_flows():
         "Metas",
     )
 
+def test_resolve_data_mode_keeps_only_valid_values():
+    for valid_mode in (
+        "user",
+        "demo",
+        "empty",
+    ):
+        assert (
+            app_module.resolve_data_mode(
+                valid_mode
+            )
+            == valid_mode
+        )
+
+    assert (
+        app_module.resolve_data_mode(
+            "invalid"
+        )
+        == "user"
+    )
 
 def test_load_data_passes_received_user_context(
     monkeypatch,
@@ -136,7 +155,6 @@ def test_load_data_passes_received_user_context(
     assert transactions.empty
     assert rejections.empty
 
-
 def test_header_presents_finantec_as_local_application(
     monkeypatch,
 ) -> None:
@@ -175,7 +193,6 @@ def test_header_presents_finantec_as_local_application(
         "Período analisado"
         not in header_html
     )
-
 
 def test_main_flows_render_without_configured_profile(
     monkeypatch,
@@ -294,7 +311,6 @@ def test_main_flows_render_without_configured_profile(
         "budget",
         "goals",
     ]
-
 
 def test_main_stops_when_user_is_not_authenticated(
     monkeypatch,
