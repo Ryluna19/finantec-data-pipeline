@@ -50,6 +50,11 @@ class DuplicateUserAccountError(
 ):
     """Indica conflito com uma conta já existente."""
 
+class ExpiredUserAccountError(
+    RuntimeError
+):
+    """Indica que uma conta temporária expirou."""
+
 class LoginTemporarilyLockedError(
     RuntimeError
 ):
@@ -144,6 +149,27 @@ def _parse_utc_datetime(
     return parsed_value.astimezone(
         timezone.utc
     )
+
+def is_user_account_expired(
+    account: dict[str, Any],
+) -> bool:
+    """Informa se a validade temporária terminou."""
+    raw_expires_at = account.get(
+        "expires_at"
+    )
+
+    if raw_expires_at is None:
+        return False
+
+    expires_at = _parse_utc_datetime(
+        raw_expires_at
+    )
+
+    if expires_at is None:
+        return True
+
+    return _utc_now() >= expires_at
+
 
 
 def _ensure_login_attempt_table(
@@ -945,6 +971,17 @@ def authenticate_user_account(
 
             if row is None:
                 return None
+
+            account = _row_to_account(
+                row
+            )
+
+            if is_user_account_expired(
+                account
+            ):
+                raise ExpiredUserAccountError(
+                    "A conta temporária expirou."
+                )
 
             user_id = str(
                 row[

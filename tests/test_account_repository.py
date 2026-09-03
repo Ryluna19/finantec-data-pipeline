@@ -16,6 +16,7 @@ from src.account_repository import (
     LOGIN_ATTEMPT_TABLE_NAME,
     LOGIN_MAX_FAILED_ATTEMPTS,
     DuplicateUserAccountError,
+    ExpiredUserAccountError,
     LoginTemporarilyLockedError,
     authenticate_user_account,
     create_user_account,
@@ -384,6 +385,74 @@ def test_temporary_account_expires_after_24_hours(
 
     assert loaded_account == account
 
+def test_expired_temporary_account_cannot_authenticate(
+    tmp_path,
+    monkeypatch,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    creation_time = datetime(
+        2026,
+        9,
+        2,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    monkeypatch.setattr(
+        account_repository,
+        "_utc_now",
+        lambda: creation_time,
+    )
+
+    account = create_user_account(
+        database_path=database_path,
+        username="visitante",
+        password="senha-temporaria-123",
+        temporary=True,
+    )
+
+    monkeypatch.setattr(
+        account_repository,
+        "_utc_now",
+        lambda: (
+            creation_time
+            + timedelta(
+                hours=24
+            )
+        ),
+    )
+
+    with pytest.raises(
+        ExpiredUserAccountError
+    ):
+        authenticate_user_account(
+            database_path=database_path,
+            username="visitante",
+            password="senha-temporaria-123",
+        )
+
+    with sqlite3.connect(
+        database_path
+    ) as connection:
+        failed_attempt = connection.execute(
+            f"""
+            SELECT failed_attempts
+            FROM {LOGIN_ATTEMPT_TABLE_NAME}
+            WHERE user_id = ?
+            """,
+            (
+                account[
+                    "user_id"
+                ],
+            ),
+        ).fetchone()
+
+    assert failed_attempt is None
 
 def test_create_and_load_account(
     tmp_path,
