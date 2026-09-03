@@ -16,6 +16,10 @@ from src.account_repository import (
     authenticate_user_account,
     create_user_account,
     has_user_accounts,
+    is_user_account_expired,
+)
+from src.data_reset import (
+    delete_expired_user_accounts,
 )
 from src.user_context import (
     LOCAL_USER_ID,
@@ -37,6 +41,7 @@ AUTH_FEEDBACK_KEY = "finantec_auth_feedback"
 
 REGISTRATION_CODE_ENV = "FINANTEC_REGISTRATION_CODE"
 
+
 def is_registration_code_valid(
     registration_code: str,
 ) -> bool:
@@ -46,9 +51,7 @@ def is_registration_code_valid(
         "",
     ).strip()
 
-    provided_code = str(
-        registration_code or ""
-    ).strip()
+    provided_code = str(registration_code or "").strip()
 
     if not expected_code or not provided_code:
         return False
@@ -57,6 +60,7 @@ def is_registration_code_valid(
         provided_code,
         expected_code,
     )
+
 
 def choose_registration_user_id(
     accounts_exist: bool,
@@ -86,8 +90,7 @@ def _render_auth_brand_panel() -> None:
         quote=True,
     )
 
-    render_html(
-        f"""
+    render_html(f"""
         <section class="finantec-auth-brand">
             <div class="finantec-auth-brand-top">
                 <div class="finantec-auth-logo">
@@ -167,8 +170,7 @@ def _render_auth_brand_panel() -> None:
                 Projeto pessoal publicado para demonstração e testes.
             </p>
         </section>
-        """
-    )
+        """)
 
 
 def _render_auth_form_heading(
@@ -177,22 +179,16 @@ def _render_auth_form_heading(
 ) -> None:
     """Exibe o título da área de acesso."""
     title = (
-        "Bem-vindo de volta"
-        if accounts_exist
-        else "Comece a organizar suas finanças"
+        "Bem-vindo de volta" if accounts_exist else "Comece a organizar suas finanças"
     )
 
     description = (
         "Entre na sua conta ou crie um novo espaço financeiro."
         if accounts_exist
-        else (
-            "Crie a primeira conta para iniciar "
-                "seu espaço financeiro."
-        )
+        else ("Crie a primeira conta para iniciar " "seu espaço financeiro.")
     )
 
-    render_html(
-        f"""
+    render_html(f"""
         <header class="finantec-auth-form-heading">
             <span class="finantec-auth-form-eyebrow">
                 Acesso seguro
@@ -202,17 +198,14 @@ def _render_auth_form_heading(
 
             <p>{description}</p>
         </header>
-        """
-    )
+        """)
 
 
 def _render_login_form() -> None:
     """Exibe o formulário de entrada."""
     st.markdown("### Entrar")
 
-    st.caption(
-        "Use seu nome de usuário e sua senha para continuar."
-    )
+    st.caption("Use seu nome de usuário e sua senha para continuar.")
 
     with st.form(
         "finantec-login-form",
@@ -254,9 +247,7 @@ def _render_login_form() -> None:
         return
 
     if account is None:
-        st.error(
-            "Nome de usuário ou senha inválidos."
-        )
+        st.error("Nome de usuário ou senha inválidos.")
         return
 
     _start_authenticated_session(account)
@@ -267,23 +258,15 @@ def _render_registration_form(
     accounts_exist: bool,
 ) -> None:
     """Exibe o formulário de criação de conta."""
-    title = (
-        "Criar conta"
-        if accounts_exist
-        else "Criar primeira conta"
-    )
+    title = "Criar conta" if accounts_exist else "Criar primeira conta"
 
     st.markdown(f"### {title}")
 
     if not accounts_exist:
-        st.info(
-            "Esta será a primeira conta "
-                "do ambiente atual."
-        )
+        st.info("Esta será a primeira conta " "do ambiente atual.")
     else:
         st.caption(
-            "A nova conta começará sem transações, "
-            "perfil, metas ou orçamento."
+            "A nova conta começará sem transações, " "perfil, metas ou orçamento."
         )
 
     with st.form(
@@ -297,20 +280,16 @@ def _render_registration_form(
             autocomplete="off",
             placeholder="Digite o código de acesso",
             help=(
-                "O código é fornecido às pessoas "
-                "convidadas para testar o FinanTec."
+                "O código é fornecido às pessoas " "convidadas para testar o FinanTec."
             ),
         )
-        
+
         username = st.text_input(
             "Nome de usuário",
             max_chars=50,
             autocomplete="username",
             placeholder="Escolha um nome de usuário",
-            help=(
-                "Use letras, números, ponto, "
-                "hífen ou sublinhado."
-            ),
+            help=("Use letras, números, ponto, " "hífen ou sublinhado."),
         )
 
         password = st.text_input(
@@ -319,10 +298,7 @@ def _render_registration_form(
             max_chars=128,
             autocomplete="new-password",
             placeholder="Crie uma senha",
-            help=(
-                "A senha deve possuir pelo menos "
-                "8 caracteres."
-            ),
+            help=("A senha deve possuir pelo menos " "8 caracteres."),
         )
 
         password_confirmation = st.text_input(
@@ -341,24 +317,16 @@ def _render_registration_form(
 
     if not submitted:
         return
-    
-    if not is_registration_code_valid(
-        registration_code
-    ):
-        st.error(
-            "Código de acesso inválido."
-        )
+
+    if not is_registration_code_valid(registration_code):
+        st.error("Código de acesso inválido.")
         return
 
     if password != password_confirmation:
-        st.error(
-            "A confirmação da senha não corresponde."
-        )
+        st.error("A confirmação da senha não corresponde.")
         return
 
-    registration_user_id = choose_registration_user_id(
-        accounts_exist
-    )
+    registration_user_id = choose_registration_user_id(accounts_exist)
 
     try:
         account = create_user_account(
@@ -396,9 +364,7 @@ def _show_auth_feedback() -> None:
         )
     )
 
-    message_type = feedback.get(
-        "type"
-    )
+    message_type = feedback.get("type")
 
     if message_type == "success":
         st.success(message)
@@ -411,34 +377,59 @@ def _show_auth_feedback() -> None:
     st.error(message)
 
 
-def render_authentication_gate() -> dict[str, str] | None:
-    """Impede o acesso ao aplicativo sem autenticação."""
-    current_account = get_current_account()
-
-    if current_account is not None:
-        return current_account
-
+def _end_expired_account_session() -> None:
+    """Encerra a sessão e remove contas temporárias vencidas."""
     try:
-        accounts_exist = has_user_accounts(
-            ARQUIVO_BANCO
+        delete_expired_user_accounts(
+            database_path=ARQUIVO_BANCO,
         )
 
     except RuntimeError as error:
         st.error(str(error))
+        return
+
+    clear_session_preserving_visual_preferences()
+
+    st.session_state[AUTH_FEEDBACK_KEY] = {
+        "type": "warning",
+        "message": (
+            "Sua conta temporária expirou. " "Os dados associados foram excluídos."
+        ),
+    }
+
+    st.cache_data.clear()
+    st.rerun()
+
+
+def render_authentication_gate() -> dict[str, Any] | None:
+    """Impede o acesso ao aplicativo sem autenticação."""
+    current_account = get_current_account()
+
+    if current_account is not None:
+        if is_user_account_expired(current_account):
+            _end_expired_account_session()
+            return None
+
+        return current_account
+
+    try:
+        delete_expired_user_accounts(
+            database_path=ARQUIVO_BANCO,
+        )
+
+        accounts_exist = has_user_accounts(ARQUIVO_BANCO)
+    except RuntimeError as error:
+        st.error(str(error))
         return None
 
-    render_html(
-        """
+    render_html("""
         <div
             class="finantec-auth-page-marker"
             aria-hidden="true"
         ></div>
-        """
-    )
-    
-    render_appearance_toolbar(
-        key="finantec-auth-toolbar"
-    )
+        """)
+
+    render_appearance_toolbar(key="finantec-auth-toolbar")
 
     with st.container(
         border=True,
@@ -454,16 +445,12 @@ def render_authentication_gate() -> dict[str, str] | None:
 
         with form_column:
 
-            _render_auth_form_heading(
-                accounts_exist=accounts_exist
-            )
+            _render_auth_form_heading(accounts_exist=accounts_exist)
 
             _show_auth_feedback()
 
             if not accounts_exist:
-                _render_registration_form(
-                    accounts_exist=False
-                )
+                _render_registration_form(accounts_exist=False)
 
             else:
                 login_tab, registration_tab = st.tabs(
@@ -477,9 +464,7 @@ def render_authentication_gate() -> dict[str, str] | None:
                     _render_login_form()
 
                 with registration_tab:
-                    _render_registration_form(
-                        accounts_exist=True
-                    )
+                    _render_registration_form(accounts_exist=True)
 
     return None
 
@@ -489,50 +474,30 @@ def _build_account_initials(
 ) -> str:
     """Cria iniciais curtas para a identidade da conta."""
     normalized_username = " ".join(
-        str(
-            username
-            if username is not None
-            else ""
-        )
-        .strip()
-        .split()
+        str(username if username is not None else "").strip().split()
     )
 
     if not normalized_username:
         return "C"
 
-    parts = [
-        part
-        for part in normalized_username.split()
-        if part
-    ]
+    parts = [part for part in normalized_username.split() if part]
 
     if len(parts) == 1:
         return parts[0][0].upper()
 
-    return (
-        parts[0][0]
-        + parts[-1][0]
-    ).upper()
+    return (parts[0][0] + parts[-1][0]).upper()
 
 
 def build_sidebar_account_html(
     username: str,
 ) -> str:
     """Monta a identidade compacta da conta na sidebar."""
-    normalized_username = " ".join(
-        str(
-            username
-            if username is not None
-            else ""
-        )
-        .strip()
-        .split()
-    ) or "Conta local"
-
-    initials = _build_account_initials(
-        normalized_username
+    normalized_username = (
+        " ".join(str(username if username is not None else "").strip().split())
+        or "Conta local"
     )
+
+    initials = _build_account_initials(normalized_username)
 
     return (
         '<div class="finantec-sidebar-account-identity">'
@@ -577,11 +542,7 @@ def render_account_sidebar(
             )
 
             with identity_column:
-                render_html(
-                    build_sidebar_account_html(
-                        username
-                    )
-                )
+                render_html(build_sidebar_account_html(username))
 
             with action_column:
                 logout_requested = st.button(
