@@ -16,20 +16,13 @@ from src.user_context import (
 def test_session_starts_without_authenticated_account():
     session_state: dict = {}
 
-    assert (
-        get_current_account(
-            session_state
-        )
-        is None
-    )
+    assert get_current_account(session_state) is None
 
     with pytest.raises(
         RuntimeError,
         match="Nenhum usuário",
     ):
-        get_current_user_id(
-            session_state
-        )
+        get_current_user_id(session_state)
 
 
 def test_sets_and_reads_authenticated_account():
@@ -46,21 +39,28 @@ def test_sets_and_reads_authenticated_account():
     assert account == {
         "user_id": "user-1",
         "username": "Ryan",
+        "expires_at": None,
     }
+    assert get_current_account(session_state) == account
 
-    assert (
-        get_current_account(
-            session_state
-        )
-        == account
+    assert get_current_user_id(session_state) == "user-1"
+
+
+def test_preserves_temporary_account_expiration():
+    session_state: dict = {}
+
+    account = set_current_account(
+        {
+            "user_id": "temporary-user",
+            "username": "Visitante",
+            "expires_at": ("2026-09-03T12:00:00+00:00"),
+        },
+        session_state,
     )
 
-    assert (
-        get_current_user_id(
-            session_state
-        )
-        == "user-1"
-    )
+    assert account["expires_at"] == "2026-09-03T12:00:00+00:00"
+
+    assert get_current_account(session_state) == account
 
 
 def test_clears_authenticated_account():
@@ -72,23 +72,11 @@ def test_clears_authenticated_account():
         "another_key": "preserved",
     }
 
-    clear_current_account(
-        session_state
-    )
+    clear_current_account(session_state)
 
-    assert (
-        get_current_account(
-            session_state
-        )
-        is None
-    )
+    assert get_current_account(session_state) is None
 
-    assert (
-        session_state[
-            "another_key"
-        ]
-        == "preserved"
-    )
+    assert session_state["another_key"] == "preserved"
 
 
 def test_rejects_invalid_authenticated_account():
