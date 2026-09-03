@@ -41,6 +41,10 @@ AUTH_FEEDBACK_KEY = "finantec_auth_feedback"
 
 REGISTRATION_CODE_ENV = "FINANTEC_REGISTRATION_CODE"
 
+TEMPORARY_ACCOUNT_OPTION = "Teste por 24 horas"
+
+PERMANENT_ACCOUNT_OPTION = "Conta permanente"
+
 
 def is_registration_code_valid(
     registration_code: str,
@@ -62,11 +66,25 @@ def is_registration_code_valid(
     )
 
 
+def is_registration_authorized(
+    registration_code: str,
+    *,
+    temporary: bool,
+) -> bool:
+    """Autoriza teste público ou cadastro por convite."""
+    if temporary:
+        return True
+
+    return is_registration_code_valid(registration_code)
+
+
 def choose_registration_user_id(
     accounts_exist: bool,
+    *,
+    temporary: bool = False,
 ) -> str | None:
-    """Preserva os dados antigos na primeira conta criada."""
-    if accounts_exist:
+    """Preserva dados antigos somente na primeira conta permanente."""
+    if accounts_exist or temporary:
         return None
 
     return LOCAL_USER_ID
@@ -258,38 +276,79 @@ def _render_registration_form(
     accounts_exist: bool,
 ) -> None:
     """Exibe o formulário de criação de conta."""
-    title = "Criar conta" if accounts_exist else "Criar primeira conta"
+    title = (
+        "Criar conta"
+        if accounts_exist
+        else "Criar primeira conta"
+    )
 
     st.markdown(f"### {title}")
 
+    temporary = False
+
     if not accounts_exist:
-        st.info("Esta será a primeira conta " "do ambiente atual.")
-    else:
-        st.caption(
-            "A nova conta começará sem transações, " "perfil, metas ou orçamento."
+        st.info(
+            "A primeira conta deste ambiente será permanente "
+            "e associada aos dados locais existentes."
         )
+
+    else:
+        account_type = st.radio(
+            "Tipo de conta",
+            options=(
+                TEMPORARY_ACCOUNT_OPTION,
+                PERMANENT_ACCOUNT_OPTION,
+            ),
+            horizontal=True,
+            key="finantec-registration-account-type",
+        )
+
+        temporary = (
+            account_type
+            == TEMPORARY_ACCOUNT_OPTION
+        )
+
+        if temporary:
+            st.info(
+                "Acesso completo por 24 horas. Os dados "
+                "permanecem entre acessos e são excluídos "
+                "após o prazo. Use apenas dados fictícios."
+            )
+
+        else:
+            st.caption(
+                "A conta permanente requer o código de acesso "
+                "fornecido pelo responsável pelo projeto."
+            )
+
+    registration_code = ""
 
     with st.form(
         "finantec-registration-form",
         border=False,
     ):
-        registration_code = st.text_input(
-            "Código de acesso",
-            type="password",
-            max_chars=128,
-            autocomplete="off",
-            placeholder="Digite o código de acesso",
-            help=(
-                "O código é fornecido às pessoas " "convidadas para testar o FinanTec."
-            ),
-        )
+        if not temporary:
+            registration_code = st.text_input(
+                "Código de acesso",
+                type="password",
+                max_chars=128,
+                autocomplete="off",
+                placeholder="Digite o código de acesso",
+                help=(
+                    "O código é fornecido às pessoas "
+                    "convidadas para usar o FinanTec."
+                ),
+            )
 
         username = st.text_input(
             "Nome de usuário",
             max_chars=50,
             autocomplete="username",
             placeholder="Escolha um nome de usuário",
-            help=("Use letras, números, ponto, " "hífen ou sublinhado."),
+            help=(
+                "Use letras, números, ponto, "
+                "hífen ou sublinhado."
+            ),
         )
 
         password = st.text_input(
@@ -298,7 +357,10 @@ def _render_registration_form(
             max_chars=128,
             autocomplete="new-password",
             placeholder="Crie uma senha",
-            help=("A senha deve possuir pelo menos " "8 caracteres."),
+            help=(
+                "A senha deve possuir pelo menos "
+                "8 caracteres."
+            ),
         )
 
         password_confirmation = st.text_input(
@@ -309,8 +371,14 @@ def _render_registration_form(
             placeholder="Digite a senha novamente",
         )
 
+        submit_label = (
+            "Criar conta de teste"
+            if temporary
+            else "Criar conta permanente"
+        )
+
         submitted = st.form_submit_button(
-            "Criar minha conta",
+            submit_label,
             type="primary",
             width="stretch",
         )
@@ -318,15 +386,27 @@ def _render_registration_form(
     if not submitted:
         return
 
-    if not is_registration_code_valid(registration_code):
-        st.error("Código de acesso inválido.")
+    if not is_registration_authorized(
+        registration_code,
+        temporary=temporary,
+    ):
+        st.error(
+            "Código de acesso inválido."
+        )
         return
 
     if password != password_confirmation:
-        st.error("A confirmação da senha não corresponde.")
+        st.error(
+            "A confirmação da senha não corresponde."
+        )
         return
 
-    registration_user_id = choose_registration_user_id(accounts_exist)
+    registration_user_id = (
+        choose_registration_user_id(
+            accounts_exist,
+            temporary=temporary,
+        )
+    )
 
     try:
         account = create_user_account(
@@ -334,6 +414,7 @@ def _render_registration_form(
             username=username,
             password=password,
             user_id=registration_user_id,
+            temporary=temporary,
         )
 
     except (

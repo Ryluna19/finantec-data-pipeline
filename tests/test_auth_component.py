@@ -8,6 +8,7 @@ from src.components.auth import (
     REGISTRATION_CODE_ENV,
     choose_registration_user_id,
     is_registration_code_valid,
+    is_registration_authorized,
 )
 from src.user_context import (
     LOCAL_USER_ID,
@@ -89,3 +90,31 @@ def test_expired_authenticated_session_is_ended(
     assert result is None
 
     assert ended_sessions == ["temporary-user"]
+
+def test_temporary_registration_does_not_require_code(
+    monkeypatch,
+):
+    monkeypatch.delenv(
+        REGISTRATION_CODE_ENV,
+        raising=False,
+    )
+
+    assert is_registration_authorized(
+        "",
+        temporary=True,
+    )
+
+    assert not is_registration_authorized(
+        "",
+        temporary=False,
+    )
+
+
+def test_temporary_account_does_not_reuse_local_user_id():
+    assert (
+        choose_registration_user_id(
+            accounts_exist=False,
+            temporary=True,
+        )
+        is None
+    )
