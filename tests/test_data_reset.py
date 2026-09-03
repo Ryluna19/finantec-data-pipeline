@@ -10,6 +10,7 @@ from src.data_reset import (
     reset_user_transaction_data,
     summarize_user_transaction_data,
     delete_user_account_and_data,
+    delete_expired_user_accounts,
 )
 from src.user_context import (
     LOCAL_USER_ID,
@@ -41,11 +42,8 @@ def create_test_database(
         exist_ok=True,
     )
 
-    with sqlite3.connect(
-        database_path
-    ) as connection:
-        connection.executescript(
-            """
+    with sqlite3.connect(database_path) as connection:
+        connection.executescript("""
             CREATE TABLE transacoes_processadas (
                 transaction_id TEXT,
                 descricao TEXT,
@@ -130,8 +128,7 @@ def create_test_database(
                 'local-user',
                 'Mensagem preservada'
             );
-            """
-        )
+            """)
 
 
 def count_rows(
@@ -141,9 +138,7 @@ def count_rows(
     params: tuple = (),
 ) -> int:
     """Conta linhas de uma tabela durante os testes."""
-    with sqlite3.connect(
-        database_path
-    ) as connection:
+    with sqlite3.connect(database_path) as connection:
         row = connection.execute(
             f"""
             SELECT COUNT(*)
@@ -153,98 +148,44 @@ def count_rows(
             params,
         ).fetchone()
 
-    return int(
-        row[0]
-    )
+    return int(row[0])
 
 
 def test_reset_removes_only_current_user_transactions(
     tmp_path,
 ) -> None:
     """Remove dados reais sem apagar banco, perfil, metas ou chat."""
-    raw_dir = (
-        tmp_path
-        / "data"
-        / "raw"
-    )
+    raw_dir = tmp_path / "data" / "raw"
 
-    processed_dir = (
-        tmp_path
-        / "data"
-        / "processed"
-    )
+    processed_dir = tmp_path / "data" / "processed"
 
-    demo_dir = (
-        tmp_path
-        / "data"
-        / "demo"
-    )
+    demo_dir = tmp_path / "data" / "demo"
 
-    database_path = (
-        tmp_path
-        / "database"
-        / "finantec.db"
-    )
+    database_path = tmp_path / "database" / "finantec.db"
 
-    log_path = (
-        tmp_path
-        / "logs"
-        / "etl_transacoes.log"
-    )
+    log_path = tmp_path / "logs" / "etl_transacoes.log"
 
-    manual_file = (
-        raw_dir
-        / "transacoes_manuais.csv"
-    )
+    manual_file = raw_dir / "transacoes_manuais.csv"
 
-    imported_file = (
-        raw_dir
-        / "imported"
-        / "transacoes_importadas_teste.csv"
-    )
+    imported_file = raw_dir / "imported" / "transacoes_importadas_teste.csv"
 
-    monthly_user_file = (
-        raw_dir
-        / "transacoes_2026_08.csv"
-    )
+    monthly_user_file = raw_dir / "transacoes_2026_08.csv"
 
-    raw_gitkeep = (
-        raw_dir
-        / ".gitkeep"
-    )
+    raw_gitkeep = raw_dir / ".gitkeep"
 
-    imported_gitkeep = (
-        raw_dir
-        / "imported"
-        / ".gitkeep"
-    )
+    imported_gitkeep = raw_dir / "imported" / ".gitkeep"
 
-    processed_file = (
-        processed_dir
-        / "transacoes_processadas.csv"
-    )
+    processed_file = processed_dir / "transacoes_processadas.csv"
 
-    rejected_file = (
-        processed_dir
-        / "transacoes_rejeitadas.csv"
-    )
+    rejected_file = processed_dir / "transacoes_rejeitadas.csv"
 
-    demo_file = (
-        demo_dir
-        / "transacoes_2026_06.csv"
-    )
+    demo_file = demo_dir / "transacoes_2026_06.csv"
 
-    create_file(
-        manual_file
-    )
+    create_file(manual_file)
 
-    create_file(
-        imported_file
-    )
+    create_file(imported_file)
 
-    create_file(
-        monthly_user_file
-    )
+    create_file(monthly_user_file)
 
     create_file(
         raw_gitkeep,
@@ -256,34 +197,22 @@ def test_reset_removes_only_current_user_transactions(
         "",
     )
 
-    create_file(
-        processed_file
-    )
+    create_file(processed_file)
 
-    create_file(
-        rejected_file
-    )
+    create_file(rejected_file)
 
-    create_file(
-        log_path
-    )
+    create_file(log_path)
 
-    create_file(
-        demo_file
-    )
+    create_file(demo_file)
 
-    create_test_database(
-        database_path
-    )
+    create_test_database(database_path)
 
-    result = (
-        reset_user_transaction_data(
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            database_path=database_path,
-            log_path=log_path,
-            user_id=LOCAL_USER_ID,
-        )
+    result = reset_user_transaction_data(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        database_path=database_path,
+        log_path=log_path,
+        user_id=LOCAL_USER_ID,
     )
 
     assert not manual_file.exists()
@@ -304,10 +233,7 @@ def test_reset_removes_only_current_user_transactions(
         count_rows(
             database_path,
             "transacoes_processadas",
-            (
-                "WHERE user_id = ? "
-                "AND data_mode = ?"
-            ),
+            ("WHERE user_id = ? " "AND data_mode = ?"),
             (
                 LOCAL_USER_ID,
                 "user",
@@ -320,10 +246,7 @@ def test_reset_removes_only_current_user_transactions(
         count_rows(
             database_path,
             "transacoes_processadas",
-            (
-                "WHERE user_id = ? "
-                "AND data_mode = ?"
-            ),
+            ("WHERE user_id = ? " "AND data_mode = ?"),
             (
                 LOCAL_USER_ID,
                 "demo",
@@ -336,10 +259,7 @@ def test_reset_removes_only_current_user_transactions(
         count_rows(
             database_path,
             "transacoes_processadas",
-            (
-                "WHERE user_id = ? "
-                "AND data_mode = ?"
-            ),
+            ("WHERE user_id = ? " "AND data_mode = ?"),
             (
                 "other-user",
                 "user",
@@ -385,43 +305,25 @@ def test_reset_handles_missing_files(
     tmp_path,
 ) -> None:
     """Permite executar o reset quando não existem transações."""
-    raw_dir = (
-        tmp_path
-        / "data"
-        / "raw"
-    )
+    raw_dir = tmp_path / "data" / "raw"
 
-    processed_dir = (
-        tmp_path
-        / "data"
-        / "processed"
-    )
+    processed_dir = tmp_path / "data" / "processed"
 
-    database_path = (
-        tmp_path
-        / "database"
-        / "finantec.db"
-    )
+    database_path = tmp_path / "database" / "finantec.db"
 
-    log_path = (
-        tmp_path
-        / "logs"
-        / "etl_transacoes.log"
-    )
+    log_path = tmp_path / "logs" / "etl_transacoes.log"
 
     raw_dir.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    result = (
-        reset_user_transaction_data(
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            database_path=database_path,
-            log_path=log_path,
-            user_id=LOCAL_USER_ID,
-        )
+    result = reset_user_transaction_data(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        database_path=database_path,
+        log_path=log_path,
+        user_id=LOCAL_USER_ID,
     )
 
     assert result == {
@@ -437,58 +339,28 @@ def test_summarize_user_transaction_data_counts_local_data(
     tmp_path,
 ) -> None:
     """Resume corretamente arquivos e transações do usuário."""
-    raw_dir = (
-        tmp_path
-        / "data"
-        / "raw"
-    )
+    raw_dir = tmp_path / "data" / "raw"
 
-    processed_dir = (
-        tmp_path
-        / "data"
-        / "processed"
-    )
+    processed_dir = tmp_path / "data" / "processed"
 
-    database_path = (
-        tmp_path
-        / "database"
-        / "finantec.db"
-    )
+    database_path = tmp_path / "database" / "finantec.db"
 
-    log_path = (
-        tmp_path
-        / "logs"
-        / "etl_transacoes.log"
-    )
+    log_path = tmp_path / "logs" / "etl_transacoes.log"
 
-    create_file(
-        raw_dir
-        / "transacoes_manuais.csv"
-    )
+    create_file(raw_dir / "transacoes_manuais.csv")
 
-    create_file(
-        raw_dir
-        / "imported"
-        / "transacoes_importadas_teste.csv"
-    )
+    create_file(raw_dir / "imported" / "transacoes_importadas_teste.csv")
 
-    create_file(
-        processed_dir
-        / "transacoes_processadas.csv"
-    )
+    create_file(processed_dir / "transacoes_processadas.csv")
 
-    create_test_database(
-        database_path
-    )
+    create_test_database(database_path)
 
-    summary = (
-        summarize_user_transaction_data(
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            database_path=database_path,
-            log_path=log_path,
-            user_id=LOCAL_USER_ID,
-        )
+    summary = summarize_user_transaction_data(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        database_path=database_path,
+        log_path=log_path,
+        user_id=LOCAL_USER_ID,
     )
 
     assert summary == {
@@ -504,15 +376,9 @@ def test_count_user_transaction_rows_isolated_by_user(
     tmp_path,
 ) -> None:
     """Conta somente as transações reais do usuário informado."""
-    database_path = (
-        tmp_path
-        / "database"
-        / "finantec.db"
-    )
+    database_path = tmp_path / "database" / "finantec.db"
 
-    create_test_database(
-        database_path
-    )
+    create_test_database(database_path)
 
     assert (
         count_user_transaction_rows(
@@ -529,7 +395,8 @@ def test_count_user_transaction_rows_isolated_by_user(
         )
         == 1
     )
-    
+
+
 def create_complete_user_database(
     database_path,
 ) -> None:
@@ -539,14 +406,12 @@ def create_complete_user_database(
         exist_ok=True,
     )
 
-    with sqlite3.connect(
-        database_path
-    ) as connection:
-        connection.executescript(
-            """
+    with sqlite3.connect(database_path) as connection:
+        connection.executescript("""
             CREATE TABLE user_accounts (
                 user_id TEXT PRIMARY KEY,
-                username TEXT NOT NULL
+                username TEXT NOT NULL,
+                expires_at TEXT
             );
 
             CREATE TABLE login_attempts (
@@ -555,11 +420,22 @@ def create_complete_user_database(
                 last_failed_at TEXT NOT NULL,
                 locked_until TEXT
             );
-            INSERT INTO user_accounts
-                (user_id, username)
+            INSERT INTO user_accounts (
+                user_id,
+                username,
+                expires_at
+            )
             VALUES
-                ('local-user', 'ryan'),
-                ('other-user', 'outro');
+                (
+                    'local-user',
+                    'ryan',
+                    '2020-01-01T00:00:00+00:00'
+                ),
+                (
+                    'other-user',
+                    'outro',
+                    NULL
+                );
                 
             INSERT INTO login_attempts (
                 user_id,
@@ -649,55 +525,60 @@ def create_complete_user_database(
                 ('local-user', 'user'),
                 ('local-user', 'demo'),
                 ('other-user', 'user');
-            """
-        )
+            """)
 
 
 def test_delete_user_financial_data_preserves_account_and_other_contexts(
     tmp_path,
 ) -> None:
-    database_path = (
-        tmp_path
-        / "database"
-        / "finantec.db"
-    )
+    database_path = tmp_path / "database" / "finantec.db"
 
-    create_complete_user_database(
-        database_path
-    )
+    create_complete_user_database(database_path)
 
     result = delete_user_financial_data(
         database_path=database_path,
         user_id=LOCAL_USER_ID,
     )
 
-    assert count_rows(
-        database_path,
-        "login_attempts",
-        "WHERE user_id = ?",
-        (LOCAL_USER_ID,),
-    ) == 1
+    assert (
+        count_rows(
+            database_path,
+            "login_attempts",
+            "WHERE user_id = ?",
+            (LOCAL_USER_ID,),
+        )
+        == 1
+    )
 
-    assert count_rows(
-        database_path,
-        "login_attempts",
-        "WHERE user_id = ?",
-        ("other-user",),
-    ) == 1
+    assert (
+        count_rows(
+            database_path,
+            "login_attempts",
+            "WHERE user_id = ?",
+            ("other-user",),
+        )
+        == 1
+    )
 
-    assert count_rows(
-        database_path,
-        "transacoes_processadas",
-        "WHERE user_id = ? AND data_mode = ?",
-        (LOCAL_USER_ID, "user"),
-    ) == 0
+    assert (
+        count_rows(
+            database_path,
+            "transacoes_processadas",
+            "WHERE user_id = ? AND data_mode = ?",
+            (LOCAL_USER_ID, "user"),
+        )
+        == 0
+    )
 
-    assert count_rows(
-        database_path,
-        "transacoes_processadas",
-        "WHERE user_id = ? AND data_mode = ?",
-        (LOCAL_USER_ID, "demo"),
-    ) == 1
+    assert (
+        count_rows(
+            database_path,
+            "transacoes_processadas",
+            "WHERE user_id = ? AND data_mode = ?",
+            (LOCAL_USER_ID, "demo"),
+        )
+        == 1
+    )
 
     for table_name in (
         "user_profiles",
@@ -705,40 +586,55 @@ def test_delete_user_financial_data_preserves_account_and_other_contexts(
         "financial_goal_seed_state",
         "monthly_budgets",
     ):
-        assert count_rows(
-            database_path,
-            table_name,
-            "WHERE user_id = ?",
-            (LOCAL_USER_ID,),
-        ) == 0
+        assert (
+            count_rows(
+                database_path,
+                table_name,
+                "WHERE user_id = ?",
+                (LOCAL_USER_ID,),
+            )
+            == 0
+        )
 
-        assert count_rows(
+        assert (
+            count_rows(
+                database_path,
+                table_name,
+                "WHERE user_id = ?",
+                ("other-user",),
+            )
+            == 1
+        )
+
+    assert (
+        count_rows(
             database_path,
-            table_name,
+            "chat_messages",
+            "WHERE user_id = ? AND data_mode = ?",
+            (LOCAL_USER_ID, "user"),
+        )
+        == 0
+    )
+
+    assert (
+        count_rows(
+            database_path,
+            "chat_messages",
+            "WHERE user_id = ? AND data_mode = ?",
+            (LOCAL_USER_ID, "demo"),
+        )
+        == 1
+    )
+
+    assert (
+        count_rows(
+            database_path,
+            "chat_messages",
             "WHERE user_id = ?",
             ("other-user",),
-        ) == 1
-
-    assert count_rows(
-        database_path,
-        "chat_messages",
-        "WHERE user_id = ? AND data_mode = ?",
-        (LOCAL_USER_ID, "user"),
-    ) == 0
-
-    assert count_rows(
-        database_path,
-        "chat_messages",
-        "WHERE user_id = ? AND data_mode = ?",
-        (LOCAL_USER_ID, "demo"),
-    ) == 1
-
-    assert count_rows(
-        database_path,
-        "chat_messages",
-        "WHERE user_id = ?",
-        ("other-user",),
-    ) == 1
+        )
+        == 1
+    )
 
     assert result == {
         "transaction_rows_removed": 1,
@@ -749,38 +645,39 @@ def test_delete_user_financial_data_preserves_account_and_other_contexts(
         "chat_rows_removed": 1,
         "database_preserved": True,
     }
-    
+
+
 def test_delete_user_account_and_all_associated_data(
     tmp_path,
 ) -> None:
-    database_path = (
-        tmp_path
-        / "database"
-        / "finantec.db"
-    )
+    database_path = tmp_path / "database" / "finantec.db"
 
-    create_complete_user_database(
-        database_path
-    )
+    create_complete_user_database(database_path)
 
     result = delete_user_account_and_data(
         database_path=database_path,
         user_id=LOCAL_USER_ID,
     )
 
-    assert count_rows(
-        database_path,
-        "user_accounts",
-        "WHERE user_id = ?",
-        (LOCAL_USER_ID,),
-    ) == 0
+    assert (
+        count_rows(
+            database_path,
+            "user_accounts",
+            "WHERE user_id = ?",
+            (LOCAL_USER_ID,),
+        )
+        == 0
+    )
 
-    assert count_rows(
-        database_path,
-        "user_accounts",
-        "WHERE user_id = ?",
-        ("other-user",),
-    ) == 1
+    assert (
+        count_rows(
+            database_path,
+            "user_accounts",
+            "WHERE user_id = ?",
+            ("other-user",),
+        )
+        == 1
+    )
 
     for table_name in (
         "transacoes_processadas",
@@ -791,19 +688,25 @@ def test_delete_user_account_and_all_associated_data(
         "chat_messages",
         "login_attempts",
     ):
-        assert count_rows(
-            database_path,
-            table_name,
-            "WHERE user_id = ?",
-            (LOCAL_USER_ID,),
-        ) == 0
+        assert (
+            count_rows(
+                database_path,
+                table_name,
+                "WHERE user_id = ?",
+                (LOCAL_USER_ID,),
+            )
+            == 0
+        )
 
-        assert count_rows(
-            database_path,
-            table_name,
-            "WHERE user_id = ?",
-            ("other-user",),
-        ) == 1
+        assert (
+            count_rows(
+                database_path,
+                table_name,
+                "WHERE user_id = ?",
+                ("other-user",),
+            )
+            == 1
+        )
 
     assert result == {
         "transaction_rows_removed": 2,
@@ -815,3 +718,57 @@ def test_delete_user_account_and_all_associated_data(
         "account_rows_removed": 1,
         "database_preserved": True,
     }
+
+
+def test_delete_expired_user_accounts_and_data(
+    tmp_path,
+) -> None:
+    database_path = tmp_path / "database" / "finantec.db"
+
+    create_complete_user_database(database_path)
+
+    removed_accounts = delete_expired_user_accounts(
+        database_path=database_path,
+    )
+
+    assert removed_accounts == 1
+
+    for table_name in (
+        "user_accounts",
+        "login_attempts",
+        "transacoes_processadas",
+        "user_profiles",
+        "financial_goals",
+        "financial_goal_seed_state",
+        "monthly_budgets",
+        "chat_messages",
+    ):
+        assert (
+            count_rows(
+                database_path,
+                table_name,
+                "WHERE user_id = ?",
+                (LOCAL_USER_ID,),
+            )
+            == 0
+        )
+
+    assert (
+        count_rows(
+            database_path,
+            "user_accounts",
+            "WHERE user_id = ?",
+            ("other-user",),
+        )
+        == 1
+    )
+
+    assert (
+        count_rows(
+            database_path,
+            "transacoes_processadas",
+            "WHERE user_id = ?",
+            ("other-user",),
+        )
+        == 1
+    )

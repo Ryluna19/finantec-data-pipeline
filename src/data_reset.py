@@ -1,4 +1,4 @@
-"""Consulta e limpeza segura dos dados locais do usuário."""
+"""Consulta e limpeza segura dos dados do usuário."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 from src.account_repository import (
     ACCOUNT_TABLE_NAME,
     LOGIN_ATTEMPT_TABLE_NAME,
+    is_user_account_expired,
 )
 from src.budget_repository import (
     BUDGET_TABLE_NAME,
@@ -564,3 +565,84 @@ def delete_user_account_and_data(
         ) from error
 
     return result
+
+
+
+def delete_expired_user_accounts(
+    database_path: Path,
+) -> int:
+    """Remove contas temporárias vencidas e seus dados."""
+    database_path = Path(
+        database_path
+    )
+
+    if not _database_is_available(
+        database_path
+    ):
+        return 0
+
+    try:
+        with connect_database(
+            database_path
+        ) as connection:
+            if not _table_exists(
+                connection,
+                ACCOUNT_TABLE_NAME,
+            ):
+                return 0
+
+            account_columns = _get_table_columns(
+                connection,
+                ACCOUNT_TABLE_NAME,
+            )
+
+            if "expires_at" not in account_columns:
+                return 0
+
+            rows = connection.execute(
+                f"""
+                SELECT
+                    user_id,
+                    expires_at
+                FROM {ACCOUNT_TABLE_NAME}
+                WHERE expires_at IS NOT NULL
+                """
+            ).fetchall()
+
+    except DatabaseError as error:
+        raise RuntimeError(
+            "Não foi possível consultar "
+            "as contas temporárias."
+        ) from error
+
+    expired_user_ids = [
+        str(
+            row[
+                "user_id"
+            ]
+        )
+        for row in rows
+        if is_user_account_expired(
+            {
+                "expires_at": row[
+                    "expires_at"
+                ],
+            }
+        )
+    ]
+
+    removed_accounts = 0
+
+    for user_id in expired_user_ids:
+        result = delete_user_account_and_data(
+            database_path=database_path,
+            user_id=user_id,
+        )
+
+        removed_accounts += int(
+            result[
+                "account_rows_removed"
+            ]
+        )
+
+    return removed_accounts
