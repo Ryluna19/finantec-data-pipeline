@@ -1,4 +1,4 @@
-"""Persistência de contas locais do FinanTec."""
+"""Persistência de contas do FinanTec."""
 
 from __future__ import annotations
 
@@ -41,6 +41,9 @@ LOGIN_MAX_FAILED_ATTEMPTS = 5
 LOGIN_FAILURE_RESET_MINUTES = 15
 
 LOGIN_LOCKOUT_MINUTES = 15
+
+TEMPORARY_ACCOUNT_DURATION_HOURS = 24
+
 
 class DuplicateUserAccountError(
     ValueError
@@ -649,7 +652,11 @@ def password_hash_needs_rehash(
 def _row_to_account(
     row: DatabaseRow,
 ) -> dict[str, Any]:
-    """Converte uma linha SQLite em conta pública."""
+    """Converte uma linha persistida em conta pública."""
+    raw_expires_at = row[
+        "expires_at"
+    ]
+
     return {
         "user_id": str(
             row[
@@ -671,8 +678,14 @@ def _row_to_account(
                 "updated_at"
             ]
         ),
+        "expires_at": (
+            str(
+                raw_expires_at
+            )
+            if raw_expires_at is not None
+            else None
+        ),
     }
-
 
 def create_user_account(
     database_path: Path,
@@ -680,8 +693,9 @@ def create_user_account(
     password: str,
     *,
     user_id: str | None = None,
+    temporary: bool = False,
 ) -> dict[str, Any]:
-    """Cria uma conta local com senha protegida."""
+    """Cria uma conta com senha protegida."""
     (
         normalized_username,
         username_key,
@@ -703,6 +717,19 @@ def create_user_account(
         password
     )
 
+    expires_at = (
+        (
+            _utc_now()
+            + timedelta(
+                hours=(
+                    TEMPORARY_ACCOUNT_DURATION_HOURS
+                )
+            )
+        ).isoformat()
+        if temporary
+        else None
+    )
+    
     try:
         with _connect(
             database_path
@@ -717,15 +744,17 @@ def create_user_account(
                     user_id,
                     username,
                     username_key,
-                    password_hash
+                    password_hash,
+                    expires_at
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     normalized_user_id,
                     normalized_username,
                     username_key,
                     password_hash,
+                    expires_at,
                 ),
             )
 
@@ -735,7 +764,8 @@ def create_user_account(
                     user_id,
                     username,
                     created_at,
-                    updated_at
+                    updated_at,
+                    expires_at
                 FROM {ACCOUNT_TABLE_NAME}
                 WHERE user_id = ?
                 """,
@@ -766,7 +796,6 @@ def create_user_account(
         row
     )
 
-
 def get_user_account_by_username(
     database_path: Path,
     username: str,
@@ -793,7 +822,8 @@ def get_user_account_by_username(
                     user_id,
                     username,
                     created_at,
-                    updated_at
+                    updated_at,
+                    expires_at
                 FROM {ACCOUNT_TABLE_NAME}
                 WHERE username_key = ?
                 """,
@@ -841,7 +871,8 @@ def get_user_account_by_id(
                     user_id,
                     username,
                     created_at,
-                    updated_at
+                    updated_at,
+                    expires_at
                 FROM {ACCOUNT_TABLE_NAME}
                 WHERE user_id = ?
                 """,
@@ -902,7 +933,8 @@ def authenticate_user_account(
                     username,
                     password_hash,
                     created_at,
-                    updated_at
+                    updated_at,
+                    expires_at
                 FROM {ACCOUNT_TABLE_NAME}
                 WHERE username_key = ?
                 """,
@@ -988,7 +1020,8 @@ def authenticate_user_account(
                             username,
                             password_hash,
                             created_at,
-                            updated_at
+                            updated_at,
+                            expires_at
                         FROM {ACCOUNT_TABLE_NAME}
                         WHERE user_id = ?
                         """,

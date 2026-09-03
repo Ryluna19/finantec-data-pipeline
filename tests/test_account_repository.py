@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import (
+    datetime,
+    timedelta,
+    timezone,
+)
 
 import pytest
 import src.account_repository as account_repository
@@ -328,6 +333,57 @@ def test_existing_account_table_receives_expiration_column(
     assert "expires_at" in account_columns
 
 
+def test_temporary_account_expires_after_24_hours(
+    tmp_path,
+    monkeypatch,
+):
+    database_path = (
+        tmp_path
+        / "accounts.db"
+    )
+
+    current_time = datetime(
+        2026,
+        9,
+        2,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    monkeypatch.setattr(
+        account_repository,
+        "_utc_now",
+        lambda: current_time,
+    )
+
+    account = create_user_account(
+        database_path=database_path,
+        username="visitante",
+        password="senha-temporaria-123",
+        temporary=True,
+    )
+
+    expected_expiration = (
+        current_time
+        + timedelta(
+            hours=24
+        )
+    ).isoformat()
+
+    assert account[
+        "expires_at"
+    ] == expected_expiration
+
+    loaded_account = (
+        get_user_account_by_username(
+            database_path=database_path,
+            username="visitante",
+        )
+    )
+
+    assert loaded_account == account
+
 
 def test_create_and_load_account(
     tmp_path,
@@ -354,13 +410,16 @@ def test_create_and_load_account(
 
     assert loaded_account == account
 
+    assert loaded_account[
+        "expires_at"
+    ] is None
+    
     assert (
         loaded_account[
             "username"
         ]
         == "Ryan.Santos"
     )
-
 
 def test_create_account_with_existing_user_id(
     tmp_path,
