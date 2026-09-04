@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 import src.components.auth as auth_module
 
 from src.components.auth import (
@@ -91,6 +92,7 @@ def test_expired_authenticated_session_is_ended(
 
     assert ended_sessions == ["temporary-user"]
 
+
 def test_temporary_registration_does_not_require_code(
     monkeypatch,
 ):
@@ -117,4 +119,25 @@ def test_temporary_account_does_not_reuse_local_user_id():
             temporary=True,
         )
         is None
+    )
+
+
+def test_formats_temporary_account_remaining_time():
+    assert (
+        auth_module.format_temporary_account_time_remaining(
+            timedelta(
+                hours=2,
+                minutes=5,
+            )
+        )
+        == "2h 5min"
+    )
+
+    assert (
+        auth_module.format_temporary_account_time_remaining(timedelta(hours=2)) == "2h"
+    )
+
+    assert (
+        auth_module.format_temporary_account_time_remaining(timedelta(seconds=30))
+        == "menos de 1 minuto"
     )

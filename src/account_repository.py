@@ -150,26 +150,30 @@ def _parse_utc_datetime(
         timezone.utc
     )
 
+def get_user_account_remaining_time(
+    account: dict[str, Any],
+) -> timedelta | None:
+    """Retorna o tempo restante de uma conta temporária."""
+    raw_expires_at = account.get("expires_at")
+
+    if raw_expires_at is None:
+        return None
+
+    expires_at = _parse_utc_datetime(raw_expires_at)
+
+    if expires_at is None:
+        return timedelta(0)
+
+    return expires_at - _utc_now()
+
+
 def is_user_account_expired(
     account: dict[str, Any],
 ) -> bool:
     """Informa se a validade temporária terminou."""
-    raw_expires_at = account.get(
-        "expires_at"
-    )
+    remaining_time = get_user_account_remaining_time(account)
 
-    if raw_expires_at is None:
-        return False
-
-    expires_at = _parse_utc_datetime(
-        raw_expires_at
-    )
-
-    if expires_at is None:
-        return True
-
-    return _utc_now() >= expires_at
-
+    return remaining_time is not None and remaining_time <= timedelta(0)
 
 
 def _ensure_login_attempt_table(

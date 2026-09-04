@@ -5,6 +5,8 @@ from __future__ import annotations
 import hmac
 import os
 
+from datetime import timedelta
+from math import ceil
 from html import escape
 from typing import Any
 
@@ -17,6 +19,7 @@ from src.account_repository import (
     create_user_account,
     has_user_accounts,
     is_user_account_expired,
+    get_user_account_remaining_time,
 )
 from src.data_reset import (
     delete_expired_user_accounts,
@@ -457,6 +460,59 @@ def _show_auth_feedback() -> None:
 
     st.error(message)
 
+def format_temporary_account_time_remaining(
+    remaining_time: timedelta,
+) -> str:
+    """Formata o prazo restante para exibição."""
+    total_seconds = (
+        remaining_time.total_seconds()
+    )
+
+    if total_seconds < 60:
+        return "menos de 1 minuto"
+
+    total_minutes = ceil(
+        total_seconds / 60
+    )
+
+    hours, minutes = divmod(
+        total_minutes,
+        60,
+    )
+
+    if hours and minutes:
+        return f"{hours}h {minutes}min"
+
+    if hours:
+        return f"{hours}h"
+
+    return f"{minutes}min"
+
+
+def render_temporary_account_notice(
+    account: dict[str, Any],
+) -> None:
+    """Exibe a validade restante da conta temporária."""
+    remaining_time = (
+        get_user_account_remaining_time(
+            account
+        )
+    )
+
+    if remaining_time is None:
+        return
+
+    formatted_time = (
+        format_temporary_account_time_remaining(
+            remaining_time
+        )
+    )
+
+    st.warning(
+        "Conta temporária de teste — tempo restante: "
+        f"{formatted_time}. Todos os dados desta conta "
+        "serão excluídos ao final do prazo."
+    )
 
 def _end_expired_account_session() -> None:
     """Encerra a sessão e remove contas temporárias vencidas."""

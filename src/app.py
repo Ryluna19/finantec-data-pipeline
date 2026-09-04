@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-    
+
 from datetime import date
 from typing import Any
 
@@ -65,6 +65,7 @@ from components.tables import (
 from components.auth import (
     render_account_sidebar,
     render_authentication_gate,
+    render_temporary_account_notice,
 )
 from data_loader import (
     carregar_perfil_usuario as load_user_profile,
@@ -719,6 +720,10 @@ def main() -> None:
         return
 
     render_account_sidebar(
+        authenticated_account
+    )
+
+    render_temporary_account_notice(
         authenticated_account
     )
 

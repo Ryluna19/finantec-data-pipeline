@@ -24,6 +24,7 @@ from src.account_repository import (
     get_user_account_by_username,
     hash_password,
     verify_password,
+    get_user_account_remaining_time,
 )
 
 
@@ -384,6 +385,51 @@ def test_temporary_account_expires_after_24_hours(
     )
 
     assert loaded_account == account
+
+def test_reports_temporary_account_remaining_time(
+    monkeypatch,
+):
+    current_time = datetime(
+        2026,
+        9,
+        3,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    monkeypatch.setattr(
+        account_repository,
+        "_utc_now",
+        lambda: current_time,
+    )
+
+    remaining_time = get_user_account_remaining_time(
+        {
+            "expires_at": (
+                current_time
+                + timedelta(
+                    hours=2,
+                    minutes=15,
+                )
+            ).isoformat(),
+        }
+    )
+
+    assert remaining_time == timedelta(
+        hours=2,
+        minutes=15,
+    )
+
+    assert (
+        get_user_account_remaining_time(
+            {
+                "expires_at": None,
+            }
+        )
+        is None
+    )
+
 
 def test_expired_temporary_account_cannot_authenticate(
     tmp_path,

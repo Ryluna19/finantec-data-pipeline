@@ -230,6 +230,12 @@ def test_main_flows_render_without_configured_profile(
 
     monkeypatch.setattr(
         app_module,
+        "render_temporary_account_notice",
+        lambda account: None,
+    )
+
+    monkeypatch.setattr(
+        app_module,
         "get_current_user_id",
         lambda: "user-1",
     )
