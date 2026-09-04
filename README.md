@@ -1,305 +1,152 @@
-# FinanTec Data Pipeline
+# FinanTec
 
-Aplicação local de organização financeira com Python, pandas, SQLite e
-Streamlit.
+<p align="center">
+  <img
+    src="assets/branding/finantec-logo-main.png"
+    alt="FinanTec"
+    width="420"
+  />
+</p>
 
-O projeto organiza transações financeiras, valida dados, salva as informações
-em SQLite e exibe indicadores em uma interface local.
+Aplicação web de organização financeira pessoal desenvolvida com Python,
+Streamlit e pandas, com persistência em SQLite ou Turso.
 
-O repositório inclui uma base de demonstração simulada. A aplicação também
-permite criar contas locais e registrar dados pessoais, mas não acessa contas
-bancárias, Open Finance ou instituições financeiras reais.
+O FinanTec reúne controle de transações, importação de arquivos, orçamento
+mensal, metas financeiras e perfil em uma interface responsiva.
 
----
-
-## Sobre o Projeto
-
-O FinanTec começou como um pipeline para transformar arquivos brutos de
-transações em uma base organizada. Hoje, o SQLite é a fonte principal dos dados
-da aplicação, enquanto o ETL permanece disponível para demonstração,
-compatibilidade e processamento explícito de arquivos.
-
-A proposta atual é demonstrar um fluxo completo de organização financeira
-pessoal, combinando persistência, validação e interface:
-
-```text
-Conta local
-    ↓
-Entrada manual ou importação
-    ↓
-Validação e normalização
-    ↓
-SQLite
-    ↓
-Interface Streamlit
-```
-
-A versão 1 é uma aplicação local com contas autenticadas e isolamento dos dados
-por usuário. O sistema de autenticação atual foi projetado para esse contexto
-local e ainda não deve ser tratado como uma solução pronta para exposição
-pública ou uso multiusuário em produção.
+**[Acessar a demonstração pública](https://finantec-data-pipeline-immggyug2jwy78khudpv2s.streamlit.app/)**
 
 ---
 
-## Objetivo
+## Como testar
 
-Demonstrar um fluxo de dados aplicado a uma ferramenta financeira local:
+Na tela de cadastro, selecione **Teste por 24 horas** e crie um usuário e uma
+senha. Essa opção:
 
-- leitura e importação de diferentes fontes de transações;
-- validação da estrutura dos dados;
-- limpeza e padronização com pandas;
-- separação entre transações válidas e rejeitadas;
-- geração de relatório de rejeições;
-- carga e persistência dos dados em SQLite;
-- autenticação e isolamento local por usuário;
-- análise por período;
-- visualização em Streamlit;
-- persistência dos principais dados financeiros;
-- testes automatizados das regras e fluxos de maior risco;
-- planejamento mensal de limites por categoria;
-- comparação entre valores planejados e gastos efetivamente registrados;
-- gerenciamento de metas e perfil financeiro;
-- controle dos dados associados à conta.
+- não exige código de acesso;
+- libera os fluxos funcionais da aplicação;
+- mantém os dados entre acessos durante 24 horas;
+- exibe o tempo restante dentro do aplicativo;
+- exclui a conta e seus dados associados após o prazo.
+
+> [!IMPORTANT]
+> A demonstração pública é destinada a testes com dados fictícios. Não informe
+> dados bancários, documentos ou outras informações sensíveis.
+
+Contas permanentes são separadas das contas temporárias e só podem ser criadas
+com um código de acesso.
 
 ---
 
-## Funcionalidades
+## Sobre o projeto
 
-### Contas e dados pessoais
+O projeto começou como um pipeline ETL para transformar arquivos de transações
+em dados padronizados. A evolução da V1 incorporou esses fluxos a uma aplicação
+com autenticação, persistência, isolamento por usuário e gerenciamento dos
+próprios dados.
 
-- criação e autenticação de contas locais;
-- armazenamento seguro do hash da senha;
-- isolamento dos principais dados por usuário;
-- perfil financeiro persistido;
-- alternância entre dados pessoais e demonstração;
+O objetivo é demonstrar uma solução completa dentro de um escopo controlado:
+entrada, validação, persistência, consulta e visualização de dados financeiros.
+O FinanTec não acessa instituições financeiras, Open Finance ou contas
+bancárias reais.
+
+## Principais funcionalidades
+
+### Contas e dados
+
+- cadastro e autenticação com senha armazenada somente como hash;
+- bloqueio temporário após tentativas de login malsucedidas;
+- isolamento dos dados por usuário;
+- contas temporárias com expiração em 24 horas;
 - exclusão dos dados financeiros preservando a conta;
 - exclusão definitiva da conta e dos dados associados.
 
-### Transações
+### Transações e importação
 
-- entrada manual de transações pela interface;
-- edição e exclusão de transações persistidas;
-- filtros e análise por período;
-- importação de arquivos CSV e Excel no formato do FinanTec;
-- importação de arquivos OFX com conversão automática;
-- importação assistida de planilhas Excel externas, com seleção de aba e
-  cabeçalho;
-- mapeamento de colunas para valor único, tipo explícito ou débito e crédito
-  separados;
-- prévia e validação antes da importação;
-- identificação e tratamento seguro de possíveis duplicatas;
-- exportação das transações do período em Excel.
+- cadastro, consulta, edição e exclusão de transações;
+- filtros e indicadores por período;
+- importação de CSV e Excel no formato do FinanTec;
+- importação de OFX;
+- importação assistida de planilhas Excel externas;
+- prévia, validação e relatório de registros rejeitados;
+- identificação e tratamento de possíveis duplicatas;
+- exportação das transações do período para Excel.
 
-### Organização financeira
+### Planejamento financeiro
 
 - resumo de receitas, gastos, reserva e saldo;
-- gráfico de gastos por categoria;
-- criação, acompanhamento, edição e exclusão de metas financeiras;
-- simulador de metas sem alteração dos dados persistidos;
+- gastos por categoria;
 - orçamento mensal por categoria;
-- criação, edição e exclusão de limites mensais;
-- continuidade e encerramento de limites entre períodos;
-- comparação entre valor planejado, gasto real e saldo disponível;
-- identificação de categorias próximas ou acima do limite;
-- resumo do orçamento mensal na Visão geral;
-- perfil financeiro com fontes de renda e informações pessoais relacionadas ao
-  planejamento.
+- comparação entre valor planejado, gasto e saldo disponível;
+- criação e acompanhamento de metas financeiras;
+- simulador de metas sem alteração dos dados persistidos;
+- perfil financeiro com fontes de renda e informações de planejamento.
 
-### Pipeline e qualidade dos dados
+## Arquitetura
 
-- pipeline ETL para transações financeiras simuladas;
-- leitura de arquivos em `data/raw/`;
-- validação de colunas obrigatórias;
-- tratamento de datas, tipos, descrições, categorias e valores;
-- criação da coluna `ano_mes`;
-- remoção de linhas inválidas da base final;
-- geração de relatório de transações rejeitadas com motivo da rejeição;
-- geração de arquivo tratado em `data/processed/`;
-- carga dos dados processados em SQLite;
-- resumo da validação dos dados;
-- comando centralizado de execução com `main.py`.
+```mermaid
+flowchart TD
+    A[Interface Streamlit] --> B[Serviços e validações]
+    B --> C[Repositórios]
+    C --> D{Backend configurado}
+    D --> E[SQLite local]
+    D --> F[Turso no deploy]
+    G[CSV, Excel e OFX] --> H[Importação e normalização]
+    H --> B
+```
 
----
+A camada de acesso ao banco fornece uma interface comum para os dois backends:
 
-## Tecnologias Utilizadas
+| Ambiente | Persistência |
+|---|---|
+| Desenvolvimento local | SQLite |
+| Aplicação publicada | Turso/libSQL |
 
-- Python
-- pandas
+O ETL permanece disponível como fluxo explícito para processar os arquivos CSV
+de `data/raw/`, separar linhas válidas e rejeitadas e gerar os resultados em
+`data/processed/`.
+
+## Tecnologias
+
+- Python 3.13
 - Streamlit
+- pandas
 - SQLite
-- pytest
+- Turso/libSQL
 - Altair
+- pytest
 - openpyxl
 - ofxparse2
-- CSV
-- JSON
 
----
+## Qualidade e testes
 
-## Fluxo do Pipeline
+A suíte atual possui **455 testes automatizados** cobrindo, entre outras áreas:
 
-O ETL permanece como uma parte independente do projeto para processamento
-explícito dos arquivos de entrada:
+- autenticação, expiração de contas e isolamento por usuário;
+- persistência em SQLite e abstração do banco remoto;
+- CRUD de transações, perfil, metas e orçamento;
+- importação de CSV, Excel e OFX;
+- validação, rejeições e possíveis duplicatas;
+- ETL e cálculos financeiros;
+- exclusão coordenada dos dados da conta;
+- composição dos principais componentes Streamlit.
 
-```text
-data/raw/
-    ↓
-Extração dos arquivos CSV
-    ↓
-Validação de colunas obrigatórias
-    ↓
-Tratamento e padronização com pandas
-    ↓
-Separação entre linhas válidas e rejeitadas
-    ↓
-data/processed/transacoes_processadas.csv
-    ↓
-database/finantec.db
+Para executar toda a suíte:
+
+```powershell
+python -m pytest -q
 ```
 
-Na utilização normal da aplicação, o SQLite funciona como fonte principal para
-a interface:
-
-```text
-Conta autenticada
-    ↓
-Entrada manual ou importação
-    ↓
-Validação
-    ↓
-SQLite
-    ↓
-Streamlit
-    ↓
-Indicadores, orçamento, metas e perfil
-```
-
----
-
-## Etapas do ETL
-
-| Etapa | Descrição |
-|---|---|
-| Extract | Lê os arquivos CSV mensais armazenados em `data/raw/`. |
-| Transform | Valida colunas, converte datas, padroniza textos, trata valores, separa linhas válidas e rejeitadas e cria a coluna `ano_mes`. |
-| Load | Salva os dados tratados em CSV processado e em uma base SQLite local. |
-
-Quando existem linhas inválidas, o pipeline também gera:
-
-```text
-data/processed/transacoes_rejeitadas.csv
-```
-
-Esse arquivo contém as transações descartadas e uma coluna
-`motivo_rejeicao`, explicando por que cada linha não entrou na base final.
-
----
-
-## Estrutura do Projeto
-
-```text
-finantec-data-pipeline/
-├── assets/
-│   ├── branding/
-│   └── styles/
-├── data/
-│   ├── demo/
-│   ├── processed/
-│   ├── raw/
-│   └── templates/
-├── database/
-├── docs/
-│   ├── decisions/
-│   ├── ai_prompting.md
-│   ├── data_contract.md
-│   ├── knowledge_base.md
-│   ├── project_overview.md
-│   ├── roadmap.md
-│   └── validation.md
-├── logs/
-├── manual_tests/
-├── scripts/
-│   └── etl_transacoes.py
-├── src/
-│   ├── components/
-│   ├── account_repository.py
-│   ├── analytics.py
-│   ├── app.py
-│   ├── budget_repository.py
-│   ├── data_loader.py
-│   ├── data_reset.py
-│   ├── goal_repository.py
-│   ├── profile_repository.py
-│   ├── transaction_repository.py
-│   └── user_context.py
-├── tests/
-│   └── test_*.py
-├── .gitignore
-├── AGENTS.md
-├── main.py
-├── README.md
-└── requirements.txt
-```
-
-A estrutura acima destaca os componentes principais. O diretório `src/`
-também contém serviços auxiliares responsáveis por importação, validação,
-sincronização e manipulação das transações.
-
----
-
-## Documentação
-
-A pasta `docs/` reúne a documentação técnica e de produto do projeto.
-
-| Arquivo | Finalidade |
-|---|---|
-| `docs/project_overview.md` | Visão geral do projeto, problema, solução, componentes e decisões técnicas. |
-| `docs/data_contract.md` | Contrato de dados das transações processadas pelo projeto. |
-| `docs/knowledge_base.md` | Explicação das fontes de dados usadas pelo pipeline e pela aplicação. |
-| `docs/ai_prompting.md` | Registro histórico da antiga arquitetura de assistente e integração externa. |
-| `docs/decisions/001-remove-gemini-integration.md` | Decisão arquitetural de remover a integração com Gemini. |
-| `docs/validation.md` | Estratégia de validação atual e registros históricos de testes. |
-| `docs/roadmap.md` | Estado da v1 e próximas etapas planejadas para a evolução do projeto. |
-
----
-
-## Base de Dados Simulada
-
-A base de demonstração representa a vida financeira fictícia de Marina Costa,
-uma estudante universitária e estagiária.
-
-Os dados incluem:
-
-- receitas mensais;
-- gastos de consumo;
-- valor separado para reserva;
-- categorias de despesas;
-- metas financeiras;
-- conceitos financeiros básicos;
-- produtos financeiros apenas informativos.
-
-Os arquivos versionados em `data/demo/` representam as transações mensais da
-demonstração. O pipeline processa esses arquivos e gera uma base tratada para
-análise.
-
-Um uso pessoal novo pode começar sem perfil, metas, orçamento ou transações.
-A demonstração não substitui os dados pessoais do usuário e pode ser ativada ou
-desativada sem sobrescrever o contexto pessoal da conta.
-
----
-
-## Como Executar o Projeto
+## Execução local
 
 ### 1. Clone o repositório
 
-```bash
+```powershell
 git clone https://github.com/Ryluna19/finantec-data-pipeline.git
-cd finantec-data-pipeline
+Set-Location finantec-data-pipeline
 ```
 
 ### 2. Crie e ative o ambiente virtual
-
-No Windows PowerShell:
 
 ```powershell
 py -m venv .venv
@@ -309,283 +156,112 @@ py -m venv .venv
 ### 3. Instale as dependências
 
 ```powershell
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
----
+### 4. Configure o ambiente local
 
-## Comandos Principais
-
-Para abrir a aplicação:
+O SQLite é utilizado quando o backend não é informado. Para deixar a
+configuração explícita e definir o código da primeira conta permanente:
 
 ```powershell
-python main.py
+$env:FINANTEC_DATABASE_BACKEND = "sqlite"
+$env:FINANTEC_REGISTRATION_CODE = "defina-um-codigo-local"
 ```
 
-Ou:
+### 5. Inicie a aplicação
 
 ```powershell
 python main.py app
 ```
 
-Para processar explicitamente os arquivos CSV pelo pipeline ETL:
+As variáveis definidas dessa forma existem somente na sessão atual do
+PowerShell.
+
+### Backend Turso opcional
+
+Para usar um banco Turso em vez do SQLite:
 
 ```powershell
-python main.py etl
+$env:FINANTEC_DATABASE_BACKEND = "turso"
+$env:TURSO_DATABASE_URL = "libsql://seu-banco.turso.io"
+$env:TURSO_AUTH_TOKEN = "seu-token"
+$env:FINANTEC_REGISTRATION_CODE = "seu-codigo-de-acesso"
 ```
 
-Para executar os testes automatizados:
+Tokens e códigos de acesso não devem ser incluídos no Git. O repositório ignora
+arquivos `.env` e `.streamlit/secrets.toml`.
 
-```powershell
-python main.py test
-```
+## Comandos disponíveis
 
-Para abrir a aplicação sem executar o ETL:
-
-```powershell
-python main.py dev
-```
-
-Para ver os comandos disponíveis:
-
-```powershell
-python main.py help
-```
-
----
-
-## Arquivos Gerados Localmente
-
-Ao executar a aplicação ou o ETL, o projeto pode gerar arquivos como:
-
-```text
-data/processed/transacoes_processadas.csv
-data/processed/transacoes_rejeitadas.csv
-database/finantec.db
-logs/etl_transacoes.log
-```
-
-Esses arquivos são gerados localmente e não precisam ser versionados no GitHub.
-
-O arquivo `transacoes_rejeitadas.csv` só é criado quando existem linhas
-inválidas nos arquivos de entrada.
-
-O arquivo legado `data/raw/transacoes_manuais.csv` pode existir em instalações
-antigas, mas a entrada manual atual grava diretamente no SQLite. Esse arquivo
-continua sendo local e não deve ser versionado no GitHub.
-
----
-
-## Integração Externa Descontinuada
-
-O projeto já utilizou Gemini para complementar consultas financeiras. A
-integração foi removida preventivamente porque poderia enviar perguntas,
-histórico e contexto financeiro a um serviço externo, um risco incompatível com
-a proposta local do produto.
-
-Não houve violação de dados comprovada. A remoção foi uma decisão consciente de
-minimização de dados e privacidade por concepção.
-
-Parte do código, dos testes e da documentação dessa fase foi preservada como
-registro técnico e histórico. O assistente financeiro, o histórico de
-conversas e o antigo recurso de Insights não fazem parte das funcionalidades
-atuais da aplicação.
-
-Consulte a
-[decisão arquitetural](docs/decisions/001-remove-gemini-integration.md) para o
-contexto completo.
-
----
-
-## Testes Automatizados
-
-O projeto utiliza `pytest` para validar o pipeline, as regras financeiras, a
-persistência, o isolamento de dados e os principais fluxos da aplicação.
-
-Entre as principais áreas cobertas estão:
-
-| Área | Finalidade |
+| Comando | Ação |
 |---|---|
-| Analytics | Cálculos financeiros, categorias, períodos, saldo e formatação. |
-| ETL | Validação, transformação, rejeições e carga dos dados. |
-| Contas | Criação, autenticação, senha e isolamento entre usuários. |
-| Transações | Identidade, persistência, sincronização, CRUD e importação. |
-| Importação | CSV, Excel, OFX, mapeamento assistido e duplicatas. |
-| Perfil | Persistência e isolamento das informações financeiras pessoais. |
-| Metas | CRUD, isolamento, cálculos e simulação. |
-| Orçamento | CRUD, recorrência, períodos, isolamento e acompanhamento dos limites. |
-| Dados e privacidade | Exclusão de dados financeiros, preservação da conta e exclusão definitiva da conta. |
-| Interface | Estados e funções auxiliares dos principais componentes Streamlit. |
+| `python main.py` | Inicia a aplicação Streamlit. |
+| `python main.py app` | Inicia a aplicação Streamlit. |
+| `python main.py etl` | Executa o pipeline ETL explicitamente. |
+| `python main.py test` | Executa os testes automatizados. |
+| `python main.py dev` | Inicia a aplicação sem executar o ETL. |
+| `python main.py help` | Exibe a ajuda dos comandos. |
 
-Alguns testes relacionados ao antigo mecanismo local de consultas financeiras
-permanecem no repositório como cobertura de código legado. Esse mecanismo não
-faz parte da experiência atual da aplicação.
-
-Para executar a suíte:
-
-```powershell
-python main.py test
-```
-
-Ou diretamente com pytest:
-
-```powershell
-pytest
-```
-
----
-
-## Testes Manuais
-
-A pasta `manual_tests/` contém scripts auxiliares usados durante o
-desenvolvimento para verificar partes específicas do projeto.
-
-Esses arquivos não substituem os testes automatizados. A validação final da v1
-também incluiu testes manuais dos principais fluxos diretamente pela interface,
-como:
-
-- criação, edição e exclusão de transações;
-- importação e tratamento de duplicatas;
-- orçamento mensal;
-- metas e simulador;
-- perfil financeiro;
-- alternância entre dados pessoais e demonstração;
-- exclusão dos dados financeiros;
-- exclusão de conta;
-- responsividade em desktop, notebook e mobile.
-
-Os scripts auxiliares existentes podem ser executados individualmente quando
-necessário, por exemplo:
-
-```powershell
-python manual_tests/teste_dados.py
-python manual_tests/teste_metas.py
-python manual_tests/teste_periodos.py
-python manual_tests/teste_sqlite.py
-```
-
----
-
-## Limitações
-
-O FinanTec Data Pipeline não:
-
-- acessa contas bancárias reais;
-- utiliza Open Finance;
-- envia perguntas ou contexto financeiro para serviços externos;
-- substitui orientação financeira profissional;
-- recomenda investimentos personalizados;
-- garante rentabilidade ou resultados financeiros;
-- consulta taxas ou produtos financeiros em tempo real;
-- executa operações financeiras;
-- possui autenticação preparada para exposição pública ou uso multiusuário em
-  produção;
-- possui infraestrutura de produção, monitoramento ou processo de deploy
-  público;
-- integra com instituições financeiras reais.
-
-A autenticação existente na v1 protege e separa contas no contexto local da
-aplicação. Uma eventual publicação web exigirá nova avaliação de segurança,
-sessões, autorização e infraestrutura.
-
----
-
-## Possíveis Evoluções Futuras
-
-A evolução do projeto deve preservar a v1 local como uma versão funcional e
-evitar mudanças arquiteturais sem benefício concreto.
-
-### Hardening da v1
-
-Antes da migração arquitetural, está planejada uma revisão específica de
-segurança e qualidade, incluindo:
-
-- autenticação e armazenamento de credenciais;
-- isolamento entre usuários;
-- consultas e persistência no SQLite;
-- importação e manipulação de arquivos;
-- dependências;
-- segredos e configurações;
-- logs e exposição acidental de dados;
-- fluxos de exclusão de dados e conta.
-
-O objetivo dessa etapa é corrigir problemas relevantes encontrados na v1, e não
-transformá-la em uma aplicação web de produção.
-
-### Versão 2
-
-A direção planejada para a v2 é separar frontend e backend:
+## Estrutura principal
 
 ```text
-React
-    ↓ HTTP
-API Python
-    ↓
-Regras e serviços da aplicação
-    ↓
-Persistência
+finantec-data-pipeline/
+├── assets/             # identidade visual e estilos
+├── data/               # demonstração, entradas e modelos
+├── docs/               # documentação técnica e decisões
+├── manual_tests/       # verificações manuais auxiliares
+├── scripts/            # pipeline ETL
+├── src/
+│   ├── components/     # componentes da interface
+│   ├── app.py          # composição principal
+│   ├── *_repository.py # persistência por domínio
+│   └── ...             # serviços e regras de negócio
+├── tests/              # suíte automatizada
+├── main.py             # entrada de comandos do projeto
+└── requirements.txt
 ```
 
-Essa evolução deve incluir:
+## Documentação
 
-- frontend em React;
-- backend Python exposto por API;
-- reaproveitamento gradual das regras de negócio já validadas na v1;
-- autenticação e autorização projetadas para a arquitetura web;
-- testes de backend e frontend;
-- validações automatizadas de qualidade e segurança;
-- CI desde as etapas iniciais da v2;
-- processo de deploy somente quando a aplicação estiver preparada para
-  publicação;
-- PostgreSQL e migrations quando concorrência, múltiplos usuários ou
-  infraestrutura de produção justificarem a mudança.
+| Documento | Conteúdo |
+|---|---|
+| [Project Overview](docs/project_overview.md) | Produto, arquitetura e decisões técnicas. |
+| [Contrato de Dados](docs/data_contract.md) | Estrutura canônica e regras de importação. |
+| [Validação](docs/validation.md) | Estratégia de testes e verificações manuais. |
+| [Roadmap](docs/roadmap.md) | Estado da V1 e direção de evolução. |
+| [ADR 001](docs/decisions/001-remove-gemini-integration.md) | Decisão de remover a integração externa com Gemini. |
 
-A migração deve ser incremental. A intenção não é descartar a v1 e reescrever
-todo o produto de uma única vez.
+## Limitações conhecidas
 
----
+- a aplicação é um projeto de portfólio e não um serviço financeiro de
+  produção;
+- não existe integração bancária ou com Open Finance;
+- não há recuperação de senha por e-mail;
+- a limpeza física de contas vencidas ocorre quando a aplicação executa sua
+  rotina de verificação, sem um serviço agendado independente;
+- a interface depende das possibilidades e limitações do Streamlit;
+- testes de carga, pentest e uma suíte end-to-end completa em navegador não
+  fazem parte da V1.
+
+## Privacidade
+
+A antiga integração com Gemini foi removida para evitar o envio de contexto
+financeiro a um serviço externo. A aplicação atual não utiliza IA externa para
+processar os dados financeiros cadastrados.
+
+O contexto completo está registrado no
+[ADR 001](docs/decisions/001-remove-gemini-integration.md).
 
 ## Status
 
-A versão 1 local está funcionalmente concluída e em fase de fechamento
-documental e estabilização final.
+A **V1 está funcional, publicada e disponível para testes externos**. Os fluxos
+principais foram validados manualmente e pela suíte automatizada.
 
-Fluxo principal:
+A direção considerada para uma futura V2 é separar frontend e backend para
+obter maior controle da experiência visual e da arquitetura web. Essa evolução
+não faz parte do escopo da V1.
 
-```text
-Conta local
-    ↓
-Entrada manual ou importação
-    ↓
-Validação
-    ↓
-SQLite
-    ↓
-Interface Streamlit
-```
+## Autor
 
-Áreas funcionais da v1:
-
-```text
-Visão geral
-Transações
-Orçamento
-Metas
-Perfil
-Dados e privacidade
-```
-
-O ETL continua disponível para demonstração, compatibilidade e execução
-explícita.
-
-A antiga integração com Gemini, o assistente financeiro, o histórico de
-conversas e o mecanismo de Insights permanecem apenas como histórico técnico
-quando ainda existem referências no código, nos testes ou na documentação. Eles
-não fazem parte da navegação ou das funcionalidades atuais da v1.
-
-A revisão global de responsividade foi concluída em desktop, notebook e mobile.
-Os fluxos funcionais principais também passaram por validação manual antes do
-fechamento da versão.
-
-A etapa seguinte ao fechamento da v1 será uma revisão de segurança e hardening.
-Depois dela, o projeto poderá iniciar a evolução arquitetural gradual para a v2.
+Desenvolvido por [Ryan Santos](https://github.com/Ryluna19).
