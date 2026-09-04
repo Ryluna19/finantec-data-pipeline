@@ -139,3 +139,7 @@ histórico de conversas
 
 módulos e dados remanescentes
 → legado técnico ou registro histórico
+```
+
+A publicação posterior da V1 não alterou esta decisão. A aplicação continua sem
+enviar os dados financeiros cadastrados para um serviço externo de IA.

@@ -22,5 +22,6 @@ Para rodar os scripts, execute os comandos a partir da raiz do projeto.
 
 Exemplo:
 
-```bash
+```powershell
 python manual_tests/teste_periodos.py
+```

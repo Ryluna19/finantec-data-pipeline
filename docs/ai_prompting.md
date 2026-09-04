@@ -696,9 +696,9 @@ reintroduzi-la.
 
 ---
 
-## Relação com a v2
+## Relação com uma possível v2
 
-A evolução planejada para React + API Python não depende do retorno do
+Uma possível evolução para frontend e API separados não depende do retorno do
 assistente.
 
 A v2 deve inicialmente priorizar:
@@ -732,26 +732,28 @@ cálculos em Python
 explicação com IA
 ```
 
-A direção atual da v1 é:
+A direção atual da v1 publicada é:
 
 ```text
 dados organizados
         ↓
 regras determinísticas
         ↓
-persistência local
+persistência configurável
+(SQLite ou Turso/libSQL)
         ↓
-interface financeira
+interface Streamlit
 ```
 
-E a evolução arquitetural planejada é:
+Uma eventual evolução arquitetural deverá seguir necessidades confirmadas pelo
+feedback externo:
 
 ```text
-v1 local
+v1 publicada
         ↓
-hardening
+feedback e definição de escopo
         ↓
-React + API Python
+frontend e API separados
         ↓
 migração gradual das funções financeiras
 ```
