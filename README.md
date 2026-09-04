@@ -38,6 +38,20 @@ com um código de acesso.
 
 ---
 
+## Interface
+
+### Cadastro temporário
+
+![Tela de cadastro de conta temporária do FinanTec](docs/images/temporary-account-registration.png)
+
+### Visão geral
+
+![Painel de visão geral do FinanTec](docs/images/financial-overview.png)
+
+### Importação e validação
+
+![Validação da importação de transações no FinanTec](docs/images/transaction-import-validation.png)
+
 ## Sobre o projeto
 
 O projeto começou como um pipeline ETL para transformar arquivos de transações
