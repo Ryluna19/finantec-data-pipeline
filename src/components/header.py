@@ -180,7 +180,7 @@ def build_brand_header_html() -> str:
             </div>
 
             <p class="finantec-brand-description">
-                Aplicativo local de organização financeira para estudantes
+                Aplicativo de organização financeira pessoal para estudantes
                 e pessoas em início de carreira.
             </p>
         </header>

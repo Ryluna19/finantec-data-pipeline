@@ -631,7 +631,7 @@ def build_sidebar_account_html(
     """Monta a identidade compacta da conta na sidebar."""
     normalized_username = (
         " ".join(str(username if username is not None else "").strip().split())
-        or "Conta local"
+        or "Conta FinanTec"
     )
 
     initials = _build_account_initials(normalized_username)
@@ -644,7 +644,7 @@ def build_sidebar_account_html(
         "</span>"
         '<div class="finantec-sidebar-account-copy">'
         '<span class="finantec-sidebar-account-eyebrow">'
-        "Conta local"
+        "Conta FinanTec"
         "</span>"
         f'<strong title="{escape(normalized_username)}">'
         f"{escape(normalized_username)}"
@@ -661,9 +661,9 @@ def render_account_sidebar(
     username = str(
         account.get(
             "username",
-            "Conta local",
+            "Conta FinanTec",
         )
-        or "Conta local"
+        or "Conta FinanTec"
     ).strip()
 
     with st.sidebar:

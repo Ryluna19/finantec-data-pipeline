@@ -19,7 +19,7 @@ def test_sidebar_account_html_normalizes_username():
 
     assert "Ryan Santos" in html
     assert ">RS<" in html
-    assert "Conta local" in html
+    assert "Conta FinanTec" in html
 
 
 def test_sidebar_account_html_escapes_username():

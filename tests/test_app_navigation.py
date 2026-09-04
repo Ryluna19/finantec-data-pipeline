@@ -175,7 +175,7 @@ def test_header_presents_finantec_as_local_application(
     header_html = rendered_html[0]
 
     assert (
-        "Aplicativo local de organização financeira"
+        "Aplicativo de organização financeira pessoal"
         in header_html
     )
 
