@@ -949,19 +949,20 @@ só.
 
 ---
 
-## Arquivos Importados Localmente
+## Arquivos e lotes de importação
 
-Lotes processados pela interface podem utilizar a pasta local:
+Arquivos enviados pela interface são processados e normalizados antes da
+persistência das transações.
+
+Alguns fluxos de compatibilidade na execução local podem utilizar:
 
 ```text
 data/raw/imported/
 ```
 
-Essa pasta faz parte do fluxo local da aplicação.
-
-Arquivos nela gerados não devem ser enviados ao repositório.
-
-O Git deve continuar ignorando dados pessoais e arquivos derivados da execução.
+Essa pasta é um artefato de execução, não a fonte principal dos dados. Arquivos
+importados ou gerados não devem ser enviados ao repositório quando puderem
+conter informações pessoais.
 
 ---
 
@@ -1003,9 +1004,9 @@ O relatório é local e não deve ser versionado.
 
 ---
 
-## Arquivos Gerados Localmente
+## Artefatos gerados localmente
 
-O pipeline ou a utilização da aplicação podem produzir arquivos como:
+A execução local ou o pipeline podem produzir:
 
 ```text
 data/processed/transacoes_processadas.csv
@@ -1015,11 +1016,13 @@ logs/etl_transacoes.log
 data/raw/imported/
 ```
 
-Esses conteúdos são derivados da execução local e não representam arquivos que
-devem ser enviados ao GitHub com dados pessoais.
+O arquivo `database/finantec.db` existe somente quando o backend SQLite é
+utilizado. Na aplicação publicada, os registros persistidos são enviados ao
+Turso.
 
-Arquivos `.gitkeep` podem permanecer versionados para preservar diretórios
-necessários.
+Esses artefatos não devem ser enviados ao GitHub quando contiverem dados
+pessoais. Arquivos `.gitkeep` podem permanecer versionados apenas para preservar
+os diretórios necessários.
 
 ---
 
@@ -1143,7 +1146,8 @@ validação
         ↓
 associação ao contexto atual
         ↓
-SQLite
+backend configurado
+(SQLite ou Turso/libSQL)
 ```
 
 Um arquivo não deve decidir arbitrariamente qual usuário será proprietário da
